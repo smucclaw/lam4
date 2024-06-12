@@ -1,0 +1,20 @@
+{
+    "projectName": "MiniL4Types",
+    "languages": [
+        {
+            "id": "mini-l4-types",
+            "grammar": "src/language/mini-l4-types.langium",
+            "fileExtensions": [
+                ".l4",
+                ".l4types"
+            ],
+            "textMate": {
+                "out": "syntaxes/mini-l4-types.tmLanguage.json"
+            },
+            "monarch": {
+                "out": "syntaxes/mini-l4-types.monarch.ts"
+            }
+        }
+    ],
+    "out": "src/language/generated"
+}
