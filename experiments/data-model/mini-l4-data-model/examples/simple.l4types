@@ -1,0 +1,25 @@
+GENERAL_METADATA {
+  description: "A reasonably simple example of a (mini-)L4 data model, using the Loan exampe from https://docs.google.com/spreadsheets/d/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/edit#gid=2000125343"
+
+  nestedMetadata: {
+    nestedKey: "blah blah"
+  }
+}
+
+TYPES {
+  DECLARE Person {
+  }
+  DECLARE Loan {
+    /-
+    description: "Who the lender is"
+    someNumericMetadataForIllustration: 12.30
+    -/
+    lender IS_A Person
+    // the property above has a 'block metadata' annotation 
+    // just to show how that syntax is possible
+
+    // the properties below just have a single line metadata annotation (this will become the 'description')
+    borrower IS_A Person -- Who the borrower is.
+    closing IS_A Date -- When the loan must be paid up by.
+  }
+}
