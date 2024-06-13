@@ -69,59 +69,66 @@ Type:
 ;
 
 TypeDef:
-    (refType=[CustomType:ID] | builtinType=Builtin | primitive=Primitive )
+    (refType=[CustomType:ID] | builtinType=Builtin )
 ;
 
 
-/* ========================================
-        BUILT INs and PRIMITIVEs
-======================================== */
+// /* ========================================
+//         BUILT INs and PRIMITIVEs
+// ======================================== */
 
 // TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
-BuiltinIntegerFormats returns string:
-    'int32' | 'int64'
-;
-
-BuiltinFloatFormats returns string:
-    'float'
+// Sticking to the numeric types supported by json schema for now
+// https://json-schema.org/understanding-json-schema/reference/numeric
+BuiltinNumberFormats returns string:
+    'Integer' | 'IntegerOrFloat'
 ;
 
 BuiltinStringFormats returns string:
     'String'
 ;
 
-// Could try to support specific currencies in the future
-BuiltinMoneyFormat returns string:
-    'Money'
-;
-
+// https://json-schema.org/understanding-json-schema/reference/string
 BuiltinDateTimeRelated returns string:
-    'Date' | 'DateTime'
+    'Date' | 'DateTime' | 'Time' | 'Duration'
 ;
 
+// in the future: BuiltinMoneyFormats ?
 Builtin returns string:
-    BuiltinStringFormats | BuiltinIntegerFormats | BuiltinFloatFormats | BuiltinMoneyFormat | BuiltinDateTimeRelated;
-
-PrimitiveString:
-    type='string' '(' format=(ID|BuiltinStringFormats) ')'
-;
-
-Primitive:
-    PrimitiveString | PrimitiveFloats | PrimitiveIntegers;
-
-PrimitiveFloats:
-    'number' '(' format=(ID|BuiltinFloatFormats) ')' 
-        (lowerBound=('('|'[') lower=INT? ',' upper=INT? upperBound=(')'|']'))?
-        ('mul' multipleOf=UNSIGNED_NUMBER)?
-;
+    BuiltinStringFormats | BuiltinNumberFormats | BuiltinDateTimeRelated;
 
 
-PrimitiveIntegers:
-    'integer' '(' format=(ID|BuiltinIntegerFormats) ')' 
-        (lowerBound=('('|'[') lower=INT? ',' upper=INT? upperBound=(')'|']'))?
-        ('mul' multipleOf=UNSIGNED_NUMBER)?
-;
+// Could try to support specific currencies in the future
+// BuiltinMoneyFormats returns string:
+//     'Money'
+// ;
+
+// If you were trying to model OpenAPI, you would use the following too:
+// BuiltinIntegerFormats returns string:
+//     'int32' | 'int64'
+// ;
+// BuiltinFloatFormats returns string:
+//     'float'
+// ;
+// PrimitiveString:
+//     type='string' '(' format=(ID|BuiltinStringFormats) ')'
+// ;
+
+// Primitive:
+//     PrimitiveString | PrimitiveFloats | PrimitiveIntegers;
+
+// PrimitiveFloats:
+//     'number' '(' format=(ID|BuiltinFloatFormats) ')' 
+//         (lowerBound=('('|'[') lower=INT? ',' upper=INT? upperBound=(')'|']'))?
+//         ('mul' multipleOf=UNSIGNED_NUMBER)?
+// ;
+
+// PrimitiveIntegers:
+//     'integer' '(' format=(ID|BuiltinIntegerFormats) ')' 
+//         (lowerBound=('('|'[') lower=INT? ',' upper=INT? upperBound=(')'|']'))?
+//         ('mul' multipleOf=UNSIGNED_NUMBER)?
+// ;
 
 /* ========================================
         LITERALS

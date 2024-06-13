@@ -1,0 +1,37 @@
+GENERAL_METADATA_FOR_TYPES {
+  description: "An example that demonstrates how to get open sums with EXTENDS"
+}
+
+/* -----------------------
+    Entities
+-------------------------*/
+DECLARE Entity {
+  name: String
+}
+
+DECLARE Institution EXTENDS Entity {}
+
+DECLARE Government EXTENDS Institution {}
+
+DECLARE Business EXTENDS Institution {
+  date_incorporated: Date
+  market_capitalization_mil_usd: IntegerOrFloat
+}
+
+DECLARE NonProfitInstitution EXTENDS Institution {}
+
+DECLARE NonInstitutionalPerson EXTENDS Entity {}
+
+
+DECLARE Loan {
+  /-
+  description_for_semantic_parser: "Who the lender is"
+  someNumericMetadataForIllustration: 12.30
+  -/
+  lender IS_A Entity
+  // the property above has a 'block metadata' annotation 
+  // just to show how that syntax is possible
+
+  // the properties below just have a single line metadata annotation (this will become the 'description')
+  borrower IS_A Entity -- Who the borrower is.
+}
