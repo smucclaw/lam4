@@ -49,13 +49,13 @@ concrete L4cnc of L4 = {
     -- : String -> FinalDefinition -> Rule ;
     Hornlike name defn = {
       s =  t
-          (tr (th name.s ++ td "MEANS" ++ emptyCols ! defn.ncols)
+          (tr (th name.s ++ td "MEANS")
         ++ defn.s)
     } ;
 
     -- : String -> [Definition] -> [Definition] ;
     Pre pr defn = defn ** {
-      s1 = td pr.s ++ emptyCol defn.s1 ;
+      s1 = td pr.s ++ defn.s1 ;
       s2 = \\conj => emptyCol (defn.s2 ! conj) ;
       ncols = increment ! defn.ncols ;
     } ;

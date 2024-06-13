@@ -4,25 +4,33 @@ This is a quick demo, probably not worth pursuing for production. Just to experi
 
 ## Example use
 
+Start the GF shell as follows.
 ```
 $ gf L4cnc.gf
-linking ... OK
+```
 
-Languages: L4cnc
+### Small example tree
 
+Linearizing the following tree produces an HTML table.
+```
 L4> l Hornlike "Drinks" (Or (PrePost "consumes" "beverage" (BaseDefinition (MkDefinition "alcoholic") (MkDefinition "non-alcoholic"))))
 ```
-Generates the following HTML:
-
-<table> <tr> <th> Drinks </th> <td> MEANS </td>  <td></td> </tr> <tr> <td> consumes </td> <td></td> <td> alcoholic </td> </tr> <tr> <td></td> <td> OR </td> <td> non-alcoholic </td> </tr> <tr> <td> beverage </td> <td></td> <td></td> </tr> </table>
+<table> <tr> <th> Drinks </th> <td> MEANS </td> </tr> <tr> <td> consumes </td> <td></td> <td> alcoholic </td> </tr> <tr> <td></td> <td> OR </td> <td> non-alcoholic </td> </tr> <tr> <td> beverage </td> <td></td> <td></td> </tr> </table>
 
 View it as a tree with the following command:
 ```
-L4> vt -view=open Hornlike "Drinks" (Or (PrePost "consumes" "beverage" (BaseDefinition (MkDefinition "alcoholic") (MkDefinition "non-alcoholic"))))
+L4> vt -view=open Hornlike "Drinks" (And (BaseDefinition (Or (PrePost "consumes" "beverage" (BaseDefinition (MkDefinition "alcoholic") (MkDefinition "non-alcoholic")))) (Or (Pre "whether" (BaseDefinition (MkDefinition "in part") (MkDefinition "in whole"))))))
 ```
 
 ![drinks](drinks.png "AST for the hornlike about Drinks")
 
+
+### Bigger example tree
+
+```
+L4> l Hornlike "Drinks" (And (BaseDefinition (Or (PrePost "consumes" "beverage" (BaseDefinition (MkDefinition "alcoholic") (MkDefinition "non-alcoholic")))) (Or (Pre "whether" (BaseDefinition (MkDefinition "in part") (MkDefinition "in whole"))))))
+```
+<table> <tr> <th> Drinks </th> <td> MEANS </td> </tr> <tr> <td></td> <tr> <td> consumes </td> <td></td> <td> alcoholic </td> </tr> <tr> <td></td> <td> OR </td> <td> non-alcoholic </td> </tr> <tr> <td> beverage </td> <td></td> <td></td> </tr> </tr> <tr> <td> AND </td> <tr> <td> whether </td> <td></td> <td> in part </td> </tr> <tr> <td></td> <td> OR </td> <td> in whole </td> </tr> </tr> </table>
 
 ### Generating all trees
 
