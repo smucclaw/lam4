@@ -11,8 +11,8 @@ Note:
 */
 
 entry Model:
-    ('GENERAL_METADATA' gen_metadata=MetadataBlock)*
-    ('TYPES' '{' types+=CustomType* '}')?
+    ('GENERAL_METADATA_FOR_TYPES' gen_metadata=MetadataBlock)*
+    (types+=CustomType*)*
 ;
 
 /* ========================================
@@ -41,19 +41,6 @@ MetadataForProperty:
         properties+=MetadataKVPair+
     '-/'
 ;
-
-// ModelValue:
-//     ModelType | StringLiteral
-// ;
-
-// ModelType:
-//     '{'
-//         properties+=ModelProperty+
-//     '}'
-// ;
-// ModelProperty:
-//     name=ID ':' (value=ModelValue | '[' values+=ModelValue (',' values+=ModelValue)* ']')
-// ;
 
 ValueType:
     'DECLARE' name=ID ('(' descriminator=ID ('=' descriminatorValue=STRING)? ')')? ( 'EXTENDS' parents+=[ValueType:ID] ( ',' parents+=[ValueType:ID] )* )? '{'
@@ -90,20 +77,31 @@ TypeDef:
         BUILT INs and PRIMITIVEs
 ======================================== */
 
+// TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
+
 BuiltinIntegerFormats returns string:
     'int32' | 'int64'
 ;
 
 BuiltinFloatFormats returns string:
-    'float' | 'double'
+    'float'
 ;
 
 BuiltinStringFormats returns string:
-    'String' | 'Money' | 'Password' | 'Date' | 'Date-Time'
+    'String'
+;
+
+// Could try to support specific currencies in the future
+BuiltinMoneyFormat returns string:
+    'Money'
+;
+
+BuiltinDateTimeRelated returns string:
+    'Date' | 'DateTime'
 ;
 
 Builtin returns string:
-    BuiltinStringFormats | BuiltinIntegerFormats | BuiltinFloatFormats;
+    BuiltinStringFormats | BuiltinIntegerFormats | BuiltinFloatFormats | BuiltinMoneyFormat | BuiltinDateTimeRelated;
 
 PrimitiveString:
     type='string' '(' format=(ID|BuiltinStringFormats) ')'
@@ -129,7 +127,7 @@ PrimitiveIntegers:
         LITERALS
 ======================================== */
 
-// TODO: Clean number literals up
+// TODO: Clean number literals / signed vs unsigned num up
 Decimal returns number:
     INT ('.' INT)?;
 
@@ -156,8 +154,6 @@ terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 
-
-// /\/\-[\s\S]*?\-\//;
 // matches --
 terminal SINGLELINE_METADATA_ANNOTATION: /-- [^\n\r]*/;
 
