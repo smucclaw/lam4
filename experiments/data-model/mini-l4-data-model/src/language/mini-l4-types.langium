@@ -24,9 +24,12 @@ MetadataBlock:
         properties+=MetadataKVPair+
     '}'
 ;
+MetadataKey returns string:
+    ID | "description" | "description_for_semantic_parser"
+;
 
 MetadataKVPair:
-    name=ID ':' (value=MetadataValue | '[' values+=MetadataValue (',' values+=MetadataValue)* ']')
+    name=MetadataKey ':' (value=MetadataValue | '[' values+=MetadataValue (',' values+=MetadataValue)* ']')
 ;
 
 MetadataValue:
