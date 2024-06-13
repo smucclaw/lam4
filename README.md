@@ -18,3 +18,8 @@ This differs from the current JSON transpiler in that
 * it's not afraid to look a bit more like a conventional PL, since the people writing the data models will typically have programming experience, and since it wouldn't be hard to add support for things that help explain the data model -- e.g. intuitive visualizations and a 'preview mode' that explains the data model in more ordinary natural language terms
   * [TODO] plug into visualizations / a diagrammatic UI that'll help with understanding the data model
   * [MAYBE] along with a GUI for editing or crafting a data model from scratch?
+
+In the short term, I'm sticking mostly to the types that are supported by JSON Schema.
+Ideally we would start by thinking about what types *we* want to have in L4, independently of what's available in JSON Schema,
+and either write custom objects or warn the user if they want to produce a JSON Schema from types that are incompatible / not available in JSON Schema.
+But in the short term, it's easier if we limit ourselves to the the JSON Schema types.
