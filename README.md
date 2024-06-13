@@ -19,7 +19,8 @@ This differs from the current JSON transpiler in that
   * [TODO] plug into visualizations / a diagrammatic UI that'll help with understanding the data model
   * [MAYBE] along with a GUI for editing or crafting a data model from scratch?
 
-In the short term, I'm sticking mostly to the types that are supported by JSON Schema.
+In the short term, I'm sticking mostly to the types that are supported by JSON Schema (though I've perhaps too ambitiously added some `Money` types).
+
 Ideally we would start by thinking about what types *we* want to have in L4, independently of what's available in JSON Schema,
 and either write custom objects or warn the user if they want to produce a JSON Schema from types that are incompatible / not available in JSON Schema.
-But in the short term, it's easier if we limit ourselves to the the JSON Schema types.
+But in the short term, it's easier if we mostly limit ourselves to the the JSON Schema types.
