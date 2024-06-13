@@ -15,5 +15,6 @@ This differs from the current JSON transpiler in that
 * it has more support for metadata, whether as 'general,' schema-global metadata, or metadata that's specific to a property
 * it supports sum types and union types
 * it's textual
-* [TODO] will plug into visualizations / a diagrammatic UI that'll help with understanding the data model
-* [MAYBE] along with a GUI for editing or crafting a data model from scratch?
+* it's not afraid to look a bit more like a conventional PL, since the people writing the data models will typically have programming experience, and since it wouldn't be hard to add support for things that help explain the data model -- e.g. intuitive visualizations and a 'preview mode' that explains the data model in more ordinary natural language terms
+  * [TODO] plug into visualizations / a diagrammatic UI that'll help with understanding the data model
+  * [MAYBE] along with a GUI for editing or crafting a data model from scratch?
