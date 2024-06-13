@@ -108,7 +108,7 @@ Builtin returns string:
 
 // TODO: Factor out the currencies
 BuiltinMoneyFormats returns string:
-    'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Unitless)' | 'Money(Other)'
+    'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Other)'
 ;
 
 // If you were trying to model OpenAPI, you would use the following too:
