@@ -4,10 +4,38 @@ grammar MiniL4Types
 Langium playground: https://langium.org/playground/
 Go to the playground and paste the grammar in the editor to see the generated parser in action!
 
+====================
+What built-in types?
+====================
+
+Jun 13 2024
+-----------
+    Andres:
+        I think we need at least:
+            strings,
+            numbers (at least integers, probably also some form of fractional numbers, 
+            but possibly rational numbers are sufficient; it'd be good to avoid IEEE floats completely),
+            lists (or possibly another collection type)
+        Less clear are:
+            dates / times / durations,
+            commodities / money,
+            sets,
+            dictionaries (possibly subsumed by being to define user-defined record types)
+
+    YM: 
+        * Added Fraction as per the above (though might be more user-friendly to call it 'Ratio'?)
+        * Added dates since those were needed for the insurance web form. 
+            Could think of dates as being in a library instead of the core language, indeed
+            that might be cleaner, but it's more convenient for now to have them as a built-in type.
+        * Shelving `Money` for the time being
+
+=========================================================================================
+
 Useful reference when writing this grammar: https://github.com/BestSolution-at/openapi-dsl
 
-https://json-schema.org/understanding-json-schema/reference
-https://swagger.io/docs/specification/data-models/data-types/
+See also
+    * https://json-schema.org/understanding-json-schema/reference
+    * https://swagger.io/docs/specification/data-models/data-types/
 
 Note:
     * Keywords can't include whitespace: https://github.com/eclipse-langium/langium/discussions/601
@@ -68,7 +96,7 @@ Property:
 ;
 
 Type:
-    (array?='array' '<' typeDef=TypeDef (',' maxItems=INT)? '>') | typeDef=TypeDef
+    (list?='LIST' '<' typeDef=TypeDef (',' maxItems=INT)? '>') | typeDef=TypeDef
 ;
 
 TypeDef:
@@ -82,34 +110,29 @@ TypeDef:
 
 // TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
-// Sticking mostly to the numeric types supported by json schema for now
-// Ideally we would start by thinking about what types *we* want to have in L4, independently of what's available in JSON Schema,
-// and just warn the user if they want to produce a JSON Schema from types that are incompatible / not available in JSON Schema. 
-// But in the short term, it's easier if we limit ourselves to the the JSON Schema types.
-// https://json-schema.org/understanding-json-schema/reference/numeric
 BuiltinNumberFormats returns string:
-    'Integer' | 'IntegerOrFloat' 
-    // | 'Float' | 'Double'
+    'Integer' | 'Fraction'
 ;
 
 BuiltinStringFormats returns string:
     'String'
 ;
 
+// TODO: Think about whether to add DateTime, Time and Duration (days)
 // https://json-schema.org/understanding-json-schema/reference/string
-// We can require that Duration be days for now
 BuiltinDateTimeRelated returns string:
-    'Date' | 'DateTime' | 'Time' | 'Duration'
+    'Date'
 ;
 
 Builtin returns string:
-    BuiltinStringFormats | BuiltinNumberFormats | BuiltinMoneyFormats | BuiltinDateTimeRelated
+    BuiltinStringFormats | BuiltinNumberFormats | BuiltinDateTimeRelated
 ;
 
+// Shelving Money for now, but let's revisit this soon
 // TODO: Factor out the currencies
-BuiltinMoneyFormats returns string:
-    'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Other)'
-;
+// BuiltinMoneyFormats returns string:
+//     'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Other)'
+// ;
 
 // If you were trying to model OpenAPI, you would use the following too:
 // BuiltinIntegerFormats returns string:
@@ -168,6 +191,7 @@ terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 
+// TODO: Figure out how to just drop the "--.."
 // matches --
 terminal SINGLELINE_METADATA_ANNOTATION: /-- [^\n\r]*/;
 
