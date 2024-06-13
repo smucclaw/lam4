@@ -6,6 +6,9 @@ Go to the playground and paste the grammar in the editor to see the generated pa
 
 Useful reference when writing this grammar: https://github.com/BestSolution-at/openapi-dsl
 
+https://json-schema.org/understanding-json-schema/reference
+https://swagger.io/docs/specification/data-models/data-types/
+
 Note:
     * Keywords can't include whitespace: https://github.com/eclipse-langium/langium/discussions/601
 */
@@ -79,13 +82,14 @@ TypeDef:
 
 // TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
-// Sticking to the numeric types supported by json schema for now
+// Sticking mostly to the numeric types supported by json schema for now
 // Ideally we would start by thinking about what types *we* want to have in L4, independently of what's available in JSON Schema,
 // and just warn the user if they want to produce a JSON Schema from types that are incompatible / not available in JSON Schema. 
 // But in the short term, it's easier if we limit ourselves to the the JSON Schema types.
 // https://json-schema.org/understanding-json-schema/reference/numeric
 BuiltinNumberFormats returns string:
-    'Integer' | 'IntegerOrFloat'
+    'Integer' | 'AnyNumber' 
+    // | 'Float' | 'Double'
 ;
 
 BuiltinStringFormats returns string:
