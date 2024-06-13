@@ -88,7 +88,7 @@ TypeDef:
 // But in the short term, it's easier if we limit ourselves to the the JSON Schema types.
 // https://json-schema.org/understanding-json-schema/reference/numeric
 BuiltinNumberFormats returns string:
-    'Integer' | 'AnyNumber' 
+    'Integer' | 'IntegerOrFloat' 
     // | 'Float' | 'Double'
 ;
 
@@ -97,19 +97,19 @@ BuiltinStringFormats returns string:
 ;
 
 // https://json-schema.org/understanding-json-schema/reference/string
+// We can require that Duration be days for now
 BuiltinDateTimeRelated returns string:
     'Date' | 'DateTime' | 'Time' | 'Duration'
 ;
 
-// in the future: BuiltinMoneyFormats ?
 Builtin returns string:
-    BuiltinStringFormats | BuiltinNumberFormats | BuiltinDateTimeRelated;
+    BuiltinStringFormats | BuiltinNumberFormats | BuiltinMoneyFormats | BuiltinDateTimeRelated
+;
 
-
-// Could try to support specific currencies in the future
-// BuiltinMoneyFormats returns string:
-//     'Money'
-// ;
+// TODO: Factor out the currencies
+BuiltinMoneyFormats returns string:
+    'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Unitless)' | 'Money(Other)'
+;
 
 // If you were trying to model OpenAPI, you would use the following too:
 // BuiltinIntegerFormats returns string:
