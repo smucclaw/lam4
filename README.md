@@ -1,12 +1,21 @@
-# Mini L4 / Textual L4 (Natural L4's illicit child...)
+# Mini L4 / Textual L4
 
-This is meant to be a textual, more constrained version of Natural L4 --- in particular, of the 'MathLang' dialect. The goal is to get something that
+This is meant to be a textual, more constrained version of Natural L4 --- in particular, of the 'MathLang' dialect.
 
-* is more *modular*, with less technical debt, to enable rapid prototyping and iteration
+## In the short term
+
+* things will be rough around the edges, and technical debt will be unavoidable --- but we'll be explicit about said debt
+* we'll try to do some upfront software design, especially for the things that are harder to change down the road
+
+## In the mid to longer term
+
+The goal is to get something that
+
+* is more *modular*, and hence *maintainable*, with less technical debt, to enable rapid prototyping and iteration
 * is more *extensible* -- e.g., with things like metadata
-* is more *maintainable* (follows from being more modular)
-* is *textual*, and hence plugs better into other PL-related systems (eg assistive technology that uses structural editing frameworks)
-* emphasizes support for *tooling* and other modern conveniences to make working with L4 less onerous
+* has a *textual* format (potentially in addition to a visual one, if time/energy permits), and hence plugs better into other PL-related systems (eg assistive technology that uses structural editing frameworks)
+* emphasizes *usability*, *ease of learning*, and *ergonomics*, in particular, support for *tooling* and other modern conveniences to make working with L4 less onerous and more intuitive
+* allows you not only to *evaluate expressions* (via a 'MathLang'-esque expression sub-language), but also to deploy *formal-methods-powered techniques* (e.g., to explore or understand the contract better, to check that your formalization of the contract does indeed, or even to synthesize or repair L4 specifications).
 
 ## The type declarations / data modelling sub-language
 
@@ -19,8 +28,11 @@ This differs from the current JSON transpiler in that
   * [TODO] plug into visualizations / a diagrammatic UI that'll help with understanding the data model
   * [MAYBE] along with a GUI for editing or crafting a data model from scratch?
 
-In the short term, I'm sticking mostly to the types that are supported by JSON Schema (though I've perhaps too ambitiously added some `Money` types).
+## Inspiration / further reading
 
-Ideally we would start by thinking about what types *we* want to have in L4, independently of what's available in JSON Schema,
-and either write custom objects or warn the user if they want to produce a JSON Schema from types that are incompatible / not available in JSON Schema.
-But in the short term, it's easier if we mostly limit ourselves to the the JSON Schema types.
+### On keeping the underlying language grammar relatively constrained, but still understandable to non-professional-programmers via UI/UX
+
+* [The Enso Language](https://github.com/enso-org/enso), a language for data processing, seems to also [subscribe to a lot of the same tenets](https://github.com/enso-org/enso/blob/develop/docs/enso-philosophy.md), e.g.
+  * "Explicit Over Implicit: The design of Enso and its libraries should *always* account for making all behaviour explicit."
+  * "Unified Syntax: The language syntax should be simple, concise, and be usable on both the type and term levels.
+  * "Choice in a language inherently creates myriad ways to do things. This is singularly unhelpful in any programming language, let alone one intended to span all experience levels, as it increases the cognitive burden of using the language."
