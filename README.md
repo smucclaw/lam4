@@ -28,6 +28,31 @@ This differs from the current JSON transpiler in that
   * [TODO] plug into visualizations / a diagrammatic UI that'll help with understanding the data model
   * [MAYBE] along with a GUI for editing or crafting a data model from scratch?
 
+## Things to think about
+
+### Using automated reasoning to help simplifying statues / legalese, via checking equivalences
+
+An example of a convoluted piece of regulation: the US Tax Code, in particular I.R.C. § 163, which is about the deductibility of interest.
+
+Quote from "Constituencies and Control in Statuory Drafting":
+
+> That statute states a broad general rule: “[t]here shall be allowed as a deduction all interest paid or accrued within the taxable year on indebtedness.”56 But, much farther down in the statute, it creates a large exception: § 163(h)(1) states that “personal interest” is not deductible, thereby excepting personal interest from the ambit of the general rule. Making matters more complicated, § 163(h)(2) then creates an exception to that exception: It defines “personal interest” to exclude certain items including, significantly, “qualified residence interest." This is the basis for the home mortgage interest deduction.
+
+> The entire disallowance of personal interest in §163(h) threatens to swallow the broad general rule in § 163(a) that all interest is deductible, and in fact substantially changes the principle stated in the general rule to the point where one wonders why the broad general rule was necessary. Moreover, the exception to the exception in § 163(h)(2) buries the intricate and important rules allowing home mortgage interest deductions deep within the statute
+
+> The statute could, alternatively, be written using a much narrower rule that is circumscribed using a defined term, while achieving the same substantive outcome.  For example:
+
+> **Narrow Rule**: Approved Business Interest and Approved
+Personal Interest are deductible.
+
+> **Defined Term 1**: Approved Business Interest includes ___.
+
+> **Defined Term 2:** Approved Personal Interest includes ___.
+
+> In short, rather than stating a broad general rule that all interest is deductible followed by large exceptions, the statute could have articulated a narrower rule stating that only certain “approved interest” is deductible, and then could have defined that term.
+
+IDEA: Having a way to automatedly checking the logical (or 'practical / outcome') equivalence of these two formulations would presumbly be helpful, as it was with Forge. We should try to support that.
+
 ## Inspiration / further reading
 
 ### On keeping the underlying language grammar relatively constrained, but still understandable to non-professional-programmers via UI/UX
