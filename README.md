@@ -30,6 +30,15 @@ This differs from the current JSON transpiler in that
 
 ## Things to think about
 
+### How to get interop --- in particular, how to enabling interfacing with L4 from other languages
+
+1. Have one L4 runtime; put it behind a REST API or use some sort of RPC (and maybe also offer more ergonomic wrappers around http or rpc clients, e.g. in the same way that [the OpenAPI python lib](https://github.com/openai/openai-python) basically wraps their REST API; c.f. also things like vscode rpc)
+
+2. If the runtime is in Haskell: use the FFI (e.g. go through C).
+
+* <https://www.reddit.com/r/haskell/comments/wighew/haskell_language_interoperability_and_how_to/>
+* See <https://www.reddit.com/r/haskell/comments/17ec6bu/how_to_expose_haskell_application_to_other/> and e.g. <https://github.com/simplex-chat/simplex-chat/blob/4000fe383d6563509555d5d51a0b5f116e0fb363/apps/multiplatform/common/src/commonMain/cpp/desktop/include/jni.h#L214>
+
 ### Using automated reasoning to help simplifying statues / legalese, via checking equivalences
 
 An example of a convoluted piece of regulation: the US Tax Code, in particular I.R.C. § 163, which is about the deductibility of interest.
