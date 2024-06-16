@@ -96,7 +96,7 @@ Property:
 ;
 
 Type:
-    (list?='LIST' '<' typeDef=TypeDef (',' maxItems=INT)? '>') | typeDef=TypeDef
+    (list?='LIST' '[' typeDef=TypeDef (',' maxItems=INT)? ']') | typeDef=TypeDef
 ;
 
 TypeDef:
