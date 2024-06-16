@@ -2,7 +2,7 @@
 
 This is meant to be a textual, more constrained version of Natural L4 --- in particular, of the 'MathLang' dialect.
 
-## In the short term
+## Goals in the short term
 
 * things will be rough around the edges, and technical debt will be unavoidable --- but we'll be explicit about said debt
 * we'll try to do some upfront software design, especially for the things that are harder to change down the road
@@ -17,12 +17,46 @@ The goal is to get something that
 * emphasizes *usability*, *ease of learning*, and *ergonomics*, in particular, support for *tooling* and other modern conveniences to make working with L4 less onerous and more intuitive
 * allows you not only to *evaluate expressions* (via a 'MathLang'-esque expression sub-language), but also to deploy *formal-methods-powered techniques* (e.g., to explore or understand the contract better, to check that your formalization of the contract does indeed, or even to synthesize or repair L4 specifications).
 
-## The type declarations / data modelling sub-language
+## Noteworthy TODOs
+
+### Backlog
+
+#### Parser
+
+1. Try cutting down on symbols like braces if this is something that would confuse non-technical users
+
+Right now the data modelling sublanguage uses braces to disambiguate scope.
+
+```mini-l4
+GENERAL_METADATA_FOR_TYPES {
+  description: "A reasonably simple example of a (mini-)L4 data model"
+
+  nestedMetadata: {
+    nestedKey: true
+  }
+}
+```
+
+When time permits -- e.g., shortly after the first end-to-end system is done --- we should try cutting down on symbols like braces if that will confuse non-professional programmers. EG, we could instead go for something that uses indentation:
+
+```mini-l4
+GENERAL_METADATA_FOR_TYPES:
+  description: "A reasonably simple example of a (mini-)L4 data model"
+
+  nestedMetadata:
+    nestedKey: true
+```
+
+This is already possible with Langium; I just haven't done it because it requires a bit more effort and would complicate the codebase more than I would like at this stage.
+
+## The various fragments / sub-languages of Mini L4
+
+### The type declarations / data modelling sub-language
 
 This differs from the current JSON transpiler in that
 
-* it has more support for metadata, whether as 'general,' schema-global metadata, or metadata that's specific to a property
-* it supports sum types and union types
+* it has more support for *metadata*, whether as 'general,' schema-global metadata, or metadata that's specific to a property
+* it supports open sums and union types
 * it's textual
 * it's not afraid to look a bit more like a conventional PL, since the people writing the data models will typically have programming experience, and since it wouldn't be hard to add support for things that help explain the data model -- e.g. intuitive visualizations and a 'preview mode' that explains the data model in more ordinary natural language terms
   * [TODO] plug into visualizations / a diagrammatic UI that'll help with understanding the data model
