@@ -1,37 +1,37 @@
 GENERAL_METADATA_FOR_TYPES {
-  description: "An example that demonstrates how to get open sums with EXTENDS"
+  description: "An example that demonstrates how to get open sums with SUBSET_OF"
 }
 
 /* -----------------------
     Entities
 -------------------------*/
-DECLARE Entity {
+SIG Entity {
   name: String
 }
 
-DECLARE Institution EXTENDS Entity {}
+SIG Institution SUBSET_OF Entity {}
 
-DECLARE Government EXTENDS Institution {}
+SIG Government SUBSET_OF Institution {}
 
-DECLARE Business EXTENDS Institution {
+SIG Business SUBSET_OF Institution {
   date_incorporated: Date
-  market_capitalization_mil_usd: IntegerOrFloat
+  market_share: Fraction
 }
 
-DECLARE NonProfitInstitution EXTENDS Institution {}
+SIG NonProfitInstitution SUBSET_OF Institution {}
 
-DECLARE NonInstitutionalPerson EXTENDS Entity {}
+SIG NonInstitutionalPerson SUBSET_OF Entity {}
 
 
-DECLARE Loan {
+SIG Loan {
   /-
   description_for_semantic_parser: "Who the lender is"
   someNumericMetadataForIllustration: 12.30
   -/
-  lender IS_A Entity
+  lender IS_A ONE Entity
   // the property above has a 'block metadata' annotation 
   // just to show how that syntax is possible
 
   // the properties below just have a single line metadata annotation (this will become the 'description')
-  borrower IS_A Entity -- Who the borrower is.
+  borrower IS_A ONE Entity -- Who the borrower is.
 }

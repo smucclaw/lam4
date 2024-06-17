@@ -62,6 +62,10 @@ This differs from the current JSON transpiler in that
   * [TODO] plug into visualizations / a diagrammatic UI that'll help with understanding the data model
   * [MAYBE] along with a GUI for editing or crafting a data model from scratch?
 
+## Langium notes
+
+To factor a grammar into multiple sub-grammars: <https://github.com/eclipse-langium/langium/tree/main/examples/requirements>
+
 ## Things to think about
 
 ### How to get interop --- in particular, how to enabling interfacing with L4 from other languages

@@ -1,4 +1,4 @@
-grammar MiniL4Types
+grammar L4Types
 
 /*
 Langium playground: https://langium.org/playground/
@@ -29,7 +29,11 @@ Jun 13 2024
             that might be cleaner, but it's more convenient for now to have them as a built-in type.
         * Shelving `Money` for the time being
 
-=========================================================================================
+================================================================
+
+Currently experimenting with treating the type declarations along the lines of Alloy; in particular, treating data as relations
+* https://github.com/tnelson/Forge/wiki/Sigs
+* Daniel Jackson's book
 
 Useful reference when writing this grammar: https://github.com/BestSolution-at/openapi-dsl
 
@@ -67,37 +71,53 @@ MetadataValue:
     MetadataBlock | NumberLiteral | StringLiteral | BooleanLiteral
 ;
 
-MetadataForProperty:
+MetadataForRelation:
     '/-'
         properties+=MetadataKVPair+
     '-/'
 ;
 
-ValueType:
-    'DECLARE' name=ID ('(' descriminator=ID ('=' descriminatorValue=STRING)? ')')? ( 'EXTENDS' parents+=[ValueType:ID] ( ',' parents+=[ValueType:ID] )* )? '{'
-        properties+=Property*
+SigDecl:
+    'DECLARE'? 'SIG' name=ID 
+    ('(' descriminator=ID ('=' descriminatorValue=STRING)? ')')? 
+    ( 'SUBSET_OF' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
+        relations+=Relation*
     '}'
 ;
 
-UnionType:
-    'UNION' name=ID '=' types+=[ValueType:ID] ( '|' types+=[ValueType:ID] )+
-;
+// UnionType:
+//     'UNION' name=ID '=' types+=[ValueType:ID] ( '|' types+=[ValueType:ID] )+
+// ;
 
-Alias:
-    'ALIAS' name=ID '=' type=Type
-;
+// Alias:
+//     'ALIAS' name=ID '=' type=Type
+// ;
 
 CustomType:
-    ValueType | UnionType | Alias;
-
-Property:
-    metadata=(MetadataForProperty)?
-    name=ID optional?='?'? (':' | 'IS_A' | 'IS_THE') type=Type nullable?='?'? description=SINGLELINE_METADATA_ANNOTATION?
+    SigDecl 
+    // | UnionType 
+    // | Alias
 ;
 
-Type:
-    (list?='LIST' '[' typeDef=TypeDef (',' maxItems=INT)? ']') | typeDef=TypeDef
+Multiplicity returns string:
+    "SET_OF" | "ONE" | "LONE"
 ;
+
+
+Relation:
+    metadata=(MetadataForRelation)?
+    name=ID optional?='?'? 
+    (':' | 'IS') 
+    multiplicity=Multiplicity?
+    relatum=TypeDef // TODO: Support plural relata 
+    nullable?='?'? 
+    description=SINGLELINE_METADATA_ANNOTATION?
+;
+
+// Type:
+//     (list?='LIST' '[' typeDef=TypeDef (',' maxItems=INT)? ']') | 
+//     typeDef=TypeDef
+// ;
 
 TypeDef:
     (refType=[CustomType:ID] | builtinType=Builtin )
@@ -193,7 +213,7 @@ terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 
 // TODO: Figure out how to just drop the "--.."
 // matches --
-terminal SINGLELINE_METADATA_ANNOTATION: /-- [^\n\r]*/;
+terminal SINGLELINE_METADATA_ANNOTATION: /--([^\n\r]*)/;
 
 // matches start with /* ends with */
 hidden terminal MULTILINE_COMMENT: /\/\*[\s\S]*?\*\//;
