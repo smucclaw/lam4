@@ -51,14 +51,31 @@ See also
     * https://json-schema.org/understanding-json-schema/reference
     * https://swagger.io/docs/specification/data-models/data-types/
 
-Note:
+==========================================
+    Langium Notes
+==========================================
+
     * Keywords can't include whitespace: https://github.com/eclipse-langium/langium/discussions/601
+    * Avoid using newline as a delimiter: https://github.com/eclipse-langium/langium/discussions/1510
+        > "I would generally recommend against employing newline-delimited languages, as they don't behave very well when it comes to error recovery behavior in Langium. Unless you're reimplementing an existing language in Langium, you're almost always better suited using a different delimiter like `;`. Generic parsers are generally pretty bad at handling unexpected input in whitespace-aware languages. It also makes maintenance on the grammar pretty difficult, as you always need to keep track where a newline (or multiple newlines) is required/optional/not allowed."
+        
 */
 
-entry Model:
+entry Program:
+    (Model)?
+    (Rules)?
+;
+
+Model:
     ('GENERAL_METADATA_FOR_TYPES' gen_metadata=MetadataBlock)*
     (types+=CustomType*)*
 ;
+
+Rules:
+    ('GENERAL_METADATA_FOR_RULES' gen_metadata=MetadataBlock)*
+    (rules+=Rule)*
+;
+
 
 /* ========================================
        Metadata
@@ -86,6 +103,20 @@ MetadataForRelation:
         properties+=MetadataKVPair+
     '-/'
 ;
+
+
+
+
+/* ========================================
+       Rules
+======================================== */
+
+// Rule:
+
+/* ========================================
+       Sigs
+======================================== */
+
 
 SigDecl:
     'DECLARE'? 'SIG' name=ID 
@@ -129,9 +160,9 @@ TypeDef:
 ;
 
 
-// /* ========================================
-//         BUILT INs and PRIMITIVEs
-// ======================================== */
+/* ========================================
+         BUILT IN and PRIMITIVE types
+ ======================================== */
 
 // TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
