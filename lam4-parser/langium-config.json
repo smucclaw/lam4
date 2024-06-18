@@ -1,0 +1,19 @@
+{
+    "projectName": "Lam4",
+    "languages": [
+        {
+            "id": "lam4",
+            "grammar": "src/language/lam4.langium",
+            "fileExtensions": [
+                ".l4"
+            ],
+            "textMate": {
+                "out": "syntaxes/lam4.tmLanguage.json"
+            },
+            "monarch": {
+                "out": "syntaxes/lam4.monarch.ts"
+            }
+        }
+    ],
+    "out": "src/language/generated"
+}
