@@ -1,6 +1,6 @@
-# Mini L4 / Textual L4
+# λ4
 
-This is meant to be a textual, more constrained version of Natural L4 --- in particular, of the 'MathLang' dialect.
+This is a kind of rational reconstruction of the 'MathLang' dialect of L4. That is, it is, at its core, a functional expression language; but it aims to extend the MathLang work by incorporating solver / automated reasoning capabilities. It also differs from Natural L4 in offering a textual format with a more constrained surface syntax (with a 'no-code,' intuitive GUI for non-programmers on the roadmap).
 
 ## Goals in the short term
 
