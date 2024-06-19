@@ -112,7 +112,7 @@ MetadataValue:
     MetadataBlock | NumberLiteral | StringLiteral | BooleanLiteral
 ;
 
-MetadataForRelation:
+InlineMetadataBlock:
     '/-'
         properties+=MetadataKVPair+
     '-/'
@@ -124,15 +124,14 @@ MetadataForRelation:
 ======================================== */
 
 // ------- Params -------
-ParamBlock:
+GivenParamBlock:
     'GIVEN' '('
         params+=ParamTypePair+
     ')'
 ;
 
 Param:
-    {infer Param} ID
-;
+    name=ID;
 
 ParamTypePair:
     name=Param (':' | 'IS_A') paramType=TypeDef
@@ -145,16 +144,55 @@ ParamTypePair:
     FunApp */
 
 Rule:
-    PredicateDecl
-    // | FunDecl ??
+    metadata=(InlineMetadataBlock)?
+    rule=PredicateDecl 
+        | FunDecl
+;
+
+// 'terser' FunDecl
+FunDecl:
+    // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
+    'FUNCTION'? 
+    name=ID '(' ( params+=Param (',' params+=Param)* )? ')' (':' returnType=TypeDef)?  
+    // TODO: Switch Param to ParamTypePair once I figure out how to make the type annotations optional in the grammar
+    (':=' | '=' | 'EQUALS') 
+    body=Expr
+    whereDecls=WhereBlock? 
+    // TODO: Set linking rules to make it possible to link to vars tt are defined only in the where decls
 ;
 
 PredicateDecl:
-    ParamBlock?
+    GivenParamBlock?
     'DECIDE' head=PredicateOrFuncID
     'IF' body=Expr 
     // IMPT: The 'IF' here is probably going to be a 'IFF' or 'just in case', rather than a mere 'if'
+    whereDecls=WhereBlock?
 ;
+
+
+// ------- Statements -------
+
+WhereBlock:
+    'WHERE' StatementBlock
+;
+
+StatementBlock:
+    '{'
+    statement+=Statement+
+'}';
+
+Statement:
+    ThenIfStatement | VarDecl
+;
+
+ThenIfStatement infers Statement:
+    then=VarDecl 'IF' condition=Expr
+;
+
+VarDecl infers Statement:
+    name=ID op=(':=' | 'IS_TO_BE') value=Expr
+;
+
 
 PredicateOrFuncID:
     {infer PredicateOrFuncID} value=(ID | BACK_TICKED_ID)
@@ -190,8 +228,11 @@ Mult infers Expr:
 ;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | UnaryExpr | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | UnaryExpr | ParamRef | NumberLiteral | BooleanLiteral
 ;
+
+ParamRef:
+    value=[Param:ID];
 
 UnaryExpr:
     op=('-' | 'NOT') value=Expr
@@ -205,7 +246,7 @@ type NamedElement = Param | PredicateDecl | SigDecl | Relation;
        Sigs
 ======================================== */
 
-
+// TODO: Add support for `SIG sig1, sig2, ..., sig_n SUBSET_OF OrigSig`
 SigDecl:
     'DECLARE'? 'SIG' name=ID 
     ('(' descriminator=ID ('=' descriminatorValue=STRING)? ')')? 
@@ -226,7 +267,7 @@ Multiplicity returns string:
 
 
 Relation:
-    metadata=(MetadataForRelation)?
+    metadata=(InlineMetadataBlock)?
     name=ID optional?='?'? 
     (':' | 'IS') 
     multiplicity=Multiplicity?
