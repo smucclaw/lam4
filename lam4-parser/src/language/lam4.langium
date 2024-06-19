@@ -177,7 +177,7 @@ AndExpr infers Expr:
 
 
 NumComparisonExpr infers Expr:
-    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'NOT_EQUAL' | '==' | '!=') right=Add)*
+    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'DIFFERS_FROM' | '==' | '!=') right=Add)*
 ;
 
 
