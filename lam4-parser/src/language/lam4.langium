@@ -125,9 +125,9 @@ MetadataForRelation:
 
 // ------- Params -------
 ParamBlock:
-    'GIVEN''{'
+    'GIVEN' '('
         params+=ParamTypePair+
-    '}'
+    ')'
 ;
 
 Param:
