@@ -14,6 +14,20 @@ TO DOs
 1. Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
 
+============================================
+Is it important to support mixfix operators?
+============================================
+
+I was initially worried about this.
+But after thinking about it more and looking at a range of examples 
+(Meng's and Joe's formalizations, various spreadsheet examples, etc), 
+I don't feel as worried -- a lot of the uses of mixfix in the LE-targeted-formalizations
+can be rephrased, and in any case, it doesn't seem as necessary in a more functional style.
+It feels enough to support Haskell-like infix.
+And it's also not clear that long mixfix'd expressions are that understandable to non-programmers anyway.
+In particular, I'm not sure if a non-programmer is going to understand
+what it really means without understanding enough of the underlying semantics.
+
 ====================
 What built-in types?
 ====================
@@ -51,14 +65,31 @@ See also
     * https://json-schema.org/understanding-json-schema/reference
     * https://swagger.io/docs/specification/data-models/data-types/
 
-Note:
+==========================================
+    Langium Notes
+==========================================
+
     * Keywords can't include whitespace: https://github.com/eclipse-langium/langium/discussions/601
+    * Avoid using newline as a delimiter: https://github.com/eclipse-langium/langium/discussions/1510
+        > "I would generally recommend against employing newline-delimited languages, as they don't behave very well when it comes to error recovery behavior in Langium. Unless you're reimplementing an existing language in Langium, you're almost always better suited using a different delimiter like `;`. Generic parsers are generally pretty bad at handling unexpected input in whitespace-aware languages. It also makes maintenance on the grammar pretty difficult, as you always need to keep track where a newline (or multiple newlines) is required/optional/not allowed."
+
 */
 
-entry Model:
-    ('GENERAL_METADATA_FOR_TYPES' gen_metadata=MetadataBlock)*
+entry Program:
+    (Types)?
+    (Rules)?
+;
+
+Types:
+    ("GENERAL_METADATA_FOR_TYPES" gen_metadata=MetadataBlock)*
     (types+=CustomType*)*
 ;
+
+Rules:
+    ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
+    (rules+=Rule)*
+;
+
 
 /* ========================================
        Metadata
@@ -87,6 +118,94 @@ MetadataForRelation:
     '-/'
 ;
 
+
+/* ========================================
+       Rules
+======================================== */
+
+// ------- Params -------
+ParamBlock:
+    'GIVEN''{'
+        params+=ParamTypePair+
+    '}'
+;
+
+Param:
+    {infer Param} ID
+;
+
+ParamTypePair:
+    name=Param (':' | 'IS_A') paramType=TypeDef
+;
+
+// ------- PredicateDecl, FunDecl -------
+
+/* TODO:
+    FunDecl
+    FunApp */
+
+Rule:
+    PredicateDecl
+    // | FunDecl ??
+;
+
+PredicateDecl:
+    ParamBlock?
+    'DECIDE' head=PredicateOrFuncID
+    'IF' body=Expr 
+    // IMPT: The 'IF' here is probably going to be a 'IFF' or 'just in case', rather than a mere 'if'
+;
+
+PredicateOrFuncID:
+    {infer PredicateOrFuncID} value=(ID | BACK_TICKED_ID)
+;
+
+
+// ------- Expr -------
+
+Expr:
+    OrExpr
+;
+
+OrExpr infers Expr:
+    AndExpr ({infer BinBoolOp.left=current} op='OR' right=AndExpr)*
+;
+
+AndExpr infers Expr:
+    NumComparisonExpr ({infer BinBoolOp.left=current} op='AND' right=NumComparisonExpr)*
+;
+
+
+NumComparisonExpr infers Expr:
+    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'NOT_EQUAL' | '==' | '!=') right=Add)*
+;
+
+
+Add infers Expr:
+    Mult ({infer NumOp.left=current} op=('+' | '-') right=Mult)*
+;
+
+Mult infers Expr:
+    PrimitiveExpr ({infer NumOp.left=current} op=('*' | '/') right=PrimitiveExpr)*
+;
+
+PrimitiveExpr infers Expr:
+    '(' Expr ')' | UnaryExpr | NumberLiteral | StringLiteral | BooleanLiteral
+;
+
+UnaryExpr:
+    op=('-' | 'NOT') value=Expr
+;
+
+
+type NamedElement = Param | PredicateDecl | SigDecl | Relation;
+
+
+/* ========================================
+       Sigs
+======================================== */
+
+
 SigDecl:
     'DECLARE'? 'SIG' name=ID 
     ('(' descriminator=ID ('=' descriminatorValue=STRING)? ')')? 
@@ -94,14 +213,6 @@ SigDecl:
         relations+=Relation*
     '}'
 ;
-
-// UnionType:
-//     'UNION' name=ID '=' types+=[ValueType:ID] ( '|' types+=[ValueType:ID] )+
-// ;
-
-// Alias:
-//     'ALIAS' name=ID '=' type=Type
-// ;
 
 CustomType:
     SigDecl 
@@ -129,9 +240,9 @@ TypeDef:
 ;
 
 
-// /* ========================================
-//         BUILT INs and PRIMITIVEs
-// ======================================== */
+/* ========================================
+         BUILT IN and PRIMITIVE types
+ ======================================== */
 
 // TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
@@ -159,31 +270,6 @@ Builtin returns string:
 //     'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Other)'
 // ;
 
-// If you were trying to model OpenAPI, you would use the following too:
-// BuiltinIntegerFormats returns string:
-//     'int32' | 'int64'
-// ;
-// BuiltinFloatFormats returns string:
-//     'float'
-// ;
-// PrimitiveString:
-//     type='string' '(' format=(ID|BuiltinStringFormats) ')'
-// ;
-
-// Primitive:
-//     PrimitiveString | PrimitiveFloats | PrimitiveIntegers;
-
-// PrimitiveFloats:
-//     'number' '(' format=(ID|BuiltinFloatFormats) ')' 
-//         (lowerBound=('('|'[') lower=INT? ',' upper=INT? upperBound=(')'|']'))?
-//         ('mul' multipleOf=UNSIGNED_NUMBER)?
-// ;
-
-// PrimitiveIntegers:
-//     'integer' '(' format=(ID|BuiltinIntegerFormats) ')' 
-//         (lowerBound=('('|'[') lower=INT? ',' upper=INT? upperBound=(')'|']'))?
-//         ('mul' multipleOf=UNSIGNED_NUMBER)?
-// ;
 
 /* ========================================
         LITERALS
@@ -215,6 +301,9 @@ terminal INT returns number: /[0-9]+/;
 terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+terminal BACK_TICKED_ID:
+    '`' -> '`'
+;
 
 // TODO: Figure out how to just drop the "--.."
 // matches --

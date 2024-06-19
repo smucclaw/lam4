@@ -68,6 +68,42 @@ To factor a grammar into multiple sub-grammars: <https://github.com/eclipse-lang
 
 ## Things to think about
 
+### IDE protocol / synchronizing state between, e.g., a textual editor and a diagrammatic one
+
+* <https://matklad.github.io/2023/10/12/lsp-could-have-been-better.html>
+  * "what I think is the biggest architectural issue with LSP [...] LSP is an RPC protocol — it is formed by “edge triggered” requests that make something happen on the other side. But this is not how most of IDE features work. What actually is needed is “level triggered” state synchronization. The client and the server need to agree what something is, deciding the course of action is secondary. It is “to be or not to be” rather than “what is to be done”."
+* <https://htmlpreview.github.io/?https://github.com/dart-lang/sdk/blob/8e6a02d899ef62ef5b8405518b36340e609198e2/pkg/analysis_server/doc/api.html>
+* <https://www.codemag.com/Article/1811091/Building-a-.NET-IDE-with-JetBrains-Rider>
+
+### Concrete syntax
+
+* [Tonto](https://matheuslenke.github.io/tonto-docs/)'s syntax choices are helpful -- they seemed to have put quite a bit of effort into finding intuitive names, and their language was "designed to allow transformation to a number of languages including UML (more specifically OntoUML), OWL (for gUFO-based ontologies), Alloy" etc
+  * Think about whether to use `SPECIALIZES` instead of `SUBSET_OF`, and whether to use `KIND` or `TYPE` instead of `SIG`
+
+### Visualizations and Explainability
+
+Useful links:
+
+* [Eclipse Graphical Language Server Platform for next-generation diagram editors (GLSP)](https://eclipse.dev/glsp/)
+
+* [Tonto - A Textual Syntax for OntoUML](https://matheuslenke.github.io/tonto-docs/) and their [Visual Paradigm plugin](https://github.com/OntoUML/ontouml-vp-plugin) --- example diagrams are available in the readme for the latter
+* [Integrating Langium with a UI Editor like React-flow](https://github.com/eclipse-langium/langium/discussions/1373)
+* [SvelteFlow](https://svelteflow.dev/)
+
+#### Explainability
+
+* [Whyline: "a debugging tool that allows programmers to ask "Why did" and "Why didn't" questions about their program's output".](https://www.cs.cmu.edu/~NatProg/whyline.html) Useful ideas here, both UX and implementation-wise, for both the 'chatobt' and IDE.
+
+#### Visual diagramming languages
+
+* <https://www.thestrangeloop.com/2022/diagrammar-simply-make-interactive-diagrams.html>
+* An *un*related diagrammar, this time a dataflow PL: <https://github.com/billbudge/Diagrammar>
+* See [Enso IDE](https://github.com/enso-org/enso/tree/develop/app/gui2) for a nice example of a visual programming language / editor
+* Visual Haskell: <https://github.com/rgleichman/glance> and <https://github.com/Only1Loatheb/glance/> and <https://www.youtube.com/watch?v=cb25Ts4rLXA>
+* [Flyde](https://github.com/flydelabs/flyde) "is an open-source visual programming language built to integrate with your existing codebase. It allows you to create and run visual programs and is designed to complement and enhance traditional textual coding, not to replace it."
+* [Flowblocks](https://github.com/jyjblrd/flowblocks) "FlowBlocks is a visual interface for programming the Raspberry Pi Pico [...] With FlowBlocks, users can build programs by dragging and dropping blocks from a comprehensive standard library of inputs, operators, and outputs, and connecting them into flowcharts, which describe the flow of data throughout a program. In addition, experienced users also have the option of creating custom blocks—written with a templating dialect of MicroPython"
+* [To Dissect a Mockingbird: A Graphical Notation for the Lambda Calculus with Animated Reduction](<https://dkeenan.com/Lambda/>)
+
 ### How to get interop --- in particular, how to enabling interfacing with L4 from other languages
 
 1. Have one L4 runtime; put it behind a REST API or use some sort of RPC (and maybe also offer more ergonomic wrappers around http or rpc clients, e.g. in the same way that [the OpenAPI python lib](https://github.com/openai/openai-python) basically wraps their REST API; c.f. also things like vscode rpc)
