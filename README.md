@@ -68,6 +68,13 @@ To factor a grammar into multiple sub-grammars: <https://github.com/eclipse-lang
 
 ## Things to think about
 
+### IDE protocol / synchronizing state between, e.g., a textual editor and a diagrammatic one
+
+* <https://matklad.github.io/2023/10/12/lsp-could-have-been-better.html>
+  * "what I think is the biggest architectural issue with LSP [...] LSP is an RPC protocol — it is formed by “edge triggered” requests that make something happen on the other side. But this is not how most of IDE features work. What actually is needed is “level triggered” state synchronization. The client and the server need to agree what something is, deciding the course of action is secondary. It is “to be or not to be” rather than “what is to be done”."
+* <https://htmlpreview.github.io/?https://github.com/dart-lang/sdk/blob/8e6a02d899ef62ef5b8405518b36340e609198e2/pkg/analysis_server/doc/api.html>
+* <https://www.codemag.com/Article/1811091/Building-a-.NET-IDE-with-JetBrains-Rider>
+
 ### Concrete syntax
 
 * [Tonto](https://matheuslenke.github.io/tonto-docs/)'s syntax choices are helpful -- they seemed to have put quite a bit of effort into finding intuitive names, and their language was "designed to allow transformation to a number of languages including UML (more specifically OntoUML), OWL (for gUFO-based ontologies), Alloy" etc
