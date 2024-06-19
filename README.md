@@ -68,6 +68,31 @@ To factor a grammar into multiple sub-grammars: <https://github.com/eclipse-lang
 
 ## Things to think about
 
+### Concrete syntax
+
+* [Tonto](https://matheuslenke.github.io/tonto-docs/)'s syntax choices are helpful -- they seemed to have put quite a bit of effort into finding intuitive names, and their language was "designed to allow transformation to a number of languages including UML (more specifically OntoUML), OWL (for gUFO-based ontologies), Alloy" etc
+  * Think about whether to use `SPECIALIZES` instead of `SUBSET_OF`, and whether to use `KIND` or `TYPE` instead of `SIG`
+
+### Visualizations
+
+Useful links:
+
+* [Eclipse Graphical Language Server Platform for next-generation diagram editors (GLSP)](https://eclipse.dev/glsp/)
+
+* [Tonto - A Textual Syntax for OntoUML](https://matheuslenke.github.io/tonto-docs/) and their [Visual Paradigm plugin](https://github.com/OntoUML/ontouml-vp-plugin) --- example diagrams are available in the readme for the latter
+* [Integrating Langium with a UI Editor like React-flow](https://github.com/eclipse-langium/langium/discussions/1373)
+* [SvelteFlow](https://svelteflow.dev/)
+
+Visual diagramming languages
+
+* <https://www.thestrangeloop.com/2022/diagrammar-simply-make-interactive-diagrams.html>
+* An *un*related diagrammar, this time a dataflow PL: <https://github.com/billbudge/Diagrammar>
+* See [Enso IDE](https://github.com/enso-org/enso/tree/develop/app/gui2) for a nice example of a visual programming language / editor
+* Visual Haskell: <https://github.com/rgleichman/glance> and <https://github.com/Only1Loatheb/glance/> and <https://www.youtube.com/watch?v=cb25Ts4rLXA>
+* [Flyde](https://github.com/flydelabs/flyde) "is an open-source visual programming language built to integrate with your existing codebase. It allows you to create and run visual programs and is designed to complement and enhance traditional textual coding, not to replace it."
+* [Flowblocks](https://github.com/jyjblrd/flowblocks) "FlowBlocks is a visual interface for programming the Raspberry Pi Pico [...] With FlowBlocks, users can build programs by dragging and dropping blocks from a comprehensive standard library of inputs, operators, and outputs, and connecting them into flowcharts, which describe the flow of data throughout a program. In addition, experienced users also have the option of creating custom blocks—written with a templating dialect of MicroPython"
+* [To Dissect a Mockingbird: A Graphical Notation for the Lambda Calculus with Animated Reduction](<https://dkeenan.com/Lambda/>)
+
 ### How to get interop --- in particular, how to enabling interfacing with L4 from other languages
 
 1. Have one L4 runtime; put it behind a REST API or use some sort of RPC (and maybe also offer more ergonomic wrappers around http or rpc clients, e.g. in the same way that [the OpenAPI python lib](https://github.com/openai/openai-python) basically wraps their REST API; c.f. also things like vscode rpc)
