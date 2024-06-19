@@ -73,7 +73,7 @@ To factor a grammar into multiple sub-grammars: <https://github.com/eclipse-lang
 * [Tonto](https://matheuslenke.github.io/tonto-docs/)'s syntax choices are helpful -- they seemed to have put quite a bit of effort into finding intuitive names, and their language was "designed to allow transformation to a number of languages including UML (more specifically OntoUML), OWL (for gUFO-based ontologies), Alloy" etc
   * Think about whether to use `SPECIALIZES` instead of `SUBSET_OF`, and whether to use `KIND` or `TYPE` instead of `SIG`
 
-### Visualizations
+### Visualizations and Explainability
 
 Useful links:
 
@@ -83,7 +83,11 @@ Useful links:
 * [Integrating Langium with a UI Editor like React-flow](https://github.com/eclipse-langium/langium/discussions/1373)
 * [SvelteFlow](https://svelteflow.dev/)
 
-Visual diagramming languages
+#### Explainability
+
+* [Whyline: "a debugging tool that allows programmers to ask "Why did" and "Why didn't" questions about their program's output".](https://www.cs.cmu.edu/~NatProg/whyline.html) Useful ideas here, both UX and implementation-wise, for both the 'chatobt' and IDE.
+
+#### Visual diagramming languages
 
 * <https://www.thestrangeloop.com/2022/diagrammar-simply-make-interactive-diagrams.html>
 * An *un*related diagrammar, this time a dataflow PL: <https://github.com/billbudge/Diagrammar>
