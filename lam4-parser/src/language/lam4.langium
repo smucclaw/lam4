@@ -190,7 +190,7 @@ Mult infers Expr:
 ;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | UnaryExpr | NumberLiteral | StringLiteral | BooleanLiteral
+    '(' Expr ')' | UnaryExpr | NumberLiteral | BooleanLiteral
 ;
 
 UnaryExpr:
