@@ -76,19 +76,25 @@ See also
 */
 
 entry Program:
-    (Types)?
-    (Rules)?
-;
-
-Types:
+    // (Types)?
+    // (Rules)?
     ("GENERAL_METADATA_FOR_TYPES" gen_metadata=MetadataBlock)*
-    (types+=CustomType*)*
+    ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
+    elements+=ToplevelElement*
 ;
 
-Rules:
-    ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
-    (rules+=Rule)*
+// Types:
+//     (types+=CustomType*)*
+// ;
+
+ToplevelElement:
+    CustomType | Rule
 ;
+
+// Rules:
+//     ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
+//     (rules+=Rule)*
+// ;
 
 
 /* ========================================
@@ -112,7 +118,7 @@ MetadataValue:
     MetadataBlock | NumberLiteral | StringLiteral | BooleanLiteral
 ;
 
-MetadataForRelation:
+InlineMetadataBlock:
     '/-'
         properties+=MetadataKVPair+
     '-/'
@@ -124,15 +130,14 @@ MetadataForRelation:
 ======================================== */
 
 // ------- Params -------
-ParamBlock:
-    'GIVEN''{'
+GivenParamBlock:
+    'GIVEN' '('
         params+=ParamTypePair+
-    '}'
+    ')'
 ;
 
 Param:
-    {infer Param} ID
-;
+    name=ID;
 
 ParamTypePair:
     name=Param (':' | 'IS_A') paramType=TypeDef
@@ -145,16 +150,60 @@ ParamTypePair:
     FunApp */
 
 Rule:
-    PredicateDecl
-    // | FunDecl ??
+    metadata=(InlineMetadataBlock)?
+    rule=PredicateDecl 
+        | FunDecl
+;
+
+// a terse FunDecl
+FunDecl:
+    // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
+    'FUNCTION'? 
+    name=ID '(' ( params+=Param (',' params+=Param)* )? ')' (':' returnType=TypeDef)?  
+    // TODO: Switch Param to ParamTypePair once I figure out how to make the type annotations optional in the grammar
+    (':=' | '=' | 'EQUALS') 
+    body=Expr
+    whereDecls=WhereBlock? 
+    // TODO: Set linking rules to make it possible to link to vars tt are defined only in the where decls
+    // See https://github.com/eclipse-langium/langium/discussions/1486
+    // https://langium.org/docs/reference/document-lifecycle/
+    // https://langium.org/docs/recipes/scoping/ 
+    // https://langium.org/docs/recipes/scoping/class-member/
+    // in the short term, might be easier to just use a LET
 ;
 
 PredicateDecl:
-    ParamBlock?
+    GivenParamBlock?
     'DECIDE' head=PredicateOrFuncID
     'IF' body=Expr 
     // IMPT: The 'IF' here is probably going to be a 'IFF' or 'just in case', rather than a mere 'if'
+    whereDecls=WhereBlock?
 ;
+
+
+// ------- Statements -------
+
+WhereBlock:
+    'WHERE' StatementBlock
+;
+
+StatementBlock:
+    '{'
+    statement+=Statement+
+'}';
+
+Statement:
+    ThenIfStatement | VarDecl
+;
+
+ThenIfStatement infers Statement:
+    then=VarDecl 'IF' condition=Expr
+;
+
+VarDecl returns NamedElement:
+    {infer VarDecl} name=ID op=(':=' | '=' | 'IS_TO_BE') value=Expr
+;
+
 
 PredicateOrFuncID:
     {infer PredicateOrFuncID} value=(ID | BACK_TICKED_ID)
@@ -177,7 +226,7 @@ AndExpr infers Expr:
 
 
 NumComparisonExpr infers Expr:
-    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'NOT_EQUAL' | '==' | '!=') right=Add)*
+    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'DIFFERS_FROM' | '==' | '!=') right=Add)*
 ;
 
 
@@ -189,23 +238,27 @@ Mult infers Expr:
     PrimitiveExpr ({infer NumOp.left=current} op=('*' | '/') right=PrimitiveExpr)*
 ;
 
+// TODO: Will prob want to refactor Ref into a MemberCall/Ref or something like that?
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | UnaryExpr | NumberLiteral | StringLiteral | BooleanLiteral
+    '(' Expr ')' | UnaryExpr | Ref | NumberLiteral | BooleanLiteral
 ;
+
+Ref:
+    value=[NamedElement:ID];
 
 UnaryExpr:
     op=('-' | 'NOT') value=Expr
 ;
 
 
-type NamedElement = Param | PredicateDecl | SigDecl | Relation;
+type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | SigDecl | Relation;
 
 
 /* ========================================
        Sigs
 ======================================== */
 
-
+// TODO: Add support for `SIG sig1, sig2, ..., sig_n SUBSET_OF OrigSig`
 SigDecl:
     'DECLARE'? 'SIG' name=ID 
     ('(' descriminator=ID ('=' descriminatorValue=STRING)? ')')? 
@@ -226,7 +279,7 @@ Multiplicity returns string:
 
 
 Relation:
-    metadata=(MetadataForRelation)?
+    metadata=(InlineMetadataBlock)?
     name=ID optional?='?'? 
     (':' | 'IS') 
     multiplicity=Multiplicity?

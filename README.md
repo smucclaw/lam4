@@ -138,6 +138,11 @@ IDEA: Having a way to automatedly checking the logical (or 'practical / outcome'
 
 ## Inspiration / further reading
 
+### Deontic modality / expressing requirements
+
+* [Knowledge-Assisted Reasoning of Model-Augmented System Requirements with Event Calculus and Goal-Directed Answer Set Programming](https://arxiv.org/abs/2109.04634)
+* Normative requirements for regulatory compliance: An abstract formal framework
+
 ### On keeping the underlying language grammar relatively constrained, but still understandable to non-professional-programmers via UI/UX
 
 * [The Enso Language](https://github.com/enso-org/enso), a language for data processing, seems to also [subscribe to a lot of the same tenets](https://github.com/enso-org/enso/blob/develop/docs/enso-philosophy.md), e.g.
