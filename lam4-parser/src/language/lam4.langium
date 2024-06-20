@@ -11,8 +11,12 @@ Go to the playground and paste the grammar in the editor to see the generated pa
 =======
 TO DOs
 =======
-1. Think about whether to refactor this into 2 sub-grammars
+0. Add FunApp
+1. Add If Then Else
+2. Add join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
+3. Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
+
 
 ============================================
 Is it important to support mixfix operators?
