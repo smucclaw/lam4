@@ -149,14 +149,9 @@ ParamTypePair:
 
 // ------- PredicateDecl, FunDecl -------
 
-/* TODO:
-    FunDecl
-    FunApp */
-
 Rule:
     metadata=(InlineMetadataBlock)?
-    rule=PredicateDecl 
-        | FunDecl
+    rule=(FunDecl | PredicateDecl)
 ;
 
 // a terse FunDecl
