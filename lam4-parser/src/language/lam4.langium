@@ -149,7 +149,7 @@ Rule:
         | FunDecl
 ;
 
-// 'terser' FunDecl
+// a terse FunDecl
 FunDecl:
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     'FUNCTION'? 
@@ -159,6 +159,11 @@ FunDecl:
     body=Expr
     whereDecls=WhereBlock? 
     // TODO: Set linking rules to make it possible to link to vars tt are defined only in the where decls
+    // See https://github.com/eclipse-langium/langium/discussions/1486
+    // https://langium.org/docs/reference/document-lifecycle/
+    // https://langium.org/docs/recipes/scoping/ 
+    // https://langium.org/docs/recipes/scoping/class-member/
+    // in the short term, might be easier to just use a LET
 ;
 
 PredicateDecl:
@@ -189,8 +194,8 @@ ThenIfStatement infers Statement:
     then=VarDecl 'IF' condition=Expr
 ;
 
-VarDecl infers Statement:
-    name=ID op=(':=' | 'IS_TO_BE') value=Expr
+VarDecl returns NamedElement:
+    {infer VarDecl} name=ID op=(':=' | '=' | 'IS_TO_BE') value=Expr
 ;
 
 
@@ -227,19 +232,20 @@ Mult infers Expr:
     PrimitiveExpr ({infer NumOp.left=current} op=('*' | '/') right=PrimitiveExpr)*
 ;
 
+// TODO: Will prob want to refactor Ref into a MemberCall/Ref or something like that?
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | UnaryExpr | ParamRef | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | UnaryExpr | Ref | NumberLiteral | BooleanLiteral
 ;
 
-ParamRef:
-    value=[Param:ID];
+Ref:
+    value=[NamedElement:ID];
 
 UnaryExpr:
     op=('-' | 'NOT') value=Expr
 ;
 
 
-type NamedElement = Param | PredicateDecl | SigDecl | Relation;
+type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | SigDecl | Relation;
 
 
 /* ========================================
