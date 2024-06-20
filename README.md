@@ -93,6 +93,9 @@ Useful links:
 #### Explainability
 
 * [Whyline: "a debugging tool that allows programmers to ask "Why did" and "Why didn't" questions about their program's output".](https://www.cs.cmu.edu/~NatProg/whyline.html) Useful ideas here, both UX and implementation-wise, for both the 'chatobt' and IDE.
+* The 'visual contracts' that Shell uses
+  * <http://www.flussobjekte.at/hpall/award/2630/nzknvgh8cz.pdf>
+  * [Financial Times writeup: Can contracts use pictures instead of words?](https://www.ft.com/content/032ddcb0-e6b1-11e9-b8e0-026e07cbe5b4)
 
 #### Visual diagramming languages
 
