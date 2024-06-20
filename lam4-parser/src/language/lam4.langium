@@ -80,32 +80,20 @@ See also
 */
 
 entry Program:
-    // (Types)?
-    // (Rules)?
-    ("GENERAL_METADATA_FOR_TYPES" gen_metadata=MetadataBlock)*
-    ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
+    ("GENERAL_METADATA_FOR_TYPES" gen_metadata=GeneralMetadataBlock)*
+    ("GENERAL_METADATA_FOR_RULES" gen_metadata=GeneralMetadataBlock)*
     elements+=ToplevelElement*
 ;
-
-// Types:
-//     (types+=CustomType*)*
-// ;
 
 ToplevelElement:
     CustomType | Rule
 ;
 
-// Rules:
-//     ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
-//     (rules+=Rule)*
-// ;
-
-
 /* ========================================
        Metadata
 ======================================== */
 
-MetadataBlock:
+GeneralMetadataBlock:
     '{'
         properties+=MetadataKVPair+
     '}'
@@ -119,10 +107,10 @@ MetadataKVPair:
 ;
 
 MetadataValue:
-    MetadataBlock | NumberLiteral | StringLiteral | BooleanLiteral
+    GeneralMetadataBlock | NumberLiteral | StringLiteral | BooleanLiteral
 ;
 
-InlineMetadataBlock:
+SpecificMetadataBlock:
     '/-'
         properties+=MetadataKVPair+
     '-/'
@@ -150,7 +138,7 @@ ParamTypePair:
 // ------- PredicateDecl, FunDecl -------
 
 Rule:
-    metadata=(InlineMetadataBlock)?
+    metadata=(SpecificMetadataBlock)?
     rule=(FunDecl | PredicateDecl)
 ;
 
@@ -250,7 +238,7 @@ UnaryExpr:
 ;
 
 
-type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | SigDecl | Relation;
+type NamedElement = VarDecl | Param | ParamTypePair | FunDecl | PredicateDecl | SigDecl | Relation;
 
 
 /* ========================================
@@ -278,7 +266,7 @@ Multiplicity returns string:
 
 
 Relation:
-    metadata=(InlineMetadataBlock)?
+    metadata=(SpecificMetadataBlock)?
     name=ID optional?='?'? 
     (':' | 'IS') 
     multiplicity=Multiplicity?
