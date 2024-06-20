@@ -76,19 +76,25 @@ See also
 */
 
 entry Program:
-    (Types)?
-    (Rules)?
-;
-
-Types:
+    // (Types)?
+    // (Rules)?
     ("GENERAL_METADATA_FOR_TYPES" gen_metadata=MetadataBlock)*
-    (types+=CustomType*)*
+    ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
+    elements+=ToplevelElement*
 ;
 
-Rules:
-    ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
-    (rules+=Rule)*
+// Types:
+//     (types+=CustomType*)*
+// ;
+
+ToplevelElement:
+    CustomType | Rule
 ;
+
+// Rules:
+//     ("GENERAL_METADATA_FOR_RULES" gen_metadata=MetadataBlock)*
+//     (rules+=Rule)*
+// ;
 
 
 /* ========================================
