@@ -86,7 +86,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    Facts | CustomType | Rule
+    Facts | CustomType | PredicateDecl | FunDecl
 ;
 
 /* ========================================
@@ -241,9 +241,13 @@ Mult infers Expr:
     PrimitiveExpr ({infer NumOp.left=current} op=('*' | '/') right=PrimitiveExpr)*
 ;
 
-// TODO: Will prob want to refactor Ref into a MemberCall/Ref or something like that?
+FunctionApplication infers Expr:
+    func=[NamedElement:ID]
+    ('(' args+=Expr (',' args+=Expr)* ')')
+;
+
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | UnaryExpr | Ref | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | FunctionApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
 ;
 
 Ref:
@@ -253,7 +257,7 @@ UnaryExpr:
     op=('-' | 'NOT') value=Expr
 ;
 
-
+type Rule = FunDecl | PredicateDecl;
 type NamedElement = VarDecl | Param | ParamTypePair | FunDecl | PredicateDecl | SigDecl | Relation;
 
 
@@ -282,7 +286,8 @@ Multiplicity returns string:
 
 
 Relation:
-    metadata=(SpecificMetadataBlock)?
+    PotentiallyWithSpecificMetadataBlock
+
     name=ID optional?='?'? 
     (':' | 'IS') 
     multiplicity=Multiplicity?
@@ -316,8 +321,12 @@ BuiltinDateTimeRelated returns string:
     'Date'
 ;
 
+BuiltinBoolFormat returns string:
+    "Boolean"
+;
+
 Builtin returns string:
-    BuiltinStringFormats | BuiltinNumberFormats | BuiltinDateTimeRelated
+    BuiltinStringFormats | BuiltinBoolFormat | BuiltinNumberFormats | BuiltinDateTimeRelated
 ;
 
 // Shelving Money for now, but let's revisit this soon

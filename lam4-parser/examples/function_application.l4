@@ -1,0 +1,14 @@
+SIG LifeAssured {
+    date_of_birth: Date
+    policy_active: Boolean
+}
+
+// placeholder function for illustration
+policy_is_active(life_assured) = True
+
+GIVEN (
+    life_assured: LifeAssured
+)
+DECIDE is_eligible_for_claim
+IF policy_is_active(life_assured)
+
