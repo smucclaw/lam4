@@ -334,7 +334,7 @@ StringLiteral:
 ;
 
 BooleanLiteral:
-    value='true' | 'false'
+    value='True' | 'False'
 ;
 
 /* ========================================
