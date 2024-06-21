@@ -248,9 +248,14 @@ Mult infers Expr:
     RelationJoin ({infer NumOp.left=current} op=('*' | '/') right=RelationJoin)*
 ;
 
-// NOTE: the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502
-// TODO: Also need to implement something like https://langium.org/docs/recipes/scoping/class-member/
-// can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
+/*
+ISSUE: Linking to 'fields' will require implementing something like https://langium.org/docs/recipes/scoping/class-member/ --- in particular, this seems to involve adding some kind of type system? Not clear now that it's worth using Langium.
+
+(To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
+
+The relationship between relational join and a more conventional member access operator:
+    Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
+*/
 RelationJoin infers Expr:
     PrimitiveExpr ({infer RelationJoin.left=current} op=("'s") right=PrimitiveExpr)*
 ;
@@ -276,6 +281,34 @@ UnaryExpr:
        Sigs
 ======================================== */
 
+/* The idea I had been playing with was to express structure with (flat / first-order) relations, a la Alloy.
+
+The idea is this. Given something like
+
+SIG A {
+    myField: B
+}
+
+each field `f` would be translated to a relation with arity 1 + arity(f).
+
+E.g., the above sig would be translated to a relation named myField of type A -> B.
+
+And then the `'s` operator would correspond to relational join / composition.
+
+Why do this? The rough motivation was, because, 
+    1. I wanted to have, not only a functional expression language, but also the ability to do some kind of formal modelling or querying on top of that
+    2. and as Alloy and its ilk have shown, 
+    modelling data with relations and adding a relational-logic constraint language 
+    (the quantifiers of first-order logic with the operators of the relational calculus) 
+    on top of that gives you a nice way to formally model a lot of things.
+    (See Daniel Jackson's book *Software Abstractions* for more on this.)
+    And we can think of something like a conventional OOP '<object>.<field>` as being a special case of relational join,
+    if we think of a sig as corresponding to an OOP 'class'.
+
+(Nor is expressing data with relations unique even among legal DSLs -- e.g., Eiger does this.)
+
+That said, I'm *not* sure if this really is the way to handle data --- it just felt like a reasonable choice given that I also wanted to have some support for formal modelling, and given my past experience with Alloy.
+*/
 // TODO: Add support for `SIG sig1, sig2, ..., sig_n SUBSET_OF OrigSig`
 SigDecl:
     'DECLARE'? 'SIG' 
