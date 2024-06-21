@@ -172,6 +172,8 @@ FunDecl:
 ;
 
 PredicateDecl:
+    PotentiallyWithSpecificMetadataBlock
+
     GivenParamBlock?
     'DECIDE' head=PredicateOrFuncID
     'IF' body=Expr 
