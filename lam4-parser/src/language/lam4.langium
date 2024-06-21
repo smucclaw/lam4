@@ -14,8 +14,10 @@ TO DOs
 0. Add FunApp
 1. Add If Then Else
 2. Add join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
+3. Do we want to allow for top-level var declarations?
 3. Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
+
 
 
 ============================================
@@ -203,14 +205,18 @@ Expr:
     OrExpr
 ;
 
+
 OrExpr infers Expr:
     AndExpr ({infer BinBoolOp.left=current} op='OR' right=AndExpr)*
 ;
 
 AndExpr infers Expr:
-    NumComparisonExpr ({infer BinBoolOp.left=current} op='AND' right=NumComparisonExpr)*
+    (NumComparisonExpr| IfThenElseExpr) ({infer BinBoolOp.left=current} op='AND' right=(NumComparisonExpr| IfThenElseExpr))*
 ;
 
+IfThenElseExpr infers Expr:
+    'IF' condition=OrExpr 'THEN' then=OrExpr 'ELSE' else=OrExpr
+;
 
 NumComparisonExpr infers Expr:
     Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'DIFFERS_FROM' | '==' | '!=') right=Add)*
