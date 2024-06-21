@@ -1,0 +1,14 @@
+func_with_let(y) = 
+    LET {
+        x = 1
+    } IN {
+        x
+    }
+
+DECIDE bleh
+IF True
+AND 3 EQUALS (LET {
+    x = 1
+} IN {
+    x + 2
+})

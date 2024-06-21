@@ -11,9 +11,10 @@ Go to the playground and paste the grammar in the editor to see the generated pa
 =======
 TO DOs
 =======
-0. Add FunApp
-2. Add join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
-3. Think about whether to refactor this into 2 sub-grammars
+* Finish supporting join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
+  by implementing the analogue of https://langium.org/docs/recipes/scoping/class-member/
+* Check if adding LetExpr to the grammar in way I have is compositional enough
+* Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
 
 
@@ -86,7 +87,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    Facts | CustomType | PredicateDecl | FunDecl
+    Facts | SigDecl | PredicateDecl | FunDecl
 ;
 
 /* ========================================
@@ -162,7 +163,7 @@ FunDecl:
     // TODO: Switch Param to ParamTypePair once I figure out how to make the type annotations optional in the grammar
     (':=' | '=' | 'EQUALS') 
     body=Expr
-    whereDecls=WhereBlock? 
+    // whereDecls=WhereBlock? 
     // TODO: Set linking rules to make it possible to link to vars tt are defined only in the where decls
     // See https://github.com/eclipse-langium/langium/discussions/1486
     // https://langium.org/docs/reference/document-lifecycle/
@@ -178,28 +179,28 @@ PredicateDecl:
     'DECIDE' head=PredicateOrFuncID
     'IF' body=Expr 
     // IMPT: The 'IF' here is probably going to be a 'IFF' or 'just in case', rather than a mere 'if'
-    whereDecls=WhereBlock?
+    // whereDecls=WhereBlock?
 ;
 
 
 // ------- Statements -------
 
-WhereBlock:
-    'WHERE' StatementBlock
-;
+// WhereBlock:
+//     'WHERE' StatementBlock
+// ;
 
-StatementBlock:
-    '{'
-    statement+=Statement+
-'}';
+// StatementBlock:
+//     '{'
+//     statement+=Statement+
+// '}';
 
-Statement:
-    ThenIfStatement | VarDecl
-;
+// Statement:
+//     ThenIfStatement | VarDecl
+// ;
 
-ThenIfStatement infers Statement:
-    then=VarDecl 'IF' condition=Expr
-;
+// ThenIfStatement infers Statement:
+//     then=VarDecl 'IF' condition=Expr
+// ;
 
 VarDecl returns NamedElement:
     {infer VarDecl} name=ID op=(':=' | '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
@@ -214,9 +215,9 @@ PredicateOrFuncID:
 // ------- Expr -------
 
 Expr:
-    OrExpr
+    OrExpr | LetExpr
+    // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
 ;
-
 
 OrExpr infers Expr:
     AndExpr ({infer BinBoolOp.left=current} op='OR' right=AndExpr)*
@@ -224,6 +225,10 @@ OrExpr infers Expr:
 
 AndExpr infers Expr:
     (NumComparisonExpr| IfThenElseExpr) ({infer BinBoolOp.left=current} op='AND' right=(NumComparisonExpr| IfThenElseExpr))*
+;
+
+LetExpr infers Expr:
+    'LET' '{' (vars+=VarDecl)+ '}' 'IN' '{' body=OrExpr '}'
 ;
 
 IfThenElseExpr infers Expr:
@@ -266,9 +271,6 @@ UnaryExpr:
     op=('-' | 'NOT') value=Expr
 ;
 
-type Rule = FunDecl | PredicateDecl;
-type NamedElement = VarDecl | Param | ParamTypePair | FunDecl | PredicateDecl | SigDecl | Relation;
-
 
 /* ========================================
        Sigs
@@ -283,11 +285,12 @@ SigDecl:
     '}'
 ;
 
-CustomType:
-    SigDecl 
-    // | UnionType 
-    // | Alias
-;
+type CustomType = SigDecl;
+// CustomType:
+//     SigDecl 
+// | UnionType 
+// | Alias
+// ;
 
 Multiplicity returns string:
     "SET_OF" | "ONE" | "LONE"
@@ -308,6 +311,9 @@ Relation:
 TypeDef:
     (refType=[CustomType:ID] | builtinType=Builtin )
 ;
+
+// type Rule = FunDecl | PredicateDecl;
+type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | FunDecl  | Relation | SigDecl;
 
 
 /* ========================================
