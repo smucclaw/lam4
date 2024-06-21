@@ -88,7 +88,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    CustomType | Rule
+    Facts | CustomType | Rule
 ;
 
 /* ========================================
@@ -118,6 +118,17 @@ SpecificMetadataBlock:
     '-/'
 ;
 
+/* ========================================
+       Facts
+======================================== */
+
+// e.g., if at the top level, these would be the global vars (usually constants)
+// in the future, would want to think about how to support things like Representations and Warranties (which go beyond mere statements of facts)
+Facts:
+    'FACTS' '{'
+        facts+=VarDecl+
+    '}'
+;
 
 /* ========================================
        Rules
@@ -190,7 +201,7 @@ ThenIfStatement infers Statement:
 ;
 
 VarDecl returns NamedElement:
-    {infer VarDecl} name=ID op=(':=' | '=' | 'IS_TO_BE') value=Expr
+    {infer VarDecl} name=ID op=(':=' | '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 
