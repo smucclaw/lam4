@@ -240,7 +240,14 @@ Add infers Expr:
 ;
 
 Mult infers Expr:
-    PrimitiveExpr ({infer NumOp.left=current} op=('*' | '/') right=PrimitiveExpr)*
+    RelationJoin ({infer NumOp.left=current} op=('*' | '/') right=RelationJoin)*
+;
+
+// NOTE: the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502
+// TODO: Also need to implement something like https://langium.org/docs/recipes/scoping/class-member/
+// can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
+RelationJoin infers Expr:
+    PrimitiveExpr ({infer RelationJoin.left=current} op=("'s") right=PrimitiveExpr)*
 ;
 
 FunctionApplication infers Expr:
@@ -249,7 +256,7 @@ FunctionApplication infers Expr:
 ;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | FunctionApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | FunctionApplication  | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
 ;
 
 Ref:
