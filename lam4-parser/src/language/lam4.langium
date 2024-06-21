@@ -12,9 +12,7 @@ Go to the playground and paste the grammar in the editor to see the generated pa
 TO DOs
 =======
 0. Add FunApp
-1. Add If Then Else
 2. Add join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
-3. Do we want to allow for top-level var declarations?
 3. Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
 
@@ -122,7 +120,7 @@ SpecificMetadataBlock:
        Facts
 ======================================== */
 
-// e.g., if at the top level, these would be the global vars (usually constants)
+// these would be the global vars (usually constants). These would prob just be sugar for a `let...in`
 // in the future, would want to think about how to support things like Representations and Warranties (which go beyond mere statements of facts)
 Facts:
     'FACTS' '{'
