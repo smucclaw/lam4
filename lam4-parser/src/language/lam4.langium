@@ -143,18 +143,19 @@ Param:
     name=ID;
 
 ParamTypePair:
-    name=Param (':' | 'IS_A') paramType=TypeDef
+    name=ID (':' | 'IS_A') paramType=TypeDef
 ;
 
 // ------- PredicateDecl, FunDecl -------
 
-Rule:
+fragment PotentiallyWithSpecificMetadataBlock:
     metadata=(SpecificMetadataBlock)?
-    rule=(FunDecl | PredicateDecl)
 ;
 
 // a terse FunDecl
 FunDecl:
+    PotentiallyWithSpecificMetadataBlock
+
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     'FUNCTION'? 
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')' (':' returnType=TypeDef)?  
