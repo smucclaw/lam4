@@ -267,8 +267,8 @@ type NamedElement = VarDecl | Param | ParamTypePair | FunDecl | PredicateDecl | 
 
 // TODO: Add support for `SIG sig1, sig2, ..., sig_n SUBSET_OF OrigSig`
 SigDecl:
-    'DECLARE'? 'SIG' name=ID 
-    ('(' descriminator=ID ('=' descriminatorValue=STRING)? ')')? 
+    'DECLARE'? 'SIG' 
+    name=ID 
     ( 'SUBSET_OF' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
         relations+=Relation*
     '}'
