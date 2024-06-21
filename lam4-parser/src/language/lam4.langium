@@ -325,6 +325,11 @@ type CustomType = SigDecl;
 // | Alias
 // ;
 
+/* The idea of 'Multiplicity' is from Alloy:
+    set of: a set of values (i.e., this field may contain any number of objects);
+    one: a singleton value (this field always contains a single object); and
+    lone: either a singleton value or no value (this field contains 0 or 1 object).
+*/
 Multiplicity returns string:
     "SET_OF" | "ONE" | "LONE"
 ;
