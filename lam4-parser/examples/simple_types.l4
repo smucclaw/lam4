@@ -2,7 +2,7 @@ GENERAL_METADATA_FOR_TYPES {
   description: "A reasonably simple example of a (mini-)L4 data model, using the Loan exampe from https://docs.google.com/spreadsheets/d/1ZtuEY2DAMh5sZ16o7Lgp8RH9dVdamZgfQrU0sklmvrw/edit#gid=2000125343"
 
   nestedMetadata: {
-    nestedKey: true
+    nestedKey: True
   }
 }
 
