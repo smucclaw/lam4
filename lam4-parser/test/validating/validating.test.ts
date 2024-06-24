@@ -4,15 +4,15 @@ import { expandToString as s } from "langium/generate";
 import { parseHelper } from "langium/test";
 import type { Diagnostic } from "vscode-languageserver-types";
 import { createLam4Services } from "../../src/language/lam4-module.js";
-import { Model, isModel } from "../../src/language/generated/ast.js";
+import { Program, isProgram } from "../../src/language/generated/ast.js";
 
 let services: ReturnType<typeof createLam4Services>;
-let parse:    ReturnType<typeof parseHelper<Model>>;
-let document: LangiumDocument<Model> | undefined;
+let parse:    ReturnType<typeof parseHelper<Program>>;
+let document: LangiumDocument<Program> | undefined;
 
 beforeAll(async () => {
     services = createLam4Services(EmptyFileSystem);
-    const doParse = parseHelper<Model>(services.Lam4);
+    const doParse = parseHelper<Program>(services.lam4Services);
     parse = (input: string) => doParse(input, { validation: true });
 
     // activate the following if your linking test requires elements from a built-in library, for example
@@ -57,7 +57,7 @@ function checkDocumentValid(document: LangiumDocument): string | undefined {
           ${document.parseResult.parserErrors.map(e => e.message).join('\n  ')}
     `
         || document.parseResult.value === undefined && `ParseResult is 'undefined'.`
-        || !isModel(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a '${Model}'.`
+        || !isProgram(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a '${Program}'.`
         || undefined;
 }
 

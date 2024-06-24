@@ -46,18 +46,18 @@ export const Lam4Module: Module<Lam4Services, PartialLangiumServices & Lam4Added
  */
 export function createLam4Services(context: DefaultSharedModuleContext): {
     shared: LangiumSharedServices,
-    Lam4: Lam4Services
+    lam4Services: Lam4Services
 } {
     const shared = inject(
         createDefaultSharedModule(context),
         Lam4GeneratedSharedModule
     );
-    const Lam4 = inject(
+    const lam4Services = inject(
         createDefaultModule({ shared }),
         Lam4GeneratedModule,
         Lam4Module
     );
-    shared.ServiceRegistry.register(Lam4);
-    registerValidationChecks(Lam4);
-    return { shared, Lam4 };
+    shared.ServiceRegistry.register(lam4Services);
+    registerValidationChecks(lam4Services);
+    return { shared, lam4Services };
 }

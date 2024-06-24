@@ -3,15 +3,15 @@ import { EmptyFileSystem, type LangiumDocument } from "langium";
 import { expandToString as s } from "langium/generate";
 import { clearDocuments, parseHelper } from "langium/test";
 import { createLam4Services } from "../../src/language/lam4-module.js";
-import { Model, isModel } from "../../src/language/generated/ast.js";
+import { Program, isProgram } from "../../src/language/generated/ast.js";
 
 let services: ReturnType<typeof createLam4Services>;
-let parse:    ReturnType<typeof parseHelper<Model>>;
-let document: LangiumDocument<Model> | undefined;
+let parse:    ReturnType<typeof parseHelper<Program>>;
+let document: LangiumDocument<Program> | undefined;
 
 beforeAll(async () => {
     services = createLam4Services(EmptyFileSystem);
-    parse = parseHelper<Model>(services.Lam4);
+    parse = parseHelper<Program>(services.lam4Services);
 
     // activate the following if your linking test requires elements from a built-in library, for example
     // await services.shared.workspace.WorkspaceManager.initializeWorkspace([]);
@@ -48,6 +48,6 @@ function checkDocumentValid(document: LangiumDocument): string | undefined {
           ${document.parseResult.parserErrors.map(e => e.message).join('\n  ')}
     `
         || document.parseResult.value === undefined && `ParseResult is 'undefined'.`
-        || !isModel(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a '${Model}'.`
+        || !isProgram(document.parseResult.value) && `Root AST object is a ${document.parseResult.value.$type}, expected a '${Program}'.`
         || undefined;
 }
