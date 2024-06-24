@@ -168,8 +168,7 @@ FunDecl:
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     'FUNCTION'? 
-    name=ID '(' ( params+=Param (',' params+=Param)* )? ')' (':' returnType=TypeDef)?  
-    // TODO: Switch Param to ParamTypePair once I figure out how to make the type annotations optional in the grammar
+    name=ID '(' ( params+=(ParamTypePair | Param) (',' params+=(ParamTypePair | Param))* )? ')' (':' returnType=TypeDef)?
     (':=' | '=' | 'EQUALS') 
     body=Expr
     // whereDecls=WhereBlock? 
@@ -299,9 +298,17 @@ InfixPredicateApplication:
    (args+=[NamedElement:ID] 'IS'  predicate=[PredicateDecl:ID] ) | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE') predicate=[PredicateDecl:ID] )
 ;
 
+// This is meant for programmers to implement libraries with; 
+// it's not something I'm expecting ordinary, non-programmer users to use or understand
+AnonFunction:
+    '\\'  
+    ( ('(' ')') | (params+=(ParamTypePair | Param) (params+=(ParamTypePair | Param))*) ) 
+    '->' 
+    body=Expr
+;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | InfixPredicateApplication | FunctionApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixPredicateApplication | FunctionApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
