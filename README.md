@@ -17,9 +17,20 @@ The goal is to get something that
 * emphasizes *usability*, *ease of learning*, and *ergonomics*, in particular, support for *tooling* and other modern conveniences to make working with L4 less onerous and more intuitive
 * allows you not only to *evaluate expressions* (via a 'MathLang'-esque expression sub-language), but also to deploy *formal-methods-powered techniques* (e.g., to explore or understand the contract better, to check that your formalization of the contract does indeed, or even to synthesize or repair L4 specifications).
 
-## Understanding the grammar
+## Understanding the grammar / working with it
 
-To see what the grammar looks like, you can play with it in the Langium playground, or generate a railroad diagram from VSCode, using the Langium VSCode extension.
+### To build / generate
+
+```bash
+npm install
+npm run langium:generate
+npm run build
+```
+
+### Working with it
+
+* To see what the grammar looks like, you can **generate a railroad diagram from VSCode**, using the Langium VSCode extension.
+* To serialize the AST of a Lam4 program: `node ./bin/cli toAst <lam4program filename>.l4`
 
 ## Noteworthy TODOs
 
