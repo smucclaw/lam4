@@ -17,6 +17,7 @@ TO DOs
 * Check if adding LetExpr to the grammar in way I have is compositional enough
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
+* Think about what a more user-friendly name for `SIG` might be -- perhaps `CONCEPT`?
 
 
 
@@ -237,7 +238,7 @@ IfThenElseExpr infers Expr:
 ;
 
 NumComparisonExpr infers Expr:
-    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'DIFFERS_FROM' | '==' | '!=') right=Add)*
+    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'DIFFERS_FROM' | '==' ) right=Add)*
 ;
 
 
@@ -246,7 +247,7 @@ Add infers Expr:
 ;
 
 Mult infers Expr:
-    RelationJoin ({infer NumOp.left=current} op=('*' | '/') right=RelationJoin)*
+    RelationalJoin ({infer NumOp.left=current} op=('*' | '/') right=RelationalJoin)*
 ;
 
 /*
@@ -257,8 +258,10 @@ ISSUE: Linking to 'fields' will require implementing something like https://lang
 The relationship between relational join and a more conventional member access operator:
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
-RelationJoin infers Expr:
-    PrimitiveExpr ({infer RelationJoin.left=current} op=("'s") right=PrimitiveExpr)*
+RelationalJoin infers Expr:
+    PrimitiveExpr ({infer RelationalJoin.left=current} op=("`s") right=PrimitiveExpr)*
+    // TODO: Temporarily using `s instead of 's because I'm worried the single quote might cause issues (they use single quotes when generating the AST). 
+    // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
 FunctionApplication infers Expr:
