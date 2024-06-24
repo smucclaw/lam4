@@ -213,7 +213,7 @@ PredicateDecl:
 // ;
 
 VarDecl returns NamedElement:
-    {infer VarDecl} name=ID op=(':=' | '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
+    {infer VarDecl} name=ID (':=' | '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 
@@ -230,32 +230,44 @@ Expr:
 ;
 
 OrExpr infers Expr:
-    AndExpr ({infer BinBoolOp.left=current} op='OR' right=AndExpr)*
+    AndExpr ({infer BinExpr.left=current} op='OR' right=AndExpr)*
 ;
 
 AndExpr infers Expr:
-    (NumComparisonExpr| IfThenElseExpr) ({infer BinBoolOp.left=current} op='AND' right=(NumComparisonExpr| IfThenElseExpr))*
+    (NumComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op='AND' right=(NumComparisonExpr| IfThenElseExpr))*
 ;
 
-LetExpr infers Expr:
+LetExpr:
     'LET' '{' (vars+=VarDecl)+ '}' 'IN' '{' body=OrExpr '}'
 ;
 
-IfThenElseExpr infers Expr:
+IfThenElseExpr:
     'IF' condition=OrExpr 'THEN' then=OrExpr 'ELSE' else=OrExpr
 ;
 
+
+OpLt: op_str = '<' ;
+OpLte: op_str = '<=' ;
+OpGt: op_str = '>';
+OpGte: op_str = '>=';
+OpEquals: op_str = 'EQUALS' | '==';
+OpNotEquals: op_str = "DIFFERS_FROM" | "!=";
+NumComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
+
 NumComparisonExpr infers Expr:
-    Add ({infer ComparisonOp.left=current} op=('<' | '<=' | '>' | '>=' | 'EQUALS' | 'DIFFERS_FROM' | '==' ) right=Add)*
+    Add ({infer BinExpr.left=current} op=NumComparisonOp right=Add)*
 ;
 
-
+OpPlus: op_str = '+';
+OpMinus: op_str = '-';
 Add infers Expr:
-    Mult ({infer NumOp.left=current} op=('+' | '-') right=Mult)*
+    Mult ({infer BinExpr.left=current} op=(OpPlus | OpMinus) right=Mult)*
 ;
 
+OpMult: op_str = '*';
+OpDiv: op_str = '/';
 Mult infers Expr:
-    RelationalJoin ({infer NumOp.left=current} op=('*' | '/') right=RelationalJoin)*
+    RelationalJoin ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=RelationalJoin)*
 ;
 
 /*
@@ -269,12 +281,12 @@ The relationship between relational join and a more conventional member access o
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
 RelationalJoin infers Expr:
-    PrimitiveExpr ({infer RelationalJoin.left=current} op=("`s") right=PrimitiveExpr)*
+    PrimitiveExpr ({infer RelationalJoin.left=current} "`s" right=PrimitiveExpr)*
     // TODO: Temporarily using `s instead of 's because I'm worried the single quote might cause issues (they use single quotes when generating the AST). 
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
-FunctionApplication infers Expr:
+FunctionApplication:
     func=[NamedElement:ID]
     ('(' args+=Expr (',' args+=Expr)* ')')
 ;
@@ -287,7 +299,7 @@ Ref:
     value=[NamedElement:ID];
 
 UnaryExpr:
-    op=('-' | 'NOT') value=Expr
+    op=(OpMinus) value=Expr
 ;
 
 
@@ -360,8 +372,12 @@ Relation:
     description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
+
 TypeDef:
-    (refType=[CustomType:ID] | builtinType=Builtin )
+    CustomTypeDef | BuiltinType
+;
+CustomTypeDef:
+    ref = [CustomType:ID]
 ;
 
 // type Rule = FunDecl | PredicateDecl;
@@ -392,10 +408,13 @@ BuiltinBoolFormat returns string:
     "Boolean"
 ;
 
-Builtin returns string:
-    BuiltinStringFormats | BuiltinBoolFormat | BuiltinNumberFormats | BuiltinDateTimeRelated
+BuiltinType:
+    ref = BuiltinTypeString
 ;
 
+BuiltinTypeString returns string:
+    BuiltinStringFormats | BuiltinBoolFormat | BuiltinNumberFormats | BuiltinDateTimeRelated
+;
 // Shelving Money for now, but let's revisit this soon
 // TODO: Factor out the currencies
 // BuiltinMoneyFormats returns string:
@@ -422,15 +441,20 @@ BooleanLiteral:
     value='True' | 'False'
 ;
 
+// Decimal returns number:
+//     INT ('.' INT)?;
+
+
 /* ========================================
         TERMINALS
 ======================================== */
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
-terminal INT returns number: /[0-9]+/;
-terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
-terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
+terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
+// terminal INT returns number: /[0-9]+/;
+// terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
+// terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 terminal BACK_TICKED_ID:
     '`' -> '`'
