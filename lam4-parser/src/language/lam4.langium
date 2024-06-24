@@ -13,6 +13,7 @@ TO DOs
 =======
 * Finish supporting join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
   by implementing the analogue of https://langium.org/docs/recipes/scoping/class-member/
+* May need to use TokenBuilder or smtg like that to support "'s" --- right now the ast.ts seems to use single quotes for 
 * Check if adding LetExpr to the grammar in way I have is compositional enough
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
