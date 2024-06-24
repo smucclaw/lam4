@@ -241,7 +241,7 @@ AndExpr infers Expr:
 ;
 
 LetExpr:
-    'LET' '{' (vars+=VarDecl)+ '}' 'IN' '{' body=OrExpr '}'
+    ('LET' | 'DEFINE') '{' (vars+=VarDecl)+ '}' 'IN' '{' body=OrExpr '}'
 ;
 
 IfThenElseExpr:
