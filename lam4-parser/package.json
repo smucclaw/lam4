@@ -36,11 +36,11 @@
         "monaco-editor-workers": "~0.44.0",
         "monaco-editor-wrapper": "~3.5.0",
         "monaco-languageclient": "~7.2.0",
+        "ts-pattern": "^5.2.0",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
     },
     "devDependencies": {
-        "vscode": "npm:@codingame/monaco-vscode-api@1.83.16",
         "@types/node": "^18.0.0",
         "@types/vscode": "~1.67.0",
         "@typescript-eslint/eslint-plugin": "~6.4.1",
@@ -51,7 +51,8 @@
         "langium-cli": "~3.0.0",
         "typescript": "~5.1.6",
         "vite": "~4.4.11",
-        "vitest": "~1.4.0"
+        "vitest": "~1.4.0",
+        "vscode": "npm:@codingame/monaco-vscode-api@1.83.16"
     },
     "displayName": "lam4",
     "engines": {
