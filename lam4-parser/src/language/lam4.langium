@@ -18,6 +18,7 @@ TO DOs
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
 * Think about what a more user-friendly name for `SIG` might be -- perhaps `CONCEPT`?
+* Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
 
 
 
