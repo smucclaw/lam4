@@ -211,8 +211,8 @@ VarDecl returns NamedElement:
 ;
 
 
-PredicateOrFuncID:
-    {infer PredicateOrFuncID} value=(ID | BACK_TICKED_ID)
+PredicateOrFuncID returns string:
+    ID | BACK_TICKED_ID
 ;
 
 

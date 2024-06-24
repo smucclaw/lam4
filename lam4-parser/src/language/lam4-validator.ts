@@ -21,13 +21,15 @@ export function registerValidationChecks(services: Lam4Services) {
 export class Lam4Validator {
     checkPredFunSigNamesUnique(toplevelElement: ToplevelElement, accept: ValidationAcceptor): void {
         if (!isToplevelElement(toplevelElement)) throw new Error('Retrieved a non-top-level in validation');
+        
+        const normalize = (name: string) => name.toLowerCase();
+        const seen = new Set<string>();
 
-        const seen = new Set();
         if (isNamedElement(toplevelElement)) {
-            if (seen.has(toplevelElement.name)) {
+            if (seen.has(normalize(toplevelElement.name))) {
                 accept('error',  `${toplevelElement.$type} has non-unique name '${toplevelElement.name}'.`,  {node: toplevelElement, property: 'name'});
             }
-            seen.add(isNamedElement.name)
+            seen.add(normalize(isNamedElement.name))
         }
     }
 }
