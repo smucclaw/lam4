@@ -1,8 +1,6 @@
-GIVEN (
-    x: Person
-    y: Person
-    z: Person
-)
+GIVEN (x: Person 
+       y 
+       z: Person)
 DECIDE special
 IF True
 
@@ -15,3 +13,7 @@ GIVEN (
 )
 DECIDE eligible 
 IF (person1, person2, person3) ARE special
+
+GIVEN (x)
+DECIDE bleh
+IF x IS special

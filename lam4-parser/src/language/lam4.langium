@@ -295,7 +295,8 @@ FunctionApplication:
 
 // sugar for func app
 InfixPredicateApplication: 
-   (args+=[NamedElement:ID] 'IS'  predicate=[PredicateDecl:ID] ) | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE') predicate=[PredicateDecl:ID] )
+   ( args+=[NamedElement:ID] 'IS' predicate=Expr ) | 
+   ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE') predicate=Expr )
 ;
 
 // This is meant for programmers to implement libraries with; 
