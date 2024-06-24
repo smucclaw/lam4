@@ -26,7 +26,6 @@ SIG NonInstitutionalPerson SUBSET_OF Entity {}
 SIG Loan {
   /-
   description_for_semantic_parser: "Who the lender is"
-  someNumericMetadataForIllustration: 12.30
   -/
   lender IS ONE Entity
   // the property above has a 'block metadata' annotation 
