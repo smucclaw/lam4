@@ -145,7 +145,7 @@ Facts:
 // ------- Params -------
 GivenParamBlock:
     'GIVEN' '('
-        params+=ParamTypePair+
+        params+=(ParamTypePair | Param)*
     ')'
 ;
 
@@ -185,7 +185,7 @@ FunDecl:
 PredicateDecl:
     PotentiallyWithSpecificMetadataBlock
 
-    GivenParamBlock?
+    GivenParamBlock
     'DECIDE' name=PredicateOrFuncID 
     // can think of 'name' as 'head'
     'IF' body=Expr 

@@ -5,6 +5,7 @@ func_with_let(y) =
         x
     }
 
+GIVEN()
 DECIDE bleh
 IF True
 AND 3 EQUALS (LET {

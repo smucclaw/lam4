@@ -1,0 +1,14 @@
+SIG Person {}
+
+GIVEN (x)
+DECIDE `pred blah blah`
+// use the backtick syntax when you want an identifier with spaces
+IF True
+
+GIVEN (x: Person 
+       y 
+       z: Person)
+DECIDE pred2 IF False
+
+GIVEN ()
+DECIDE no_givens_pred IF True
