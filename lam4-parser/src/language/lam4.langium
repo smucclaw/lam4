@@ -188,7 +188,10 @@ PredicateDecl:
     'DECIDE' name=PredicateOrFuncID 
     // can think of 'name' as 'head'
     'IF' body=Expr 
-    // IMPT: The 'IF' here is probably going to be a 'IFF' or 'just in case', rather than a mere 'if'
+    /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
+    since "the law implicitly assumes a condition is false unless specified otherwise" 
+    (https://catala-lang.org/en/examples/tutorial)
+    In this way this is similar to Catala's 'Rule' */
     // whereDecls=WhereBlock?
 ;
 
