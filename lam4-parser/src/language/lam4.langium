@@ -181,6 +181,7 @@ FunDecl:
     // in the short term, might be easier to just use a LET
 ;
 
+// A predicate is a special case of a function; namely, a function whose return type is Boolean
 PredicateDecl:
     PotentiallyWithSpecificMetadataBlock
 
@@ -287,13 +288,20 @@ RelationalJoin infers Expr:
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
+// with postfix predicate application as a special case of this
 FunctionApplication:
     func=[NamedElement:ID]
     ('(' args+=Expr (',' args+=Expr)* ')')
 ;
 
+// sugar for func app
+InfixPredicateApplication: 
+   (args+=[NamedElement:ID] 'IS'  predicate=[PredicateDecl:ID] ) | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE') predicate=[PredicateDecl:ID] )
+;
+
+
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | FunctionApplication  | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | InfixPredicateApplication | FunctionApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -367,7 +375,7 @@ Relation:
     PotentiallyWithSpecificMetadataBlock
 
     name=ID optional?='?'? 
-    (':' | 'IS') 
+    (':' | 'IS_A') 
     multiplicity=Multiplicity?
     relatum=TypeDef // TODO: Support plural relata 
     nullable?='?'? 
@@ -384,7 +392,6 @@ CustomTypeDef:
 
 // type Rule = FunDecl | PredicateDecl;
 type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | FunDecl  | Relation | SigDecl;
-
 
 /* ========================================
          BUILT IN and PRIMITIVE types

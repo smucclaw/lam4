@@ -1,0 +1,17 @@
+GIVEN (
+    x: Person
+    y: Person
+    z: Person
+)
+DECIDE special
+IF True
+
+SIG Person {}
+
+GIVEN (
+    person1: Person
+    person2: Person
+    person3: Person
+)
+DECIDE eligible 
+IF (person1, person2, person3) ARE special

@@ -27,10 +27,10 @@ SIG Loan {
   /-
   description_for_semantic_parser: "Who the lender is"
   -/
-  lender IS ONE Entity
+  lender IS_A ONE Entity
   // the property above has a 'block metadata' annotation 
   // just to show how that syntax is possible
 
   // the properties below just have a single line metadata annotation (this will become the 'description')
-  borrower IS ONE Entity -- Who the borrower is.
+  borrower IS_A ONE Entity -- Who the borrower is.
 }
