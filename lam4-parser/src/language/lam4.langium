@@ -246,32 +246,33 @@ IfThenElseExpr:
 ;
 
 
-OpLt: op_str = '<' ;
-OpLte: op_str = '<=' ;
-OpGt: op_str = '>';
-OpGte: op_str = '>=';
-OpEquals: op_str = 'EQUALS' | '==';
-OpNotEquals: op_str = "DIFFERS_FROM" | "!=";
+OpLt: {infer OpLt} '<' ;
+OpLte: {infer OpLte}'<=' ;
+OpGt: {infer OpGt} '>';
+OpGte: {infer OpGte} '>=';
+OpEquals: {infer OpEquals} 'EQUALS' | '==';
+OpNotEquals: {infer OpNotEquals} "DIFFERS_FROM" | "!=";
 NumComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
 
 NumComparisonExpr infers Expr:
     Add ({infer BinExpr.left=current} op=NumComparisonOp right=Add)*
 ;
 
-OpPlus: op_str = '+';
-OpMinus: op_str = '-';
+OpPlus: {infer OpPlus} '+';
+OpMinus: {infer OpMinus} '-';
 Add infers Expr:
     Mult ({infer BinExpr.left=current} op=(OpPlus | OpMinus) right=Mult)*
 ;
 
-OpMult: op_str = '*';
-OpDiv: op_str = '/';
+OpMult: {infer OpMult} '*';
+OpDiv: {infer OpDiv} '/';
 Mult infers Expr:
     RelationalJoin ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=RelationalJoin)*
 ;
 
+OpJoin: {infer OpJoin} '`s';
 /*
-TODO: Add a variant of this for relational join in the other direction --- maybe use "`of`"
+TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
 ISSUE: Linking to 'fields' will require implementing something like https://langium.org/docs/recipes/scoping/class-member/ --- in particular, this seems to involve adding some kind of type system? Not clear now that it's worth using Langium.
 
@@ -281,7 +282,7 @@ The relationship between relational join and a more conventional member access o
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
 RelationalJoin infers Expr:
-    PrimitiveExpr ({infer RelationalJoin.left=current} "`s" right=PrimitiveExpr)*
+    PrimitiveExpr ({infer BinExpr.left=current} op=OpJoin right=PrimitiveExpr)*
     // TODO: Temporarily using `s instead of 's because I'm worried the single quote might cause issues (they use single quotes when generating the AST). 
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
@@ -293,6 +294,7 @@ FunctionApplication:
 
 PrimitiveExpr infers Expr:
     '(' Expr ')' | FunctionApplication  | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
+    // Not sure if we want to allow for string literals as expressions
 ;
 
 Ref:
