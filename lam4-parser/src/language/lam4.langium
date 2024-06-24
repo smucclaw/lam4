@@ -178,7 +178,8 @@ PredicateDecl:
     PotentiallyWithSpecificMetadataBlock
 
     GivenParamBlock?
-    'DECIDE' head=PredicateOrFuncID
+    'DECIDE' name=PredicateOrFuncID 
+    // can think of 'name' as 'head'
     'IF' body=Expr 
     // IMPT: The 'IF' here is probably going to be a 'IFF' or 'just in case', rather than a mere 'if'
     // whereDecls=WhereBlock?
