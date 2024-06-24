@@ -1,4 +1,4 @@
-import type { Model } from '../language/generated/ast.js';
+import type { Program } from '../language/generated/ast.js';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { Lam4LanguageMetaData } from '../language/generated/module.js';
@@ -16,8 +16,8 @@ const packageContent = await fs.readFile(packagePath, 'utf-8');
 
 export const generateAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
     const services = createLam4Services(NodeFileSystem).Lam4;
-    const model = await extractAstNode<Model>(fileName, services);
-    const generatedFilePath = generateJavaScript(model, fileName, opts.destination);
+    const program = await extractAstNode<Program>(fileName, services);
+    const generatedFilePath = generateJavaScript(program, fileName, opts.destination);
     console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 };
 
