@@ -19,6 +19,7 @@ TO DOs
 https://langium.org/docs/recipes/multiple-languages/
 * Think about what a more user-friendly name for `SIG` might be -- perhaps `CONCEPT`?
 * Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
+* Check if the handling of number literals is good enough
 
 
 
@@ -107,11 +108,16 @@ MetadataKey returns string:
 ;
 
 MetadataKVPair:
-    name=MetadataKey ':' (value=MetadataValue | '[' values+=MetadataValue (',' values+=MetadataValue)* ']')
+    name=MetadataKey ':' value=MetadataValue
 ;
 
 MetadataValue:
-    GeneralMetadataBlock | NumberLiteral | StringLiteral | BooleanLiteral
+    GeneralMetadataBlock | ListOfMetadataValues | Literal
+;
+
+ListOfMetadataValues:
+    '[' value+=Literal 
+        (',' value+=Literal)* ']'
 ;
 
 SpecificMetadataBlock:
@@ -401,12 +407,11 @@ Builtin returns string:
         LITERALS
 ======================================== */
 
-// TODO: Clean number literals / signed vs unsigned num up
-Decimal returns number:
-    INT ('.' INT)?;
+Literal: NumberLiteral | StringLiteral | BooleanLiteral;
 
 NumberLiteral:
-    value=SIGNED_NUMBER|UNSIGNED_NUMBER|INT|Decimal
+    value=NUMBER
+    // SIGNED_NUMBER|UNSIGNED_NUMBER|INT|Decimal
 ;
 
 StringLiteral:
