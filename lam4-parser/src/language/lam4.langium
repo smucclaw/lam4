@@ -180,7 +180,9 @@ FunDecl:
     // in the short term, might be easier to just use a LET
 ;
 
-// A predicate is a special case of a function; namely, a function whose return type is Boolean
+// When doing concrete (as opposed to symbolic) execution, 
+// a predicate amounts to a special case of a function; 
+// namely, a function whose return type is Boolean
 PredicateDecl:
     PotentiallyWithSpecificMetadataBlock
 
