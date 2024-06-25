@@ -31,7 +31,7 @@ npm run build
 
 * To see what the grammar looks like, you can **generate a railroad diagram from VSCode**, using the Langium VSCode extension.
 * To serialize the concrete syntax of a Lam4 program: `node ./bin/cli toAst <lam4program filename>.l4`
-  * Note that this is still more like concrete than abstract syntax --- I hope to be able to do that desugaring / simplfiying within the next 1-1.5 weeks. I'll aim to target Andres' AST for concrete evaluation, but I'll probably need to add some constructs for symbolic execution.
+  * Note that this is still more like concrete than abstract syntax --- I hope to be able to do that desugaring / simplfiying within the next 1-1.5 weeks. I'll aim to target Andres' AST for concrete evaluation, but I'll probably also experiment with another version on the side that has a few more constructs for symbolic execution.
 
 ## Noteworthy TODOs
 
