@@ -7,10 +7,10 @@ GENERAL_METADATA_FOR_TYPES {
 }
 
 
-DECLARE SIG Person {
+DECLARE CONCEPT Person {
 }
 
-SIG Loan {
+CONCEPT Loan {
   /-
   description: "Who the lender is"
   someNumericMetadataForIllustration: 12.30

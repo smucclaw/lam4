@@ -1,4 +1,4 @@
-SIG LifeAssured {
+CONCEPT LifeAssured {
     date_of_birth: Date
     policy_active: Boolean
 }

@@ -1,29 +1,29 @@
 GENERAL_METADATA_FOR_TYPES {
-  description: "An example that demonstrates how to get open sums with SUBSET_OF"
+  description: "An example that demonstrates how to get open sums with SPECIALIZES"
 }
 
 /* -----------------------
     Entities
 -------------------------*/
-SIG Entity {
+CONCEPT Entity {
   name: String
 }
 
-SIG Institution SUBSET_OF Entity {}
+CONCEPT Institution SPECIALIZES Entity {}
 
-SIG Government SUBSET_OF Institution {}
+CONCEPT Government SPECIALIZES Institution {}
 
-SIG Business SUBSET_OF Institution {
+CONCEPT Business SPECIALIZES Institution {
   date_incorporated: Date
   market_share: Fraction
 }
 
-SIG NonProfitInstitution SUBSET_OF Institution {}
+CONCEPT NonProfitInstitution SPECIALIZES Institution {}
 
-SIG NonInstitutionalPerson SUBSET_OF Entity {}
+CONCEPT NonInstitutionalPerson SPECIALIZES Entity {}
 
 
-SIG Loan {
+CONCEPT Loan {
   /-
   description_for_semantic_parser: "Who the lender is"
   -/

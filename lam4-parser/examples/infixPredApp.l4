@@ -4,7 +4,7 @@ GIVEN (x: Person
 DECIDE special
 IF True
 
-SIG Person {}
+CONCEPT Person {}
 
 GIVEN (
     person1: Person

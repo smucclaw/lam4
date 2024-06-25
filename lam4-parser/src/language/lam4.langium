@@ -325,14 +325,20 @@ UnaryExpr:
 
 
 /* ========================================
-       Sigs
+       Sigs / Concepts
 ======================================== */
 
-/* The idea I had been playing with was to express structure with (flat / first-order) relations, a la Alloy.
+/* 
+For the most part, especially when just evaluating,
+can think of Concepts as records.
+
+------------
+
+The idea I had been playing with was to express structure with (flat / first-order) relations, a la Alloy.
 
 The idea is this. Given something like
 
-SIG A {
+CONCEPT A {
     myField: B
 }
 
@@ -351,16 +357,17 @@ Why do this? The rough motivation was, because,
     (See Daniel Jackson's book *Software Abstractions* for more on this.)
     And we can think of something like a conventional OOP '<object>.<field>` as being a special case of relational join,
     if we think of a sig as corresponding to an OOP 'class'.
+    3. I haven't seen any real need for objects --- in particular, for the sort of procedural abstraction they provide --- when modelling / formalizing regulations
 
 (Nor is expressing data with relations unique even among legal DSLs -- e.g., Eiger does this.)
 
 That said, I'm *not* sure if this really is the way to handle data --- it just felt like a reasonable choice given that I also wanted to have some support for formal modelling, and given my past experience with Alloy.
 */
-// TODO: Add support for `SIG sig1, sig2, ..., sig_n SUBSET_OF OrigSig`
+// TODO: Add support for `CONCEPT sig1, sig2, ..., sig_n SPECIALIZES OrigSig`
 SigDecl:
-    'DECLARE'? 'SIG' 
+    'DECLARE'? 'CONCEPT' 
     name=ID 
-    ( 'SUBSET_OF' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
+    ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
         relations+=Relation*
     '}'
 ;

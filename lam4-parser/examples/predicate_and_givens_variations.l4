@@ -1,4 +1,4 @@
-SIG Person {}
+CONCEPT Person {}
 
 GIVEN (x)
 DECIDE `pred blah blah`

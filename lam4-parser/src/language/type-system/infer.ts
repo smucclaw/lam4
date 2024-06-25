@@ -1,5 +1,6 @@
-import { AstNode, Reference, ReferenceInfo } from "langium";
-import { BinExpr, SigDecl, isBinExpr, isSigDecl, isRelation, isFunDecl} from "../generated/ast.js";
+import { Reference } from "langium";
+import { SigDecl } from "../generated/ast.js";
+// isBinExpr, isSigDecl, isRelation, isFunDecl
 // import {Reference} from "langium/syntax-tree";
 
 /** Get Sig ancestors via DFS */
@@ -8,7 +9,9 @@ export function getSigAncestors(sig: SigDecl): SigDecl[] {
     const toVisit: SigDecl[] = [sig];
 
     while (toVisit.length > 0) {
-        let next: SigDecl = toVisit.pop();
+        let next: SigDecl | undefined = toVisit.pop();
+        if (!next) break; // TODO: temp hack cos TS can't narrow based on length out of box
+
         if (!seen.has(next)) {
             seen.add(next);
             next.parents.forEach((parent: Reference<SigDecl>) => { 
