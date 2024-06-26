@@ -38,6 +38,21 @@ After building:
 
 ## Noteworthy TODOs
 
+### The target AST to aim for in the short term, for concrete evaluation of the expression language
+
+```haskell
+data Expr =
+    Builtin    Builtin [Expr] -- a built-in operator or function
+  | Var        Name
+  | IfThenElse Expr Expr Expr -- could potentially also be a built-in if we allow built-ins to be lazy
+  | Lit        Lit
+  | List       [Expr]         -- construct a list
+  | Fold       Expr Name Name Expr Expr -- general list eliminator
+  | App        Expr [Expr]    -- function application
+  | Fun        [Name] Expr    -- anonymous function
+  | Let        Name Expr Expr -- local declaration
+```
+
 ### Backlog
 
 #### Parser
