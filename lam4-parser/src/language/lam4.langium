@@ -169,7 +169,7 @@ FunDecl:
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     'FUNCTION'? 
     name=ID '(' ( params+=(ParamTypePair | Param) (',' params+=(ParamTypePair | Param))* )? ')' (':' returnType=TypeDef)?
-    (':=' | '=' | 'EQUALS') 
+    ( '=' | 'EQUALS') 
     body=Expr
     // whereDecls=WhereBlock? 
     // TODO: Set linking rules to make it possible to link to vars tt are defined only in the where decls
@@ -218,7 +218,7 @@ PredicateDecl:
 // ;
 
 VarDecl returns NamedElement:
-    {infer VarDecl} name=ID (':=' | '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
+    {infer VarDecl} name=ID ( '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 
