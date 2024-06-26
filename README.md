@@ -29,8 +29,11 @@ npm run build
 
 ### Working with it
 
+After building:
+
 * To see what the grammar looks like, you can **generate a railroad diagram from VSCode**, using the Langium VSCode extension.
-* To serialize the concrete syntax of a Lam4 program: `node ./bin/cli toAst <lam4program filename>.l4`
+* To print to std out a **human-readable version of the concrete syntax** (i.e., a version without the metadata): `node ./bin/cli printAstForHumans <lam4program filename>.l4`
+* To **serialize and save to a file the concrete syntax**: `node ./bin/cli toAst <lam4program filename>.l4`
   * Note that this is still more like concrete than abstract syntax --- I hope to be able to do that desugaring / simplfiying within the next 1-1.5 weeks. I'll aim to target Andres' AST for concrete evaluation, but I'll probably also experiment with another version on the side that has a few more constructs for symbolic execution.
 
 ## Noteworthy TODOs

@@ -9,11 +9,13 @@ import { createLam4Services } from '../language/lam4-module.js';
 import { NodeFileSystem } from 'langium/node';
 import type {JsonSerializeOptions} from 'langium';
 
-const DEFAULT_SERIALIZATION_CONFIG: JsonSerializeOptions = {space: 4,
-    refText: true,
-    sourceText: true,
-    textRegions: true,
-    comments: false}
+// TODO: Set up the auto formatting that adds auto indents for properties
+const DEFAULT_SERIALIZATION_CONFIG: JsonSerializeOptions = 
+    {space: 4,
+     refText: true,
+     sourceText: true,
+     textRegions: true,
+     comments: false}
 
 export function serializeProgramToJson(program: Program, serializationConfig: JsonSerializeOptions = DEFAULT_SERIALIZATION_CONFIG): JSONString {
     const services = createLam4Services(NodeFileSystem).lam4Services;

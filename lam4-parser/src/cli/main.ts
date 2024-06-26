@@ -17,9 +17,31 @@ const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 const packagePath = path.resolve(__dirname, '..', '..', 'package.json');
 const packageContent = await fs.readFile(packagePath, 'utf-8');
 
-export const toAstAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+export async function getProgramAst(fileName: string) {
     const services = createLam4Services(NodeFileSystem).lam4Services;
     const program = await extractAstNode<Program>(fileName, services);
+    return program;
+} 
+
+export async function printAstForHumans(fileName: string) {
+    const noMetadataSerializationConfig = {
+        space: 4,
+        refText: true,
+        sourceText: false,
+        textRegions: false,
+        comments: false
+    }
+
+    const program = await getProgramAst(fileName);
+    // const noMetadataAstString = 
+    serializeProgramToJson(program, noMetadataSerializationConfig) as string;
+
+    // return noMetadataAstString;
+}
+
+export const toAstAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
+    const program = await getProgramAst(fileName);
+
     // const generatedFilePath = generateJavaScript(program, fileName, opts.destination);
     // console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 
@@ -41,9 +63,15 @@ export default function(): void {
     program
         .command('toAst')
         .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
-        .option('-d, --destination <dir>', 'destination directory of generating')
-        .description('serialize AST to JSON')
+        .option('-d, --destination <dir>', 'destination directory')
+        .description('serialize concrete syntax to JSON')
         .action(toAstAction);
+
+    program
+        .command('printAstForHumans')
+        .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
+        .description('print human readable version of concrete syntax -- i.e., *without metadata*')
+        .action(printAstForHumans);
 
     program.parse(process.argv);
 }
