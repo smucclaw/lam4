@@ -1,7 +1,6 @@
 import { Reference } from "langium";
 import { SigDecl } from "../generated/ast.js";
 // isBinExpr, isSigDecl, isRelation, isFunDecl
-// import {Reference} from "langium/syntax-tree";
 
 /** Get Sig ancestors via DFS */
 export function getSigAncestors(sig: SigDecl): SigDecl[] {

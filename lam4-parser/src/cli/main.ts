@@ -6,7 +6,8 @@ import { createLam4Services } from '../language/lam4-module.js';
 import { extractAstNode } from './cli-util.js';
 import { 
     // generateJavaScript, 
-    generateAndSaveAST } from './generator.js';
+    serializeProgramToJson,
+    writeToDisk } from './generator.js';
 import { NodeFileSystem } from 'langium/node';
 import * as url from 'node:url';
 import * as fs from 'node:fs/promises';
@@ -22,7 +23,8 @@ export const toAstAction = async (fileName: string, opts: GenerateOptions): Prom
     // const generatedFilePath = generateJavaScript(program, fileName, opts.destination);
     // console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 
-    const astJsonOutPath = generateAndSaveAST(program, fileName, opts.destination);
+    const astString = serializeProgramToJson(program) as string;
+    const astJsonOutPath = writeToDisk(astString, fileName, opts.destination);
     console.log(chalk.green(`AST serialized to JSON at ${astJsonOutPath}`));
 };
 

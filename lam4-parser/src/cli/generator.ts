@@ -7,11 +7,18 @@ import * as path from 'node:path';
 import { extractDestinationAndName } from './cli-util.js';
 import { createLam4Services } from '../language/lam4-module.js';
 import { NodeFileSystem } from 'langium/node';
+import type {JsonSerializeOptions} from 'langium';
 
-export function generateAST(program: Program): JSONString {
+const DEFAULT_SERIALIZATION_CONFIG: JsonSerializeOptions = {space: 4,
+    refText: true,
+    sourceText: true,
+    textRegions: true,
+    comments: false}
+
+export function serializeProgramToJson(program: Program, serializationConfig: JsonSerializeOptions = DEFAULT_SERIALIZATION_CONFIG): JSONString {
     const services = createLam4Services(NodeFileSystem).lam4Services;
     
-    const astJson = services.serializer.JsonSerializer.serialize(program);
+    const astJson = services.serializer.JsonSerializer.serialize(program, serializationConfig);
 
     // for quick debugging
     const parsedJson = JSON.parse(astJson);
@@ -20,16 +27,14 @@ export function generateAST(program: Program): JSONString {
     return astJson as JSONString;
 }
 
-export function generateAndSaveAST(program: Program, filePath: string, destination: string | undefined): string {
-    const data = extractDestinationAndName(filePath, destination);
-    const outFilePath = `${path.join(data.destination, data.name)}.json`;
+export function writeToDisk(data: string, filePath: string, destination: string | undefined, fileExt: string = ".json"): string {
+    const filepath = extractDestinationAndName(filePath, destination);
+    const outFilePath = `${path.join(filepath.destination, filepath.name)}${fileExt}`;
 
-    const astJson = generateAST(program);
-
-    if (!fs.existsSync(data.destination)) {
-        fs.mkdirSync(data.destination, { recursive: true });
+    if (!fs.existsSync(filepath.destination)) {
+        fs.mkdirSync(filepath.destination, { recursive: true });
     }
-    fs.writeFileSync(outFilePath, astJson);
+    fs.writeFileSync(outFilePath, data);
     return outFilePath;
 }
 
