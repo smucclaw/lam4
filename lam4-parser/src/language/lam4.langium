@@ -272,7 +272,7 @@ Add infers Expr:
 OpMult: {infer OpMult} '*';
 OpDiv: {infer OpDiv} '/';
 Mult infers Expr:
-    RelationalJoin ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=RelationalJoin)*
+    Join ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Join)*
 ;
 
 OpJoin: {infer OpJoin} '`s';
@@ -286,8 +286,8 @@ ISSUE: Linking to 'fields' will require implementing something like https://lang
 The relationship between relational join and a more conventional member access operator:
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
-RelationalJoin infers Expr:
-    PrimitiveExpr ({infer BinExpr.left=current} op=OpJoin right=PrimitiveExpr)*
+Join infers Expr:
+    PrimitiveExpr ({infer Join.previous=current} op=OpJoin right=PrimitiveExpr)*
     // TODO: Temporarily using `s instead of 's because I'm worried the single quote might cause issues (they use single quotes when generating the AST). 
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
@@ -334,6 +334,8 @@ UnaryExpr:
 For the most part, especially when just evaluating,
 can think of Concepts as records.
 
+There's also a good chance I'll just give up on the Alloy stuff.
+
 ------------
 
 The idea I had been playing with was to express structure with (flat / first-order) relations, a la Alloy.
@@ -367,6 +369,8 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 */
 // TODO: Add support for `CONCEPT sig1, sig2, ..., sig_n SPECIALIZES OrigSig`
 SigDecl:
+    PotentiallyWithSpecificMetadataBlock
+    
     'DECLARE'? 'CONCEPT' 
     name=ID 
     ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
