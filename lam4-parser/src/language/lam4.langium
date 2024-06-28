@@ -287,15 +287,16 @@ The relationship between relational join and a more conventional member access o
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
 Join infers Expr:
-    PrimitiveExpr ({infer Join.previous=current} op=OpJoin right=PrimitiveExpr)*
+    FunctionApplication ({infer Join.left=current} op=OpJoin right=FunctionApplication)*
     // TODO: Temporarily using `s instead of 's because I'm worried the single quote might cause issues (they use single quotes when generating the AST). 
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
 // with postfix predicate application as a special case of this
 FunctionApplication:
-    func=[NamedElement:ID]
-    ('(' args+=Expr (',' args+=Expr)* ')')
+    PrimitiveExpr
+    ({infer FunctionApplication.func=current}
+    ('(' args+=Expr (',' args+=Expr)* ')'))*
 ;
 
 // sugar for func app
