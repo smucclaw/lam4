@@ -146,14 +146,14 @@ Facts:
 GivenParamBlock:
     'GIVEN' '('
         params+=(ParamTypePair | Param)*
-    ')'
+    ')' 
 ;
 
 Param:
     name=ID;
 
 ParamTypePair:
-    name=ID (':' | 'IS_A') paramType=TypeDef
+    name=ID ('::' | 'IS_A') paramType=TypeAnnot
 ;
 
 // ------- PredicateDecl, FunDecl -------
@@ -162,13 +162,21 @@ fragment PotentiallyWithSpecificMetadataBlock:
     metadata=(SpecificMetadataBlock)?
 ;
 
+// Not expecting non-programmers to understand this in the textual form
+// This would be visualized / rendered in more accessible ways for non-programmers
+fragment FunDeclTypeAnnot:
+    paramTypes+=TypeAnnot ('=>' paramTypes+=TypeAnnot)+
+;
+
 // a terse FunDecl
 FunDecl:
     PotentiallyWithSpecificMetadataBlock
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
-    'FUNCTION'? 
-    name=ID '(' ( params+=(ParamTypePair | Param) (',' params+=(ParamTypePair | Param))* )? ')' (':' returnType=TypeDef)?
+    FunDeclTypeAnnot?
+
+    'FUNCTION'? // An explicit kw might be helpful for non-programmers
+    name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
     ( '=' | 'EQUALS') 
     body=Expr
     // whereDecls=WhereBlock? 
@@ -310,12 +318,12 @@ InfixPredicateApplication:
 AnonFunction:
     '\\'  
     ( ('(' ')') | (params+=(ParamTypePair | Param) (params+=(ParamTypePair | Param))*) ) 
-    '->' 
+    '=>' 
     body=Expr
 ;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | FunctionApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixPredicateApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -371,7 +379,7 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 // TODO: Add support for `CONCEPT sig1, sig2, ..., sig_n SPECIALIZES OrigSig`
 SigDecl:
     PotentiallyWithSpecificMetadataBlock
-    
+
     'DECLARE'? 'CONCEPT' 
     name=ID 
     ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
@@ -402,17 +410,16 @@ Relation:
     name=ID optional?='?'? 
     (':' | 'IS_A') 
     multiplicity=Multiplicity?
-    relatum=TypeDef // TODO: Support plural relata 
+    relatum=TypeAnnot // TODO: Support plural relata 
     nullable?='?'? 
     description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
-
-TypeDef:
+TypeAnnot:
     CustomTypeDef | BuiltinType
 ;
 CustomTypeDef:
-    ref = [CustomType:ID]
+    label = [CustomType:ID]
 ;
 
 // type Rule = FunDecl | PredicateDecl;
@@ -443,7 +450,7 @@ BuiltinBoolFormat returns string:
 ;
 
 BuiltinType:
-    ref = BuiltinTypeString
+    label = BuiltinTypeString
 ;
 
 BuiltinTypeString returns string:
