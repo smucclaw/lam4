@@ -419,7 +419,7 @@ TypeAnnot:
     CustomTypeDef | BuiltinType
 ;
 CustomTypeDef:
-    label = [CustomType:ID]
+    annot = [CustomType:ID]
 ;
 
 // type Rule = FunDecl | PredicateDecl;
@@ -431,30 +431,16 @@ type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | FunDecl  |
 
 // TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
-BuiltinNumberFormats returns string:
-    'Integer' | 'Fraction'
-;
-
-BuiltinStringFormats returns string:
-    'String'
+BuiltinType:
+    annot = BuiltinTypeAnnot
 ;
 
 // TODO: Think about whether to add DateTime, Time and Duration (days)
 // https://json-schema.org/understanding-json-schema/reference/string
-BuiltinDateTimeRelated returns string:
-    'Date'
-;
-
-BuiltinBoolFormat returns string:
-    "Boolean"
-;
-
-BuiltinType:
-    label = BuiltinTypeString
-;
-
-BuiltinTypeString returns string:
-    BuiltinStringFormats | BuiltinBoolFormat | BuiltinNumberFormats | BuiltinDateTimeRelated
+BuiltinTypeAnnot returns string:
+     'Integer' | 'String' |  'Boolean'
+    //  'Fraction' 
+    //  'Date'
 ;
 // Shelving Money for now, but let's revisit this soon
 // TODO: Factor out the currencies
