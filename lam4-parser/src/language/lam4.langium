@@ -300,14 +300,14 @@ Join infers Expr:
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
-// with postfix predicate application as a special case of this
+// with postfix predicate application as a special case of this, when doing *concrete* evaluation
 FunctionApplication:
     PrimitiveExpr
     ({infer FunctionApplication.func=current}
     ('(' args+=Expr (',' args+=Expr)* ')'))*
 ;
 
-// sugar for func app
+// sugar for func app, when doing *concrete* evaluation
 InfixPredicateApplication: 
    ( args+=[NamedElement:ID] 'IS' predicate=Expr ) | 
    ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE') predicate=Expr )
