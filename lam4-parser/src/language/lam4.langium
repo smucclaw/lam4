@@ -17,9 +17,13 @@ TO DOs
 * Check if adding LetExpr to the grammar in way I have is compositional enough
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
-* Think about what a more user-friendly name for `SIG` might be -- perhaps `CONCEPT`?
-* Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
 * Check if the handling of number literals is good enough
+
+For v2:
+* Add FACTs back in for v2, 
+after first draft of bidir type checker is done
+* Add Fractions back in 
+* Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
 
 
 
@@ -91,7 +95,8 @@ entry Program:
 ;
 
 ToplevelElement:
-    Facts | SigDecl | PredicateDecl | FunDecl
+    SigDecl | PredicateDecl | FunDecl
+    // TODO: Add Facts in v2!
 ;
 
 /* ========================================
@@ -129,14 +134,15 @@ SpecificMetadataBlock:
 /* ========================================
        Facts
 ======================================== */
+// TODO -- for v2!
 
 // these would be the global vars (usually constants). These would prob just be sugar for a `let...in`
 // in the future, would want to think about how to support things like Representations and Warranties (which go beyond mere statements of facts)
-Facts:
-    'FACTS' '{'
-        facts+=VarDecl+
-    '}'
-;
+// Facts:
+//     'FACTS' '{'
+//         facts+=VarDecl+
+//     '}'
+// ;
 
 /* ========================================
        Rules
