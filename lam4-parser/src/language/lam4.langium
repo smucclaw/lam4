@@ -24,6 +24,7 @@ For v2:
 after first draft of bidir type checker is done
 * Add Fractions back in 
 * Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
+* Look into whether we can avoid having to use type annots for predicate decls
 
 
 
@@ -151,7 +152,8 @@ SpecificMetadataBlock:
 // ------- Params -------
 GivenParamBlock:
     'GIVEN' '('
-        params+=(ParamTypePair | Param)*
+        params+=ParamTypePair
+        // (ParamTypePair | Param)*
     ')' 
 ;
 
