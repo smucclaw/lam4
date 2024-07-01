@@ -9,6 +9,8 @@ export type Branded<T, B> = T & Brand<B>;
 
 export type JSONString = Branded<string, "JSON">;
 
+export const zip = <A, B>(a: A[], b: B[]) => a.map((k, i) => [k, b[i]]);
+
 /** Either type, adapted from https://gist.github.com/sallar/b66467428a9015711509f70f40e4d233 */
 
 export type Failure<T> = {tag: 'failure'; value: T}
