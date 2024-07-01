@@ -242,12 +242,14 @@ Expr:
     // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
 ;
 
+OpOr: {infer OpOr} 'OR';
 OrExpr infers Expr:
-    AndExpr ({infer BinExpr.left=current} op='OR' right=AndExpr)*
+    AndExpr ({infer BinExpr.left=current} op=OpOr right=AndExpr)*
 ;
 
+OpAnd: {infer OpAnd} 'AND';
 AndExpr infers Expr:
-    (NumComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op='AND' right=(NumComparisonExpr| IfThenElseExpr))*
+    (ComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op=OpAnd right=(ComparisonExpr| IfThenElseExpr))*
 ;
 
 LetExpr:
@@ -265,10 +267,10 @@ OpGt: {infer OpGt} '>';
 OpGte: {infer OpGte} '>=';
 OpEquals: {infer OpEquals} 'EQUALS' | '==';
 OpNotEquals: {infer OpNotEquals} "DIFFERS_FROM" | "!=";
-NumComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
+ComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
 
-NumComparisonExpr infers Expr:
-    Add ({infer BinExpr.left=current} op=NumComparisonOp right=Add)*
+ComparisonExpr infers Expr:
+    Add ({infer BinExpr.left=current} op=ComparisonOp right=Add)*
 ;
 
 OpPlus: {infer OpPlus} '+';
