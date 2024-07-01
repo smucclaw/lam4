@@ -161,7 +161,7 @@ Param:
     name=ID;
 
 ParamTypePair:
-    name=ID (':' | 'IS_A') paramType=TypeAnnot
+    param=Param (':' | 'IS_A') type=TypeAnnot
 ;
 
 // ------- PredicateDecl, FunDecl -------
