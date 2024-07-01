@@ -292,7 +292,7 @@ Mult infers Expr:
     Join ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Join)*
 ;
 
-OpJoin: {infer OpJoin} '`s';
+OpJoin: {infer OpJoin} '`s`';
 /*
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
