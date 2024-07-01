@@ -171,7 +171,7 @@ fragment PotentiallyWithSpecificMetadataBlock:
 // Not expecting non-programmers to understand this in the textual form
 // This would be visualized / rendered in more accessible ways for non-programmers
 fragment FunDeclTypeAnnot:
-    paramTypes+=TypeAnnot ('=>' paramTypes+=TypeAnnot)+
+    types+=TypeAnnot ('=>' types+=TypeAnnot)+
 ;
 
 // a terse FunDecl
