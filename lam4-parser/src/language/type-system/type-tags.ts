@@ -54,6 +54,24 @@ export function isStringTTag(tag: TypeTag): tag is StringTTag {
     return tag.tag === "String";
 }
 
+/*============= Unit ================================ */
+
+export class UnitTTag implements TypeTag {
+    readonly tag = "Unit";
+    constructor() {}
+    toString() {
+        return this.tag;
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return isUnitTTag(other);
+    }
+}
+
+export function isUnitTTag(tag: TypeTag): tag is UnitTTag {
+    return tag.tag === "Unit";
+}
+
 /*============= Integer ================================ */
 
 export class IntegerTTag implements TypeTag {
@@ -74,6 +92,7 @@ export class IntegerTTag implements TypeTag {
 export function isIntegerTTag(tag: TypeTag): tag is IntegerTTag {
     return tag.tag === "Integer";
 }
+
 
 /*============= Fraction ================================ */
 

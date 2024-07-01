@@ -441,7 +441,7 @@ BuiltinType:
 // TODO: Think about whether to add DateTime, Time and Duration (days)
 // https://json-schema.org/understanding-json-schema/reference/string
 BuiltinTypeAnnot returns string:
-     'Integer' | 'String' |  'Boolean'
+     'Integer' | 'String' |  'Boolean' | 'Unit'
     //  'Fraction' 
     //  'Date'
 ;
