@@ -134,7 +134,7 @@ export class FunctionTTag implements TypeTag {
     readonly tag = "Function";
     readonly returnType: TypeTag;
     readonly parameters: FunctionParameter[];
-    constructor(returnType: TypeTag, parameters: FunctionParameter[]) {
+    constructor(parameters: FunctionParameter[], returnType: TypeTag) {
         this.returnType = returnType;
         this.parameters = parameters;
     }
