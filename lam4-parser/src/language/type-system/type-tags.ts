@@ -4,6 +4,7 @@ import {
     BooleanLiteral,
     StringLiteral,
     NumberLiteral,
+    Param,
 } from "../generated/ast.js"; 
 
 export interface TypeTag {
@@ -139,7 +140,7 @@ export class FunctionTTag implements TypeTag {
         this.parameters = parameters;
     }
     toString() {
-        const params = this.parameters.map(p => `${p.name}: ${p.type.toString()}`).join(', ');
+        const params = this.parameters.map(p => `${p.param.name}: ${p.type.toString()}`).join(', ');
         return `(${params}) => ${this.returnType.toString()}`;
     }
 
@@ -157,9 +158,8 @@ export class FunctionTTag implements TypeTag {
     }
 }
 
-//TODO  not sure we really need this?
 export interface FunctionParameter {
-    name: string;
+    param: Param;
     type: TypeTag;
 }
 
