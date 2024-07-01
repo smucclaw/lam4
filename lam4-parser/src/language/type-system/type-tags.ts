@@ -9,6 +9,7 @@ import {
 export interface TypeTag {
     readonly tag: string;
     toString(): string;
+    sameTypeAs(other: TypeTag): boolean;
 }
 
 /*============= Boolean ================================ */
@@ -21,6 +22,10 @@ export class BooleanTTag implements TypeTag {
     }
     toString() {
         return this.tag;
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return isBooleanTTag(other);
     }
 }
 
@@ -39,6 +44,10 @@ export class StringTTag implements TypeTag {
     toString() {
         return this.tag;
     }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return isStringTTag(other);
+    }
 }
 
 export function isStringTTag(tag: TypeTag): tag is StringTTag {
@@ -55,6 +64,10 @@ export class IntegerTTag implements TypeTag {
     }
     toString() {
         return this.tag;
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return isIntegerTTag(other);
     }
 }
 
@@ -110,6 +123,19 @@ export class FunctionTTag implements TypeTag {
         const params = this.parameters.map(p => `${p.name}: ${p.type.toString()}`).join(', ');
         return `(${params}) => ${this.returnType.toString()}`;
     }
+
+    sameTypeAs(other: TypeTag): boolean {
+        const self = this;
+        function paramTagsCoincide(other: TypeTag) {
+            if (!isFunctionTTag(other)) return false;
+            if (self.parameters.length !== other.parameters.length) return false;  
+            for (let i = 0; i < self.parameters.length; i++) {
+                if (!self.parameters[i].type.sameTypeAs(other.parameters[i].type)) return false;
+            }
+            return true;
+        }
+        return paramTagsCoincide(other);
+    }
 }
 
 //TODO  not sure we really need this?
@@ -126,12 +152,16 @@ export function isFunctionTTag(tag: TypeTag): tag is FunctionTTag {
 
 export class SigTTag implements TypeTag {
     readonly tag = "Sig";
-    readonly literal: SigDecl;
-    constructor(literal: SigDecl) {
-        this.literal = literal;
+    readonly sig: SigDecl;
+    constructor(sig: SigDecl) {
+        this.sig = sig;
     }
     toString() {
-        return (this.literal as SigDecl).name;
+        return (this.sig as SigDecl).name;
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return isSigTTag(other) && this.sig === other.sig;
     }
 }
 
@@ -153,4 +183,12 @@ export class ErrorTypeTag implements TypeTag {
     toString() {
         return `Error: ${this.message}`;
     }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return isErrorTypeTag(other) && this.astNode === other.astNode && this.message === other.message;
+    }
+}
+
+export function isErrorTypeTag(tag: TypeTag): tag is ErrorTypeTag {
+    return tag.tag === "TCError";
 }
