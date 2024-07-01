@@ -144,19 +144,48 @@ export class FunctionTTag implements TypeTag {
         return `(${params}) => ${this.returnType.toString()}`;
     }
 
-    sameTypeAs(other: TypeTag): boolean {
-        const self = this;
-        function paramTagsCoincide(other: TypeTag) {
-            if (!isFunctionTTag(other)) return false;
-            if (self.parameters.length !== other.parameters.length) return false;  
-            for (let i = 0; i < self.parameters.length; i++) {
-                if (!self.parameters[i].type.sameTypeAs(other.parameters[i].type)) return false;
-            }
-            return true;
+    private paramTagsCoincide(other: TypeTag) {
+        if (!isFunctionTTag(other)) return false;
+
+        if (this.parameters.length !== other.parameters.length) return false;  
+        for (let i = 0; i < this.parameters.length; i++) {
+            if (!this.parameters[i].type.sameTypeAs(other.parameters[i].type)) return false;
         }
-        return paramTagsCoincide(other);
+        return true;
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return this.paramTagsCoincide(other);
     }
 }
+
+export class PredicateTTag implements TypeTag {
+    readonly tag = "Predicate";
+    readonly parameters: FunctionParameter[];
+    constructor(parameters: FunctionParameter[]) {
+        this.parameters = parameters;
+    }
+    toString() {
+        const params = this.parameters.map(p => `${p.param.name}: ${p.type.toString()}`).join(', ');
+        return `Predicate[(${params})]`;
+    }
+
+    paramTagsCoincide(other: TypeTag) {
+        if (!isPredicateTTag(other)) return false;
+        
+        if (this.parameters.length !== other.parameters.length) return false;  
+        for (let i = 0; i < this.parameters.length; i++) {
+            if (!this.parameters[i].type.sameTypeAs(other.parameters[i].type)) return false;
+        }
+        return true;
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return this.paramTagsCoincide(other);
+    }
+}
+
+
 
 export interface FunctionParameter {
     param: Param;
@@ -165,6 +194,10 @@ export interface FunctionParameter {
 
 export function isFunctionTTag(tag: TypeTag): tag is FunctionTTag {
     return tag.tag === "Function";
+}
+
+export function isPredicateTTag(tag: TypeTag): tag is PredicateTTag {
+    return tag.tag === "Predicate";
 }
 
 /*============= Sig ================================ */
