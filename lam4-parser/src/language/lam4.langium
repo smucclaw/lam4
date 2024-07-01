@@ -173,7 +173,8 @@ FunDecl:
     PotentiallyWithSpecificMetadataBlock
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
-    FunDeclTypeAnnot?
+    // Require annotations for top level func decl, since required for bidir type checking
+    FunDeclTypeAnnot
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
