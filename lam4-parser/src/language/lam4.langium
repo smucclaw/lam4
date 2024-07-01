@@ -204,7 +204,6 @@ PredicateDecl:
     PotentiallyWithSpecificMetadataBlock
 
     GivenParamBlock
-    'PREDICATE' // An explicit kw might be helpful for non-programmers
     'DECIDE' name=PredicateOrFuncID 
     // can think of 'name' as 'head'
     'IF' body=Expr 
