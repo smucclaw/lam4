@@ -2,6 +2,7 @@ import { type Module, inject } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
 import { Lam4GeneratedModule, Lam4GeneratedSharedModule } from './generated/module.js';
 import { Lam4Validator, registerValidationChecks } from './lam4-validator.js';
+import { Lam4ScopeProvider } from './lam4-scope.js';
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -26,6 +27,9 @@ export type Lam4Services = LangiumServices & Lam4AddedServices
 export const Lam4Module: Module<Lam4Services, PartialLangiumServices & Lam4AddedServices> = {
     validation: {
         Lam4Validator: () => new Lam4Validator()
+    },
+    references: {
+        ScopeProvider: (services) => new Lam4ScopeProvider(services)
     }
 };
 
