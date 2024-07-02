@@ -411,9 +411,9 @@ type CustomType = SigDecl;
     one: a singleton value (this field always contains a single object); and
     lone: either a singleton value or no value (this field contains 0 or 1 object).
 */
-Multiplicity returns string:
-    "SET_OF" | "ONE" | "LONE"
-;
+// Multiplicity returns string:
+//     "SET_OF" | "ONE" | "LONE"
+// ;
 
 
 Relation:
@@ -421,7 +421,7 @@ Relation:
 
     name=ID optional?='?'? 
     (':' | 'IS_A') 
-    multiplicity=Multiplicity?
+    // multiplicity=Multiplicity?
     relatum=TypeAnnot // TODO: Support plural relata 
     nullable?='?'? 
     description=SINGLELINE_METADATA_ANNOTATION?
