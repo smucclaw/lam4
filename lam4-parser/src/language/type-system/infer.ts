@@ -37,7 +37,7 @@ export class TypeEnv {
         return this.envMap.get(node) ?? null;
     }
 
-    add(node: AstNode, type: TypeTag) {
+    set(node: AstNode, type: TypeTag) {
         this.envMap.set(node, type);
     }
 
@@ -241,9 +241,10 @@ function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
 export function inferTypeOfNewNode(env: TypeEnv, term: AstNode): TypeTag {
     // TODO: Not sure this is needed
     // Forestall recursive inference errors
-    //  env.set(node, new ErrorType(node, 'Recursive inference error'));
+    env.set(term, new ErrorTypeTag(term, 'Recursive inference error'));
+    
     let typeTag: TypeTag;
-    console.log(`term: ${term}`);
+    console.log(`term: ${term.$type}`);
     typeTag = match(term)
 
         // The types that can be read off the exprs
@@ -271,6 +272,7 @@ export function inferTypeOfNewNode(env: TypeEnv, term: AstNode): TypeTag {
                 typeAnnot => inferTypeAnnot(env, typeAnnot))    
         .with(P.when(isRef),
                 ref => ref.value.ref 
+                        // TODO: Ah, `ref.value.ref` is why we are getting a cycle with smtg like "x `s` a"
                         ? inferType(env, ref.value.ref) 
                         : new ErrorTypeTag(term, `Can't typecheck ${term} because reference can't be resolved`))
 
@@ -314,7 +316,7 @@ export function inferTypeOfNewNode(env: TypeEnv, term: AstNode): TypeTag {
                 })    
         .otherwise(() => new ErrorTypeTag(term, "Type of term cannot be inferred"));
 
-    env.add(term, typeTag);
+    env.set(term, typeTag);
     return typeTag;
 }
 
