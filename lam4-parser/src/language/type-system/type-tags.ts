@@ -5,6 +5,8 @@ import {
     StringLiteral,
     NumberLiteral,
     Param,
+    Relation,
+    isRelation,
 } from "../generated/ast.js"; 
 
 export interface TypeTag {
@@ -204,16 +206,22 @@ export function isPredicateTTag(tag: TypeTag): tag is PredicateTTag {
 
 export class SigTTag implements TypeTag {
     readonly tag = "Sig";
-    readonly sig: SigDecl;
+    private readonly sig: SigDecl;
     constructor(sig: SigDecl) {
         this.sig = sig;
     }
     toString() {
-        return (this.sig as SigDecl).name;
+        return this.tag;
     }
 
+    // TODO: More thought required here -- depends on desired semantics!
     sameTypeAs(other: TypeTag): boolean {
-        return isSigTTag(other) && this.sig === other.sig;
+        return isSigTTag(other);
+    }
+    // TODO: the subtyping judgment will be interesting
+
+    getSig(): SigDecl {
+        return this.sig;
     }
 }
 
@@ -221,8 +229,42 @@ export function isSigTTag(tag: TypeTag): tag is SigTTag {
     return tag.tag === "Sig";
 }
 
+/*============= Relation ================================== */
 
-/* == Error type tag ================================== */
+export class RelationTTag implements TypeTag {
+    readonly tag = "Relation";
+    private readonly relationNode: Relation; // A relation has type: its parent sig -> relatum (in the future, relatum_1 -> ... -> relatum_n?)
+    private readonly relationType: TypeTag[];
+    constructor(relationNode: Relation, parentSigType: SigTTag, relataTypes: TypeTag[]) {
+        this.relationNode = relationNode;
+        this.relationType = [parentSigType, ...relataTypes];
+    }
+    toString() {
+        return this.tag;
+    }
+    getRelationNode(): Relation {
+        return this.relationNode;
+    }
+
+    getRelationType(): TypeTag[] {
+        return this.relationType;
+    }
+
+    // TODO: More thought required here -- depends on desired semantics!
+    sameTypeAs(other: TypeTag): boolean {
+        // Use referential equality, since it's not possible to declare the same relation type with different sigs
+        // since, on the definition above), the relation type includes as a constituent the specific Sig 
+        return this === other;
+    }
+
+    // TODO: the subtyping judgment will be interesting
+}
+
+export function isRelationTTag(tag: TypeTag): tag is RelationTTag {
+    return tag.tag === "Relation";
+}
+
+/*============= Error type tag ================================== */
 
 export class ErrorTypeTag implements TypeTag {
     readonly tag = "TCError";
