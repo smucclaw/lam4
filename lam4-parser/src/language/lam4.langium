@@ -152,7 +152,7 @@ SpecificMetadataBlock:
 // ------- Params -------
 fragment GivenParamBlock:
     'GIVEN' '('
-        params+=ParamTypePair
+        params+=ParamTypePair*
     ')' 
 ;
 
