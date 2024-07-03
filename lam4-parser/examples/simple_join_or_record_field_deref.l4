@@ -1,0 +1,7 @@
+
+CONCEPT F {
+    a: Integer
+}
+
+F => Integer
+f(x) = x `s` a

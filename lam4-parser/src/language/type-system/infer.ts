@@ -2,17 +2,20 @@ import { AstNode, Reference } from "langium";
 
 import { 
     // isLiteral, Literal, 
-    SigDecl, isSigDecl, isStringLiteral, StringLiteral, isBooleanLiteral, BooleanLiteral, NumberLiteral, isNumberLiteral, isVarDecl, isTypeAnnot, TypeAnnot, isRelation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, IfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
+    SigDecl, isSigDecl, isStringLiteral, StringLiteral, isBooleanLiteral, BooleanLiteral, NumberLiteral, isNumberLiteral, isVarDecl, isTypeAnnot, TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, IfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
     isFunctionApplication,
     FunctionApplication,
     PredicateDecl,
     isPredicateDecl,
-    isRef} from "../generated/ast.js";
-import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameter, isErrorTypeTag, isSigTTag} from "./type-tags.js";
+    isRef,
+    isParam,
+    Ref} from "../generated/ast.js";
+import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameter, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag} from "./type-tags.js";
 import { 
     // Either, Failure, Success, 
     zip } from "../../utils.js"
 import { match, P } from 'ts-pattern';
+import { isJoinExpr } from "../lang-utils.js";
 
 /*
 TODOs: 
@@ -50,7 +53,7 @@ export class TypeEnv {
 }
 
 
-export function inferType(env: TypeEnv, term: AstNode): TypeTag {
+export function synth(env: TypeEnv, term: AstNode): TypeTag {
 
     if (!term) return new ErrorTypeTag(term, "Cannot infer type for a node that's falsy");
 
@@ -58,15 +61,11 @@ export function inferType(env: TypeEnv, term: AstNode): TypeTag {
     if (existing) {
         return existing;
     } else {
-        return inferTypeOfNewNode(env, term);
+        return synthNewNode(env, term);
     }
 }
 
-// TODO placeholder
-// const isSubtype = (type1: TypeTag, type2: TypeTag): boolean => {
-
-// }; 
-
+// TODO: this is buggy / causing "Maximum call stack size exceeded" when it's called from functionTTagFromFuncDecl
 const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
     match(term)
         // literals
@@ -77,7 +76,7 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
             (fundecl: FunDecl) => {
                 if (!isFunctionTTag(type)) return new ErrorTypeTag(fundecl, "Function declaration must be annotated with a function type");
 
-                const funcParamTypePairs: FunctionParameter[] = type.parameters;
+                const funcParamTypePairs: FunctionParameter[] = type.getParameters();
                 const funcRetType = type.returnType;
                 const newExtendedEnv = env.extendWith(
                                 funcParamTypePairs.map(pair => ({node: pair.param, 
@@ -88,28 +87,30 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
             })
         .with(P.when(isPredicateDecl),
             (predDecl: PredicateDecl) => {
-                if (!isPredicateTTag(type)) return new ErrorTypeTag(predDecl, 
-                                            "Predicate decl must be annotated with a predicate type");
+                console.log("TODO");
+                return new ErrorTypeTag(predDecl, "TODO");
+                // if (!isPredicateTTag(type)) return new ErrorTypeTag(predDecl, 
+                //                             "Predicate decl must be annotated with a predicate type");
 
-                const newExtendedEnv = env.extendWith(
-                        type.parameters.map(pair => ({node: pair.param, 
-                        type: pair.type} as NodeTypePair)));
+                // const newExtendedEnv = env.extendWith(
+                //         type.getParameters().map(pair => ({node: pair.param, 
+                //         type: pair.type} as NodeTypePair)));
                         
-                return check(newExtendedEnv, predDecl.body, new BooleanTTag());
+                // return check(newExtendedEnv, predDecl.body, new BooleanTTag());
             })
         .with(P.when(isIfThenElseExpr), 
             (ite: IfThenElseExpr) => { 
-                const iteChecksPass = isBooleanTTag(inferType(env, ite.condition)) 
-                                        && inferType(env, ite.then).sameTypeAs(type)
-                                        && inferType(env, ite.else).sameTypeAs(type); 
+                const iteChecksPass = isBooleanTTag(synth(env, ite.condition)) 
+                                        && synth(env, ite.then).sameTypeAs(type)
+                                        && synth(env, ite.else).sameTypeAs(type); 
                 // TODO: Could do more error checking and more detailed error messages
                 return iteChecksPass ? type : new ErrorTypeTag(ite, "Type error in if-then-else expression (a more helpful error msg is possible with more work)");
             })
         
         .otherwise(term => {
-            let termType = inferType(env, term);
+            let termType = synth(env, term);
             return termType.sameTypeAs(type) ? type : new ErrorTypeTag(term, "Type error");
-            // isSubtype(termType, type) ? type : new ErrorTypeTag(term, "Type error");
+            // TODO in the future: isSubtype(termType, type) ? type : new ErrorTypeTag(term, "Type error");
         });
 
 
@@ -174,6 +175,7 @@ Some intuition on bidirectional typechecking, for those unfamiliar with it:
 */
 
 function inferBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
+    console.log(`[inferBinExpr]`);
     function checkChildren(env: TypeEnv, expr: BinExpr, type: TypeTag): TypeTag {
         const leftType = check(env, expr.left, type);
         const rightType = check(env, expr.right, type);
@@ -190,17 +192,16 @@ function inferBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
     } else if (ARITH_OPERATORS.includes(expr.op.$type)) {
         binType = new IntegerTTag();
         return checkChildren(env, expr, binType);
-    } else if (expr.op.$type === "OpJoin") {
-        // join, aka record dereference/access (for now)
-        const inferredLeft = inferType(env, expr.left);
-        if (isSigTTag(inferredLeft) && !Object.hasOwn(expr.left, "left")) {
-            // const relation = inferredLeft.sig.relations.find(rel => rel.name === expr.right.name)
-            console.log(`[Join] trying to infer type of expr.right ${expr.right}`)
-            return inferType(env, expr.right);
-        } else {
-            return new ErrorTypeTag(expr.left, "Expected something that evaluates to a 'CONCEPT' on the left side of the `s`");
-        }
-
+    // } else if (expr.op.$type === "OpJoin") {
+    //     // join, aka record dereference/access (for now)
+    //     const inferredLeft = inferType(env, expr.left);
+    //     if (isSigTTag(inferredLeft) && !Object.hasOwn(expr.left, "left")) {
+    //         // const relation = inferredLeft.sig.relations.find(rel => rel.name === expr.right.name)
+    //         console.log(`[Join] trying to infer type of expr.right ${expr.right}`)
+    //         return inferType(env, expr.right);
+    //     } else {
+    //         return new ErrorTypeTag(expr.left, "Expected something that evaluates to a 'CONCEPT' on the left side of the `s`");
+    //     }
     } else {
         return new ErrorTypeTag(expr, "Type of binary expression cannot be inferred");
     }
@@ -223,8 +224,9 @@ function predicateTTagFromPredDecl(env: TypeEnv, predDecl: PredicateDecl): TypeT
     return predicateType;
 }
 
+// TODO-immed!
 function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
-    const paramAndRetTypes = fundecl.types.map(inferType.bind(undefined, env));
+    const paramAndRetTypes = fundecl.types.map(synth.bind(undefined, env));
     const argTypes = paramAndRetTypes.slice(0, -1);
     const retType = paramAndRetTypes[paramAndRetTypes.length - 1];
 
@@ -235,86 +237,150 @@ function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
           .map(paramTypeTuple => ({param: paramTypeTuple[0], type: paramTypeTuple[1]} as FunctionParameter));
 
     const funcType = new FunctionTTag(argTypeTags, retType);
+    console.log(`[functionTTagFromFuncDecl] synth'd ${funcType.toString()}`);
     return funcType;
 }
 
-export function inferTypeOfNewNode(env: TypeEnv, term: AstNode): TypeTag {
-    // TODO: Not sure this is needed
-    // Forestall recursive inference errors
-    env.set(term, new ErrorTypeTag(term, 'Recursive inference error'));
+// TODO: Clean this up later
+function getRefInfoForUser(ref: Ref): string {
+    return `reftxt: ${ref.value.$refText}; linking error?: ${ref.value.error?.message}`
+}
+
+
+
+/* Infers the type for a Ref that is a child of a Join / field access.
+
+Preconditions: 
+    - Ref has not been linked 
+    - isJoinExpr(parent)
+*/
+function synthRefChildOfJoin(env: TypeEnv, ref: Ref): TypeTag {
+    console.log(`[synthRefChildOfJoin] reftxt: ${ref.value.$refText}`);
+
+    const parent = ref.$container;
+
+    // Since the ref hasn't been linked, we know `ref` is not the leftmost child of the join.
+    if ((parent as BinExpr).left === ref) {
+        throw new Error("ref is left child of the join?! There's some kind of error in my reasoning! " + getRefInfoForUser(ref));
+    }
+    // So recursively look up / infer the type of its left sibling
+    const leftSibling = (parent as BinExpr).left;
+    console.log(`Trying to synth leftSibling: ${leftSibling.$type}`);
+    const typeOfLeftSibling = synth(env, leftSibling);
+
+    // With the type of the left sibling, we can infer what the type of `ref` is
+    if (isSigTTag(typeOfLeftSibling)) {
+        const sig = typeOfLeftSibling.getSig();
+        const refName = ref.value.$refText;
+        const matchingRelation: Relation | undefined = sig.relations.find(relNode => relNode.name === refName);
+        if (matchingRelation) {
+            console.log("--matchingRelation");
+            const relationType = synth(env, matchingRelation);
+            if (!isRelationTTag(relationType)) return new ErrorTypeTag(matchingRelation, `Relation should have a RelationTTag, but it instead has ${relationType.toString()}`);
+            return relationType.joinOnLeft(typeOfLeftSibling) ?? new ErrorTypeTag(parent, "join should have worked");
+            // TODO: Do the checking of `ref`'s type in the validator
+        } else {
+            return new ErrorTypeTag(ref, `Relatum ${refName} not found in ${sig.name}`)
+        }
+    } else {
+        return new ErrorTypeTag(leftSibling, `The type of something to the left of a join / field access operator should be a Concept, and not a ${typeOfLeftSibling.toString()}`)
+    }
+}
+
     
-    let typeTag: TypeTag;
-    console.log(`term: ${term.$type}`);
-    typeTag = match(term)
+// TODO-impt: Factor the join related logic into an object or class. Add comments explaining why we need to 
+// have the logic be separated between ref and bin expr if we want a less cumbersome concrete syntax
+/* Infers the type for a Ref */
+function synthRef(env: TypeEnv, ref: Ref): TypeTag {
 
-        // The types that can be read off the exprs
-        .with(P.when(isStringLiteral), 
-                (node: AstNode) => new StringTTag(node as StringLiteral))
-        .with(P.when(isBooleanLiteral),
-                node => new BooleanTTag(node as BooleanLiteral))
-        .with(P.when(isNumberLiteral),
-                node => new IntegerTTag(node as NumberLiteral)
-                    // only integers for first pass of type infer / check
-                    // if (Number.isInteger(node.value)) {
-                    //     typeTag = new IntegerTTag(node);
-                    // } else {
-                    //     typeTag = new FractionTTag(node);
-                    // }
-                )
+    console.log(`[synthRef] reftxt: ${ref.value.$refText}`);
 
-        .with(P.when(isVarDecl),
-                node => (node.varType) 
-                    ? inferType(env, node.varType) 
-                    : inferType(env, node.value))
-        .with(P.when(isParamTypePair),
-                node => inferType(env, node.type))
-        .with(P.when(isTypeAnnot),
-                typeAnnot => inferTypeAnnot(env, typeAnnot))    
-        .with(P.when(isRef),
-                ref => ref.value.ref 
-                        // TODO: Ah, `ref.value.ref` is why we are getting a cycle with smtg like "x `s` a"
-                        ? inferType(env, ref.value.ref) 
-                        : new ErrorTypeTag(term, `Can't typecheck ${term} because reference can't be resolved`))
+    if (ref.value.ref) return synth(env, ref.value.ref);
 
-        .with(P.when(isSigDecl),
-                sig => new SigTTag(sig))
-        .with(P.when(isRelation),
-                relation => inferType(env, relation.relatum))
+    // Ref hasn't been linked.
+    // Is the ref's parent a field access / join?
+    const parent = ref.$container;
+    if (isJoinExpr(parent)) return synthRefChildOfJoin(env, ref);
 
-        .with(P.when(isBinExpr),
-                binExpr => inferBinExpr(env, binExpr))
+    return new ErrorTypeTag(ref, `Can't typecheck ${ref} because reference can't be resolved; reftxt: ${ref.value.$refText}; linking error: ${ref.value.error?.message}`)
+}
 
-        .with(P.when(isFunDecl),
-                fundecl => {
-                    // Propagate fn type annotation and check
-                    const funcType = functionTTagFromFuncDecl(env, fundecl);
-                    return check(env, fundecl, funcType);
-                })
-        .with(P.when(isFunctionApplication),
-                (funApp: FunctionApplication) => {
-                    const inferredFuncType = inferType(env, funApp.func);
-                    if (isFunctionTTag(inferredFuncType)) {
-                        // Check that Γ |- arg : expected type, for each of the (arg, expected type) pairs
-                        const inferredArgTypes = inferredFuncType.parameters.map(p => p.type);
-                        for (const [arg, expectedType] of zip(funApp.args, inferredArgTypes)) {
-                            const checkRetType = check(env, arg as AstNode, expectedType as TypeTag);
-                            if (isErrorTypeTag(checkRetType)) {
-                                return checkRetType;
-                            }
-                        }
+export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
+    console.log(`\n--[synthNewNode] term: ${term.$type}`);
 
-                        return inferredFuncType.returnType;
-                    } else {
-                        return new ErrorTypeTag(funApp.func, "We expected a function type because of the function application, but this is not a function type");
-                    }
+    let typeTag: TypeTag = new ErrorTypeTag(term, 'Could not infer type');
 
-                })
-        .with(P.when(isPredicateDecl),
-                predDecl => {
-                    const predType = predicateTTagFromPredDecl(env, predDecl);
-                    return check(env, predDecl, predType);
-                })    
-        .otherwise(() => new ErrorTypeTag(term, "Type of term cannot be inferred"));
+    // Ref has to come first, on pain of "RangeError: Maximum call stack size exceeded"
+    // (probably has to do with how the ref reso hasn't fully completed at this stage)
+    if (isRef(term)) {
+        typeTag = synthRef(env, term as Ref);
+
+    // Constructs whose types can be easily read off the term
+    } else if (isStringLiteral(term)) {
+        typeTag = new StringTTag(term as StringLiteral);
+    } else if (isBooleanLiteral(term)) {
+        typeTag = new BooleanTTag(term as BooleanLiteral);
+    } else if (isNumberLiteral(term)) {
+        typeTag = new IntegerTTag(term as NumberLiteral);
+    } else if (isVarDecl(term)) {
+        typeTag = term.varType ? synth(env, term.varType) : synth(env, term.value);
+
+    } else if (isParam(term)) {
+        console.log(`(isParam) trying to synth param's parent, ${term.$container.$type}`);
+        const typeOfParent = synth(env, term.$container);
+        console.log(`(isParam) typeOfParent: ${typeOfParent.toString()}`);
+        if (isFunctionTTag(typeOfParent)) {
+            const paramType = typeOfParent.getTypeOfParam(term);
+            console.log(`paramType: ${paramType?.toString()}`);
+            typeTag = paramType ?? new ErrorTypeTag(term, "param either not a param of function or lacks a type annotation");
+        } else {
+            typeTag = new ErrorTypeTag(term, "param either not a param of function or lacks a type annotation");
+        }
+    } else if (isParamTypePair(term)) {
+        typeTag = synth(env, term.type);
+    } else if (isTypeAnnot(term)) {
+        typeTag = inferTypeAnnot(env, term);
+    
+    } else if (isSigDecl(term)) {
+        typeTag = new SigTTag(term);
+    } else if (isRelation(term)) {
+        typeTag = isSigDecl(term.$container) ?
+            new RelationTTag(term, (synth(env, term.$container) as SigTTag), synth(env, term.relatum)) :
+            new ErrorTypeTag(term, "Relation should have a Concept as its parent");
+
+    // TODO: Not fully implemented
+    } else if (isBinExpr(term)) {
+        typeTag = inferBinExpr(env, term);
+
+    } else if (isFunDecl(term)) {
+        typeTag = functionTTagFromFuncDecl(env, term);
+    } else if (isFunctionApplication(term)) {
+        const inferredFuncType = synth(env, term.func);
+        if (isFunctionTTag(inferredFuncType)) {
+            // Check that Γ |- arg : expected type, for each of the (arg, expected type) pairs
+            const inferredArgTypes = inferredFuncType.getParameters().map(p => p.type);
+
+            let checkPassed = true;
+            for (const [arg, expectedType] of zip(term.args, inferredArgTypes)) {
+                const checkRetType = check(env, arg as AstNode, expectedType as TypeTag);
+                if (isErrorTypeTag(checkRetType)) {
+                    typeTag = checkRetType;
+                    checkPassed = false;
+                }
+            }
+            if (checkPassed) {
+                typeTag = inferredFuncType.returnType;
+            }
+        } else {
+            typeTag = new ErrorTypeTag(term.func, "We expected a function type because of the function application, but this is not a function type");
+        }
+
+    } else if (isPredicateDecl(term)) {
+        const predType = predicateTTagFromPredDecl(env, term);
+        typeTag = check(env, term, predType);
+    } else {
+        typeTag = new ErrorTypeTag(term, `Type of term cannot be inferred`);
+    }
 
     env.set(term, typeTag);
     return typeTag;

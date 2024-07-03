@@ -136,7 +136,7 @@ export function isIntegerTTag(tag: TypeTag): tag is IntegerTTag {
 export class FunctionTTag implements TypeTag {
     readonly tag = "Function";
     readonly returnType: TypeTag;
-    readonly parameters: FunctionParameter[];
+    private readonly parameters: FunctionParameter[];
     constructor(parameters: FunctionParameter[], returnType: TypeTag) {
         this.returnType = returnType;
         this.parameters = parameters;
@@ -144,6 +144,16 @@ export class FunctionTTag implements TypeTag {
     toString() {
         const params = this.parameters.map(p => `${p.param.name}: ${p.type.toString()}`).join(', ');
         return `(${params}) => ${this.returnType.toString()}`;
+    }
+
+    getParameters(): FunctionParameter[] {
+        return this.parameters;
+    }
+
+    getTypeOfParam(param: Param): TypeTag | null {
+        const matchingFunparam = this.parameters.find(funparam => funparam.param === param);
+        return matchingFunparam ? matchingFunparam.type : null;
+
     }
 
     private paramTagsCoincide(other: TypeTag) {
@@ -163,7 +173,7 @@ export class FunctionTTag implements TypeTag {
 
 export class PredicateTTag implements TypeTag {
     readonly tag = "Predicate";
-    readonly parameters: FunctionParameter[];
+    private readonly parameters: FunctionParameter[];
     constructor(parameters: FunctionParameter[]) {
         this.parameters = parameters;
     }
@@ -171,8 +181,11 @@ export class PredicateTTag implements TypeTag {
         const params = this.parameters.map(p => `${p.param.name}: ${p.type.toString()}`).join(', ');
         return `Predicate[(${params})]`;
     }
+    getParameters(): FunctionParameter[] {
+        return this.parameters;
+    }
 
-    paramTagsCoincide(other: TypeTag) {
+     paramTagsCoincide(other: TypeTag) {
         if (!isPredicateTTag(other)) return false;
         
         if (this.parameters.length !== other.parameters.length) return false;  
@@ -211,7 +224,7 @@ export class SigTTag implements TypeTag {
         this.sig = sig;
     }
     toString() {
-        return this.tag;
+        return `${this.tag}: ${this.sig.name}`;
     }
 
     getSig(): SigDecl {
