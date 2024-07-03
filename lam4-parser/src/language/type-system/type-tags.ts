@@ -214,15 +214,19 @@ export class SigTTag implements TypeTag {
         return this.tag;
     }
 
+    getSig(): SigDecl {
+        return this.sig;
+    }
+
+    sameSigAs(other: TypeTag) {
+        return isSigTTag(other) && other.getSig() === this.getSig(); 
+    }
+
     // TODO: More thought required here -- depends on desired semantics!
     sameTypeAs(other: TypeTag): boolean {
         return isSigTTag(other);
     }
     // TODO: the subtyping judgment will be interesting
-
-    getSig(): SigDecl {
-        return this.sig;
-    }
 }
 
 export function isSigTTag(tag: TypeTag): tag is SigTTag {
@@ -233,11 +237,14 @@ export function isSigTTag(tag: TypeTag): tag is SigTTag {
 
 export class RelationTTag implements TypeTag {
     readonly tag = "Relation";
-    private readonly relationNode: Relation; // A relation has type: its parent sig -> relatum (in the future, relatum_1 -> ... -> relatum_n?)
+    private readonly parentSig: SigDecl;
+    private readonly relationNode: Relation; 
+    // A relation has type: its parent sig -> relatum (in the future, relatum_1 -> ... -> relatum_n?)
     private readonly relationType: TypeTag[];
-    constructor(relationNode: Relation, parentSigType: SigTTag, relataTypes: TypeTag[]) {
+    constructor(relationNode: Relation, parentSigType: SigTTag, relatumType: TypeTag) {
         this.relationNode = relationNode;
-        this.relationType = [parentSigType, ...relataTypes];
+        this.parentSig = parentSigType.getSig();
+        this.relationType = [parentSigType, relatumType];
     }
     toString() {
         return this.tag;
@@ -248,6 +255,15 @@ export class RelationTTag implements TypeTag {
 
     getRelationType(): TypeTag[] {
         return this.relationType;
+    }
+
+    // to do in the future: return relat*a*
+    joinOnLeft(left: SigTTag): TypeTag | null {
+        if (this.parentSig === left.getSig()) {
+            return this.relationType[1];
+        } else {
+            return null;
+        }
     }
 
     // TODO: More thought required here -- depends on desired semantics!
