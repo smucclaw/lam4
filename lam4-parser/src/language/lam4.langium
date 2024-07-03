@@ -204,7 +204,7 @@ PredicateDecl:
     PotentiallyWithSpecificMetadataBlock
 
     GivenParamBlock
-    'DECIDE' name=PredicateOrFuncID 
+    'DECIDE' name=IDOrBackTickedID 
     // can think of 'name' as 'head'
     'IF' body=Expr 
     /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
@@ -239,7 +239,7 @@ VarDecl returns NamedElement:
 ;
 
 
-PredicateOrFuncID returns string:
+IDOrBackTickedID returns string:
     ID | BACK_TICKED_ID
 ;
 
@@ -339,7 +339,7 @@ PrimitiveExpr infers Expr:
 ;
 
 Ref:
-    value=[NamedElement:ID];
+    value=[NamedElement:IDOrBackTickedID];
 
 UnaryExpr:
     op=(OpMinus) value=Expr
