@@ -26,23 +26,16 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
                         container with type Ref; its parent container has type BinExpr
     x `s` a: getScope: ctx property: value
              container with type Ref; its parent container has type Ref
-    */            
-
-    if (context.container.$type === "Ref" && isJoinExpr(context.container.$container)) {
+    */   
+   
+    const self = context.container;
+    const isRightmostChildOfJoin = self.$type === "Ref" && isJoinExpr(self.$container) && (self.$container as BinExpr).right === self;
+    if (isRightmostChildOfJoin) {
       console.log(`(Scope-if) Ref ${context.reference.$refText} is child of a join`);
-      const self = context.container;
-      const parent = context.container.$container as BinExpr;
+      const parent = self.$container as BinExpr;
 
-      // `self` is the left child
-      if (parent.left === self) {
-        // @ts-ignore
-        console.log(`           Ref '${context.container.value.$refText}' is LEFT child.`);
-        return super.getScope(context);
-      }
-
-      // `self` is a `right` child
       // @ts-ignore
-      console.log(`           Ref '${context.container.value.$refText}' is RIGHT child.`);
+      console.log(`           Ref '${self.value.$refText}' is RIGHT child.`);
 
       console.log(`           left sib is ${parent.left.$type}`);
       const typeOfLeft = synth(new TypeEnv(), parent.left);
