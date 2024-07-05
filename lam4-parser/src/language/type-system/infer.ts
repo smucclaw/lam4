@@ -7,11 +7,10 @@ import {
     FunctionApplication,
     PredicateDecl,
     isPredicateDecl,
-    isRef,
     isParam,
-    Ref} from "../generated/ast.js";
+    Ref,
+    Join} from "../generated/ast.js";
 import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameter, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag} from "./type-tags.js";
-import { isJoinExpr } from "../lang-utils.js";
 
 import { 
     // Either, Failure, Success, 
@@ -77,10 +76,17 @@ export function synth(env: TypeEnv, term: AstNode): TypeTag {
 // TODO: this is buggy / causing "Maximum call stack size exceeded" when it's called from functionTTagFromFuncDecl
 const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
     match(term)
-        // literals
-        // .with(P.when(isLiteral),
-        //     (lit: Literal) => inferType(env, lit).sameTypeAs(type) ? type : new ErrorTypeTag(lit, "Type mismatch"))
-        
+        .with(P.when(isBinExpr),
+            (binE) => {
+
+                function checkChildrenHaveSameType(env: TypeEnv, expr: BinExpr, type: TypeTag): TypeTag {
+                    const leftType = check(env, expr.left, type);
+                    const rightType = check(env, expr.right, type);
+                    const typesCheck = [leftType, rightType].every(typeTag => typeTag.sameTypeAs(type));
+                    return typesCheck ? type : new ErrorTypeTag(expr, `Type error in binary expression. Expected type to be ${type}, but got ${leftType} and ${rightType}`);
+                }
+                return checkChildrenHaveSameType(env, binE, type);
+            })
         .with(P.when(isFunDecl),
             (fundecl: FunDecl) => {
                 if (!isFunctionTTag(type)) return new ErrorTypeTag(fundecl, "Function declaration must be annotated with a function type");
@@ -124,8 +130,6 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
 
 
 function inferTypeAnnot(env: TypeEnv, typeAnnot: TypeAnnot): TypeTag {
-    //ts-pattern can't seem to work with the reflection?
-
     function builtinTypeAnnotToTypeTag(typeAnnot: BuiltinType) {
         const annot = typeAnnot.annot;
         switch (annot) {
@@ -185,46 +189,20 @@ Some intuition on bidirectional typechecking, for those unfamiliar with it:
 
 function inferBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
     typecheckLogger.trace(`[inferBinExpr]`);
-    function checkChildren(env: TypeEnv, expr: BinExpr, type: TypeTag): TypeTag {
-        const leftType = check(env, expr.left, type);
-        const rightType = check(env, expr.right, type);
-        const typesCheck = [leftType, rightType].every(typeTag => typeTag.sameTypeAs(type));
-        return typesCheck ? type : new ErrorTypeTag(expr, `Type error in binary expression. Expected type to be ${type}, but got ${leftType} and ${rightType}`);
-    }
 
     const isBoolExpr = isComparisonOp(expr.op) || (['OpAnd', 'OpOr'].includes(expr.op.$type));
     let binType: TypeTag;
     if (isBoolExpr) {
         // TODO: Not sure if should check for whether the arguments are indeed boolean exprs here, or in `lam4-validator` 
         binType = new BooleanTTag();
-        return checkChildren(env, expr, binType);
+        return check(env, expr, binType);
     } else if (ARITH_OPERATORS.includes(expr.op.$type)) {
         binType = new IntegerTTag();
-        return checkChildren(env, expr, binType);
-    // } else if (expr.op.$type === "OpJoin") {
-    //     // join, aka record dereference/access (for now)
-    //     const inferredLeft = inferType(env, expr.left);
-    //     if (isSigTTag(inferredLeft) && !Object.hasOwn(expr.left, "left")) {
-    //         // const relation = inferredLeft.sig.relations.find(rel => rel.name === expr.right.name)
-    //         typecheckLogger.trace(`[Join] trying to infer type of expr.right ${expr.right}`)
-    //         return inferType(env, expr.right);
-    //     } else {
-    //         return new ErrorTypeTag(expr.left, "Expected something that evaluates to a 'CONCEPT' on the left side of the `s`");
-    //     }
+        return check(env, expr, binType);
     } else {
         return new ErrorTypeTag(expr, "Type of binary expression cannot be inferred");
     }
 }
-
-
-        
-        // right now I'm treating this *just* as a record, but will try to get the relations semantics going in v2 / v3
-        // .with(P.when(isJoin),
-        //         join => {
-        //             // TODO: Add more typechecking later
-        //             const inferredLeft = inferType(env, join.left);
-                    
-        //         })
 
 
 function predicateTTagFromPredDecl(env: TypeEnv, predDecl: PredicateDecl): TypeTag {
@@ -250,68 +228,52 @@ function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
     return funcType;
 }
 
-// TODO: Clean this up later
-function getRefInfoForUser(ref: Ref): string {
-    return `reftxt: ${ref.value.$refText}; linking error?: ${ref.value.error?.message}`
-}
-
-
-
-/* Infers the type for a Ref that is a child of a Join / field access.
-
-Preconditions: 
-    - Ref has not been linked 
-    - isJoinExpr(parent)
-*/
-function synthRefChildOfJoin(env: TypeEnv, ref: Ref): TypeTag {
-    typecheckLogger.trace(`[synthRefChildOfJoin] reftxt: ${ref.value.$refText}`);
-
-    const parent = ref.$container;
-
-    // Since the ref hasn't been linked, we know `ref` is not the leftmost child of the join.
-    if ((parent as BinExpr).left === ref) {
-        throw new Error("ref is left child of the join?! There's some kind of error in my reasoning! " + getRefInfoForUser(ref));
-    }
-    // So recursively look up / infer the type of its left sibling
-    const leftSibling = (parent as BinExpr).left;
-    typecheckLogger.trace(`Trying to synth leftSibling: ${leftSibling.$type}`);
-    const typeOfLeftSibling = synth(env, leftSibling);
-
-    // With the type of the left sibling, we can infer what the type of `ref` is
-    if (isSigTTag(typeOfLeftSibling)) {
-        const sig = typeOfLeftSibling.getSig();
-        const refName = ref.value.$refText;
-        const matchingRelation: Relation | undefined = sig.relations.find(relNode => relNode.name === refName);
-        if (matchingRelation) {
-            typecheckLogger.trace("--matchingRelation");
-            const relationType = synth(env, matchingRelation);
-            if (!isRelationTTag(relationType)) return new ErrorTypeTag(matchingRelation, `Relation should have a RelationTTag, but it instead has ${relationType.toString()}`);
-            return relationType.joinOnLeft(typeOfLeftSibling) ?? new ErrorTypeTag(parent, "join should have worked");
-            // TODO: Do the checking of `ref`'s type in the validator
-        } else {
-            return new ErrorTypeTag(ref, `Relatum ${refName} not found in ${sig.name}`)
-        }
-    } else {
-        return new ErrorTypeTag(leftSibling, `The type of something to the left of a join / field access operator should be a Concept, and not a ${typeOfLeftSibling.toString()}`)
-    }
-}
-
-    
-// TODO-impt: Factor the join related logic into an object or class. Add comments explaining why we need to 
-// have the logic be separated between ref and bin expr if we want a less cumbersome concrete syntax
-/* Infers the type for a Ref */
 function synthRef(env: TypeEnv, ref: Ref): TypeTag {
-
+    function getRefInfoForUser(ref: Ref): string {
+        return `reftxt: ${ref.value.$refText}; linking error?: ${ref.value.error?.message}`
+    }
+    
     typecheckLogger.trace(`[synthRef] reftxt: ${ref.value.$refText}`);
 
     if (ref.value.ref) return synth(env, ref.value.ref);
 
-    // Ref hasn't been linked.
-    // So let's check: Is the ref's parent a field access / join?
-    const parent = ref.$container;
-    if (isJoinExpr(parent)) return synthRefChildOfJoin(env, ref);
+    typecheckLogger.debug(`Ref ${ref.value.$refText} has not been linked!`)
+    return new ErrorTypeTag(ref, `Can't typecheck ref because reference can't be resolved. ${getRefInfoForUser(ref)}`)
+}
 
-    return new ErrorTypeTag(ref, `Can't typecheck ${ref} because reference can't be resolved; reftxt: ${ref.value.$refText}; linking error: ${ref.value.error?.message}`)
+/**
+ * Key Precondition: If the join is well-typed, then the reference of the leftmost child of the join is already resolved. 
+ * This is guaranteed by the structure of the Join construct in the grammar: 
+ * because the depth of the leftmost child will not exceed that of the right, the scoper/linker will visit the leftmost child first
+ * (and so, if the leftmost child is a Ref that can be resolved by the default linker, the Ref's reference will have been resolved) 
+ */
+function synthJoin(env: TypeEnv, term: Join): TypeTag {
+    typecheckLogger.debug(`Trying to synth left of join: ${term.left.$type}`);
+    const typeOfLeft = synth(env, term.left);
+    typecheckLogger.debug(`left of join :: ${typeOfLeft.toString()}`);
+
+    const rightRefName = term.right.value.$refText;
+    
+    // With the type of the left sibling, we can infer what the type of `left `s` right` is
+    if (isSigTTag(typeOfLeft)) {
+        const sig = typeOfLeft.getSig();
+        const matchingRelation: Relation | undefined = sig.relations.find(relNode => relNode.name === rightRefName);
+        if (matchingRelation) {
+            typecheckLogger.debug("matchingRelation:", matchingRelation.name);
+            const relationType = synth(env, matchingRelation);
+            typecheckLogger.debug(`(matchingRelation) ${matchingRelation.name} :: ${relationType.toString()}`);
+            if (!isRelationTTag(relationType)) return new ErrorTypeTag(matchingRelation, `Relation should have a RelationTTag, but it instead has ${relationType.toString()}`);
+
+            const joinedType = relationType.joinOnLeft(typeOfLeft);
+            typecheckLogger.debug(`joinedType: ${joinedType}`);
+            return joinedType ?? new ErrorTypeTag(term, "join should have worked");
+            // TODO: Do the checking of `ref`'s type in the validator
+        } else {
+            return new ErrorTypeTag(term, `Relatum ${rightRefName} not found in ${sig.name}`)
+        }
+    } else {
+        return new ErrorTypeTag(term.left, `The type of something to the left of a join / field access operator should be a Concept, and not a ${typeOfLeft.toString()}`)
+    }
 }
 
 export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
@@ -320,9 +282,12 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
     let typeTag: TypeTag = new ErrorTypeTag(term, 'Could not infer type');
 
     // Ref has to come first, on pain of "RangeError: Maximum call stack size exceeded"
-    // (probably has to do with how the ref reso hasn't fully completed at this stage)
-    if (isRef(term)) {
+    // also, can't use the reflection-using `isRef` without getting that error with other things that can contain Refs as children 
+    // (probably has to do with how the ref resolution hasn't fully completed at this stage)
+    if (term.$type === "Ref") {
         typeTag = synthRef(env, term as Ref);
+    } else if (term.$type === "Join") {
+        typeTag = synthJoin(env, term as Join);
 
     // Constructs whose types can be easily read off the term
     } else if (isStringLiteral(term)) {
@@ -357,10 +322,8 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
             new RelationTTag(term, (synth(env, term.$container) as SigTTag), synth(env, term.relatum)) :
             new ErrorTypeTag(term, "Relation should have a Concept as its parent");
 
-    // TODO: Not fully implemented
     } else if (isBinExpr(term)) {
         typeTag = inferBinExpr(env, term);
-
     } else if (isFunDecl(term)) {
         typeTag = functionTTagFromFuncDecl(env, term);
     } else if (isFunctionApplication(term)) {

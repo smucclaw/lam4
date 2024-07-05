@@ -1,0 +1,12 @@
+
+CONCEPT F {
+    a: Integer
+    c: G
+}
+
+CONCEPT G {
+    b: Integer
+}
+
+F => Integer
+f(x) = x `s` c `s` b

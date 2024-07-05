@@ -294,7 +294,6 @@ Mult infers Expr:
     Join ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Join)*
 ;
 
-OpJoin: {infer OpJoin} '`s`';
 /*
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
@@ -306,8 +305,14 @@ The relationship between relational join and a more conventional member access o
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
 Join infers Expr:
-    FunctionApplication ({infer BinExpr.left=current} op=OpJoin right=FunctionApplication)*
-    // TODO: Temporarily using `s instead of 's because I'm worried the single quote might cause issues (they use single quotes when generating the AST). 
+    FunctionApplication ({infer Join.left=current} '`s`' right=Ref)*
+    // Right can't be [NamedElement:ID]
+    // because we want the scoper to visit `left` first,
+    // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
+    // This allows us to then use that resolved reference
+    // as a base case in figuring out the reference for `right`
+
+    // TODO: 's and `s don't work out of the box
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
