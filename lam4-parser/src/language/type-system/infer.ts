@@ -2,6 +2,7 @@ import { AstNode, Reference } from "langium";
 
 import { 
     // isLiteral, Literal, 
+    Param,
     SigDecl, isSigDecl, isStringLiteral, StringLiteral, isBooleanLiteral, BooleanLiteral, NumberLiteral, isNumberLiteral, isVarDecl, isTypeAnnot, TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, IfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
     isFunctionApplication,
     FunctionApplication,
@@ -10,19 +11,16 @@ import {
     isParam,
     Ref,
     Join} from "../generated/ast.js";
-import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameter, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag} from "./type-tags.js";
+import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameter, PredicateParameter, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag} from "./type-tags.js";
 
-import { 
-    // Either, Failure, Success, 
-    zip } from "../../utils.js"
+import { zip } from "../../utils.js"
 import { match, P } from 'ts-pattern';
 import { Logger } from "tslog";
 
 
 /*
 TODOs: 
-* Handle predicates etc -- pred app the main thing left
-* Add more typechecking for the Join / record access later
+* Check that predicates type check correclty
 * isSubtypeOf
 */
 
@@ -73,6 +71,12 @@ export function synth(env: TypeEnv, term: AstNode): TypeTag {
     }
 }
 
+function checkFunType(env: TypeEnv, parameters: FunctionParameter[], returnType: TypeTag, body: AstNode) {
+    const newExtendedEnv = env.extendWith(
+                            parameters.map(pair => ({node: pair.getParam(), 
+                                                    type: pair.getType()} as NodeTypePair)));
+    return check(newExtendedEnv, body, returnType);
+}
 // TODO: this is buggy / causing "Maximum call stack size exceeded" when it's called from functionTTagFromFuncDecl
 const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
     match(term)
@@ -90,28 +94,15 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
         .with(P.when(isFunDecl),
             (fundecl: FunDecl) => {
                 if (!isFunctionTTag(type)) return new ErrorTypeTag(fundecl, "Function declaration must be annotated with a function type");
-
-                const funcParamTypePairs: FunctionParameter[] = type.getParameters();
-                const funcRetType = type.returnType;
-                const newExtendedEnv = env.extendWith(
-                                funcParamTypePairs.map(pair => ({node: pair.param, 
-                                                                type: pair.type} as NodeTypePair)));
-                return check(newExtendedEnv,
-                             fundecl.body, 
-                             funcRetType);
+                return checkFunType(env, type.getParameters(), type.returnType, fundecl.body);
             })
         .with(P.when(isPredicateDecl),
             (predDecl: PredicateDecl) => {
-                typecheckLogger.trace("PredicateDecl TODO");
-                return new ErrorTypeTag(predDecl, "TODO");
-                // if (!isPredicateTTag(type)) return new ErrorTypeTag(predDecl, 
-                //                             "Predicate decl must be annotated with a predicate type");
+                typecheckLogger.trace("Chk PredicateDecl TODO");
 
-                // const newExtendedEnv = env.extendWith(
-                //         type.getParameters().map(pair => ({node: pair.param, 
-                //         type: pair.type} as NodeTypePair)));
-                        
-                // return check(newExtendedEnv, predDecl.body, new BooleanTTag());
+                if (!isPredicateTTag(type)) return new ErrorTypeTag(predDecl, 
+                                            "Predicate decl must be annotated with a predicate type");
+                return checkFunType(env, type.getParameters(), new BooleanTTag(), predDecl.body);
             })
         .with(P.when(isIfThenElseExpr), 
             (ite: IfThenElseExpr) => { 
@@ -206,7 +197,7 @@ function inferBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
 
 
 function predicateTTagFromPredDecl(env: TypeEnv, predDecl: PredicateDecl): TypeTag {
-    const paramTypePairs = predDecl.params.map(pair => ({param: pair.param, type: inferTypeAnnot(env, pair.type)} as FunctionParameter));
+    const paramTypePairs = predDecl.params.map(pair => new PredicateParameter(pair.param, synth(env, pair.type)));
     const predicateType = new PredicateTTag(paramTypePairs);
     return predicateType;
 }
@@ -221,7 +212,7 @@ function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
     
     const argTypeTags: FunctionParameter[] = 
           zip(fundecl.params, argTypes)
-          .map(paramTypeTuple => ({param: paramTypeTuple[0], type: paramTypeTuple[1]} as FunctionParameter));
+          .map(paramTypeTuple => new FunctionParameter(paramTypeTuple[0] as Param, paramTypeTuple[1] as TypeTag));
 
     const funcType = new FunctionTTag(argTypeTags, retType);
     typecheckLogger.trace(`[functionTTagFromFuncDecl] synth'd ${funcType.toString()}`);
@@ -300,10 +291,14 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = term.varType ? synth(env, term.varType) : synth(env, term.value);
 
     } else if (isParam(term)) {
-        typecheckLogger.trace(`\t\t(isParam) trying to synth param's parent, ${term.$container.$type}`);
-        const typeOfParent = synth(env, term.$container);
+        const parent = term.$container;
+        typecheckLogger.trace(`\t\t(isParam) trying to synth param's parent, ${parent.$type}`);
+        const typeOfParent = synth(env, parent);
         typecheckLogger.trace(`\t\t(isParam) typeOfParent: ${typeOfParent.toString()}`);
-        if (isFunctionTTag(typeOfParent)) {
+        if (isParamTypePair(parent)) {
+            typeTag = typeOfParent;
+
+        } else if (isFunctionTTag(typeOfParent)) {
             const paramType = typeOfParent.getTypeOfParam(term);
             typecheckLogger.trace(`paramType: ${paramType?.toString()}`);
             typeTag = paramType ?? new ErrorTypeTag(term, "param either not a param of function or lacks a type annotation");
@@ -330,7 +325,7 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         const inferredFuncType = synth(env, term.func);
         if (isFunctionTTag(inferredFuncType)) {
             // Check that Γ |- arg : expected type, for each of the (arg, expected type) pairs
-            const inferredArgTypes = inferredFuncType.getParameters().map(p => p.type);
+            const inferredArgTypes = inferredFuncType.getParameters().map(p => p.getType());
 
             let checkPassed = true;
             for (const [arg, expectedType] of zip(term.args, inferredArgTypes)) {
@@ -344,7 +339,7 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
                 typeTag = inferredFuncType.returnType;
             }
         } else {
-            typeTag = new ErrorTypeTag(term.func, "We expected a function type because of the function application, but this is not a function type");
+            typeTag = new ErrorTypeTag(term.func, `We expected a function type because of the function application, but this is not a function type. (The inferred type was ${inferredFuncType.tag}`);
         }
 
     } else if (isPredicateDecl(term)) {

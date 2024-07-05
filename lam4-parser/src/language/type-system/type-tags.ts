@@ -1,3 +1,4 @@
+import { toString } from 'langium/generate';
 import { AstNode } from "langium";
 import {
     SigDecl,
@@ -133,6 +134,7 @@ export function isIntegerTTag(tag: TypeTag): tag is IntegerTTag {
 
 /*============= Function ================================ */
 
+
 export class FunctionTTag implements TypeTag {
     readonly tag = "Function";
     readonly returnType: TypeTag;
@@ -142,7 +144,7 @@ export class FunctionTTag implements TypeTag {
         this.parameters = parameters;
     }
     toString() {
-        const params = this.parameters.map(p => `${p.param.name}: ${p.type.toString()}`).join(', ');
+        const params = this.parameters.map(p => p.toString()).join(', ');
         return `(${params}) => ${this.returnType.toString()}`;
     }
 
@@ -150,9 +152,14 @@ export class FunctionTTag implements TypeTag {
         return this.parameters;
     }
 
+    getReturnType() {
+        return this.returnType;
+    }
+
+    // Make a ParamSeq class too? argh
     getTypeOfParam(param: Param): TypeTag | null {
-        const matchingFunparam = this.parameters.find(funparam => funparam.param === param);
-        return matchingFunparam ? matchingFunparam.type : null;
+        const matchingFunparam = this.parameters.find(funparam => funparam.getParam() === param);
+        return matchingFunparam ? matchingFunparam.getType() : null;
 
     }
 
@@ -161,9 +168,9 @@ export class FunctionTTag implements TypeTag {
 
         if (this.parameters.length !== other.parameters.length) return false;  
         for (let i = 0; i < this.parameters.length; i++) {
-            if (!this.parameters[i].type.sameTypeAs(other.parameters[i].type)) return false;
+            if (!this.parameters[i].getType().sameTypeAs(other.parameters[i].getType())) return false;
         }
-        return true;
+        return this.getReturnType().sameTypeAs(other.getReturnType());
     }
 
     sameTypeAs(other: TypeTag): boolean {
@@ -171,26 +178,36 @@ export class FunctionTTag implements TypeTag {
     }
 }
 
-export class PredicateTTag implements TypeTag {
+export class PredicateTTag implements TypeTag{
     readonly tag = "Predicate";
-    private readonly parameters: FunctionParameter[];
-    constructor(parameters: FunctionParameter[]) {
+    private readonly parameters: PredicateParameter[];
+    private readonly funTag: FunctionTTag;
+
+    constructor(parameters: PredicateParameter[]) {
         this.parameters = parameters;
+
+        this.funTag = new FunctionTTag(parameters, new BooleanTTag());
     }
+
     toString() {
-        const params = this.parameters.map(p => `${p.param.name}: ${p.type.toString()}`).join(', ');
+        const params = this.parameters.map(p => p.toString()).join(', ');
         return `Predicate[(${params})]`;
     }
-    getParameters(): FunctionParameter[] {
+    getParameters(): PredicateParameter[] {
         return this.parameters;
     }
 
-     paramTagsCoincide(other: TypeTag) {
+    getTypeOfParam(param: Param): TypeTag | null {
+        return this.funTag.getTypeOfParam(param);
+    }
+
+    // TODO: check and streamline this 
+    paramTagsCoincide(other: TypeTag) {
         if (!isPredicateTTag(other)) return false;
-        
+
         if (this.parameters.length !== other.parameters.length) return false;  
         for (let i = 0; i < this.parameters.length; i++) {
-            if (!this.parameters[i].type.sameTypeAs(other.parameters[i].type)) return false;
+            if (!this.parameters[i].getType().sameTypeAs(other.parameters[i].getType())) return false;
         }
         return true;
     }
@@ -200,12 +217,35 @@ export class PredicateTTag implements TypeTag {
     }
 }
 
+export class FunctionParameter {
+    private readonly param: Param;
+    private readonly type: TypeTag;
 
+    constructor(param: Param, paramType: TypeTag) {
+        this.param = param;
+        this.type = paramType;
+    }
 
-export interface FunctionParameter {
-    param: Param;
-    type: TypeTag;
+    getParam() {
+        return this.param;
+    }
+
+    /** Returns type of the param */
+    getType() {
+        return this.type;
+    }
+
+    toString() {
+        return `${this.getParam().name}: ${this.getType().toString()}`;
+    }
 }
+
+// export interface FunctionParameter {
+//     param: Param;
+//     type: TypeTag;
+// }
+
+export class PredicateParameter extends FunctionParameter {};
 
 export function isFunctionTTag(tag: TypeTag): tag is FunctionTTag {
     return tag.tag === "Function";
@@ -307,8 +347,12 @@ export class ErrorTypeTag implements TypeTag {
         return `Error: ${this.message}`;
     }
 
+    getMessage() {
+        return this.message;
+    }
+
     sameTypeAs(other: TypeTag): boolean {
-        return isErrorTypeTag(other) && this.astNode === other.astNode && this.message === other.message;
+        return isErrorTypeTag(other) && this.astNode === other.astNode && this.getMessage() === other.getMessage();
     }
 }
 

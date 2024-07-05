@@ -159,7 +159,6 @@ fragment GivenParamBlock:
 Param:
     name=ID;
 
-// TODO: just change param back to name=ID if that makes the AST look better --- need to actually look at the ast more
 ParamTypePair:
     param=Param (':' | 'IS_A') type=TypeAnnot
 ;

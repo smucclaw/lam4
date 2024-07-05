@@ -1,13 +1,37 @@
 import type {LangiumCoreServices} from "langium";
-import { DefaultScopeProvider, EMPTY_SCOPE, ReferenceInfo, Scope } from "langium";
+import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, DefaultScopeProvider, EMPTY_SCOPE, ReferenceInfo, Scope } from "langium";
 import { Logger } from "tslog";
-import { SigDecl, isJoin } from "./generated/ast.js";
+import { SigDecl, Join } from "./generated/ast.js";
+import {isJoinExpr} from "./lam4-lang-utils.js";
 import { getSigAncestors, synth, TypeEnv } from "./type-system/infer.js";
 import { isSigTTag } from "./type-system/type-tags.js";
 
 const scopeLogger = new Logger({ 
   name: "scoper",
   prettyLogTemplate: "{{name}}  ", });
+
+
+export class Lam4ScopeComputation extends DefaultScopeComputation {
+  constructor(services: LangiumCoreServices) {
+    super(services);
+  }
+
+  override processNode(node: AstNode, document: LangiumDocument, scopes: PrecomputedScopes): void {
+    const parent = node.$container;
+    const grandparent = node.$container?.$container;
+
+    // --- To make params available to body of predicates ----
+    // Note: CANNOT use isParam and isParamTypePair without running into issues with the reflection
+    const nodeIsParamEmbeddedInParamTypePair = parent && grandparent && node.$type === "Param" && parent.$type === "ParamTypePair"
+    if (nodeIsParamEmbeddedInParamTypePair) {
+      const nodeName = this.nameProvider.getName(node);
+      scopeLogger.debug(`scope compn ${nodeName} ${this.nameProvider.getName(parent)}`);
+      scopes.add(grandparent, this.descriptions.createDescription(node, nodeName, document));
+    } else {
+      return super.processNode(node, document, scopes);
+    }
+  }
+}
 
 export class Lam4ScopeProvider extends DefaultScopeProvider {
 
@@ -28,23 +52,25 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
     const self = context.container;
     const parent = self.$container;
 
-    const isRightChildOfJoin = isJoin(parent) && self === parent.right;
+    const isRightChildOfJoin = parent && isJoinExpr(parent) && self === parent.right;
     if (isRightChildOfJoin) {
+      const parentJoin = parent as Join;
       // getScope will have been called on parent.left before this
       // so if the left child is a Ref that can be resolved by the default linker, the Ref's reference will have been resolved
       scopeLogger.trace(`(Scope-if) ${context.reference.$refText}`);
-      scopeLogger.trace(`left sib: ${parent.left.$type}`)      
+      scopeLogger.trace(`left sib: ${parentJoin.left.$type}`)      
 
       // Return the members in scope in `left` iff `left` is a sig
       // (If the target of the join / field deref is not a sig, 
       // it's a primitive type or type resolution error)
-      const typeOfLeft = synth(new TypeEnv(), parent.left);
+      const typeOfLeft = synth(new TypeEnv(), parentJoin.left);
       scopeLogger.trace(`           left sib ::`, typeOfLeft.toString());
       const returnScope = isSigTTag(typeOfLeft) ? 
                           this.scopeSigMembers(typeOfLeft.getSig()) : EMPTY_SCOPE
       return returnScope;
     }
 
+    scopeLogger.trace("Not rt child of join");
     return super.getScope(context);
   }
 
