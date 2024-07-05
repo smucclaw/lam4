@@ -260,7 +260,7 @@ export class RelationTTag implements TypeTag {
         this.relationType = [parentSigType, relatumType];
     }
     toString() {
-        return this.tag;
+        return `${this.tag}: ${this.relationType}`;
     }
     getRelationNode(): Relation {
         return this.relationNode;
