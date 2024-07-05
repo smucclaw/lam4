@@ -1,9 +1,14 @@
 import type {AstNode, LangiumCoreServices} from "langium";
 import { DefaultScopeProvider, EMPTY_SCOPE, ReferenceInfo, Scope } from "langium";
+import { Logger } from "tslog";
 import { BinExpr, SigDecl, isBinExpr } from "./generated/ast.js";
 import { getSigAncestors, synth, TypeEnv } from "./type-system/infer.js";
 import { isSigTTag } from "./type-system/type-tags.js";
 import { isJoinExpr } from "./lang-utils.js";
+
+const scopeLogger = new Logger({ 
+  name: "scoper",
+  prettyLogTemplate: "{{name}}  ", });
 
 export class Lam4ScopeProvider extends DefaultScopeProvider {
 
@@ -18,8 +23,8 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
    * - "The default implementation of the ScopeComputation service attaches the AstNodeDescription of every symbol to its direct container. This means that the container holds information about which named nodes are nested inside of it. You can override this default behavior to change the position where a symbol is reachable, or to change the name by which it can be referenced"
    */
   override getScope(context: ReferenceInfo): Scope {
-    console.log(`\n--- getScope: ctx property: ${context.property}`)
-    console.log(`              container: ${context.container.$type}; its parent: ${context.container.$container?.$type}`);
+    scopeLogger.trace(`(getScope) ctx property: ${context.property}`);
+    scopeLogger.trace(`           container: ${context.container.$type}; its parent: ${context.container.$container?.$type}`);
 
     /*
     x `s`: getScope: ctx property: value
@@ -31,16 +36,13 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
     const self = context.container;
     const isRightmostChildOfJoin = self.$type === "Ref" && isJoinExpr(self.$container) && (self.$container as BinExpr).right === self;
     if (isRightmostChildOfJoin) {
-      console.log(`(Scope-if) Ref ${context.reference.$refText} is child of a join`);
+      scopeLogger.trace(`(Scope-if) Ref ${context.reference.$refText} is right child of a join`);
       const parent = self.$container as BinExpr;
 
-      // @ts-ignore
-      console.log(`           Ref '${self.value.$refText}' is RIGHT child.`);
-
-      console.log(`           left sib is ${parent.left.$type}`);
+      scopeLogger.trace(`           left sib is ${parent.left.$type}`);
       const typeOfLeft = synth(new TypeEnv(), parent.left);
       // IMMED-TODO: Ah, so we will need to make sure inferType BinExpr where BinExpr is a join works, in order for things like  x `s` a `s` b to work!
-      console.log(`           left: ${typeOfLeft.toString()}`);
+      scopeLogger.trace(`           left sib ::`, typeOfLeft.toString());
       const returnScope = isSigTTag(typeOfLeft) ? 
                           this.scopeSigMembers(typeOfLeft.getSig()) : EMPTY_SCOPE
       // When the target of our member call isn't a sig
@@ -53,9 +55,8 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
   }
 
   private scopeSigMembers(sig: SigDecl): Scope {
-    console.log("[scopeSigMembers]");
     const allRelations = getSigAncestors(sig).flatMap((s: SigDecl) => s.relations);
-    console.log(`relations: ${allRelations.map(r => r.name)}`);
+    scopeLogger.debug(`relations: ${allRelations.map(r => r.name)}`);
     return this.createScopeForNodes(allRelations);
   } 
 }

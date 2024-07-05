@@ -11,11 +11,14 @@ import {
     isParam,
     Ref} from "../generated/ast.js";
 import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameter, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag} from "./type-tags.js";
+import { isJoinExpr } from "../lang-utils.js";
+
 import { 
     // Either, Failure, Success, 
     zip } from "../../utils.js"
 import { match, P } from 'ts-pattern';
-import { isJoinExpr } from "../lang-utils.js";
+import { Logger } from "tslog";
+
 
 /*
 TODOs: 
@@ -23,6 +26,12 @@ TODOs:
 * Add more typechecking for the Join / record access later
 * isSubtypeOf
 */
+
+const typecheckLogger = new Logger({ 
+    name: "tinfer",
+    minLevel: 1,
+    prettyLogTemplate: "{{name}}  {{logLevelName}}  "});
+
 
 const ARITH_OPERATORS = ['OpPlus', 'OpMinus', 'OpMult', 'OpDiv'];
 
@@ -87,7 +96,7 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
             })
         .with(P.when(isPredicateDecl),
             (predDecl: PredicateDecl) => {
-                console.log("TODO");
+                typecheckLogger.trace("PredicateDecl TODO");
                 return new ErrorTypeTag(predDecl, "TODO");
                 // if (!isPredicateTTag(type)) return new ErrorTypeTag(predDecl, 
                 //                             "Predicate decl must be annotated with a predicate type");
@@ -175,7 +184,7 @@ Some intuition on bidirectional typechecking, for those unfamiliar with it:
 */
 
 function inferBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
-    console.log(`[inferBinExpr]`);
+    typecheckLogger.trace(`[inferBinExpr]`);
     function checkChildren(env: TypeEnv, expr: BinExpr, type: TypeTag): TypeTag {
         const leftType = check(env, expr.left, type);
         const rightType = check(env, expr.right, type);
@@ -197,7 +206,7 @@ function inferBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
     //     const inferredLeft = inferType(env, expr.left);
     //     if (isSigTTag(inferredLeft) && !Object.hasOwn(expr.left, "left")) {
     //         // const relation = inferredLeft.sig.relations.find(rel => rel.name === expr.right.name)
-    //         console.log(`[Join] trying to infer type of expr.right ${expr.right}`)
+    //         typecheckLogger.trace(`[Join] trying to infer type of expr.right ${expr.right}`)
     //         return inferType(env, expr.right);
     //     } else {
     //         return new ErrorTypeTag(expr.left, "Expected something that evaluates to a 'CONCEPT' on the left side of the `s`");
@@ -237,7 +246,7 @@ function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
           .map(paramTypeTuple => ({param: paramTypeTuple[0], type: paramTypeTuple[1]} as FunctionParameter));
 
     const funcType = new FunctionTTag(argTypeTags, retType);
-    console.log(`[functionTTagFromFuncDecl] synth'd ${funcType.toString()}`);
+    typecheckLogger.trace(`[functionTTagFromFuncDecl] synth'd ${funcType.toString()}`);
     return funcType;
 }
 
@@ -255,7 +264,7 @@ Preconditions:
     - isJoinExpr(parent)
 */
 function synthRefChildOfJoin(env: TypeEnv, ref: Ref): TypeTag {
-    console.log(`[synthRefChildOfJoin] reftxt: ${ref.value.$refText}`);
+    typecheckLogger.trace(`[synthRefChildOfJoin] reftxt: ${ref.value.$refText}`);
 
     const parent = ref.$container;
 
@@ -265,7 +274,7 @@ function synthRefChildOfJoin(env: TypeEnv, ref: Ref): TypeTag {
     }
     // So recursively look up / infer the type of its left sibling
     const leftSibling = (parent as BinExpr).left;
-    console.log(`Trying to synth leftSibling: ${leftSibling.$type}`);
+    typecheckLogger.trace(`Trying to synth leftSibling: ${leftSibling.$type}`);
     const typeOfLeftSibling = synth(env, leftSibling);
 
     // With the type of the left sibling, we can infer what the type of `ref` is
@@ -274,7 +283,7 @@ function synthRefChildOfJoin(env: TypeEnv, ref: Ref): TypeTag {
         const refName = ref.value.$refText;
         const matchingRelation: Relation | undefined = sig.relations.find(relNode => relNode.name === refName);
         if (matchingRelation) {
-            console.log("--matchingRelation");
+            typecheckLogger.trace("--matchingRelation");
             const relationType = synth(env, matchingRelation);
             if (!isRelationTTag(relationType)) return new ErrorTypeTag(matchingRelation, `Relation should have a RelationTTag, but it instead has ${relationType.toString()}`);
             return relationType.joinOnLeft(typeOfLeftSibling) ?? new ErrorTypeTag(parent, "join should have worked");
@@ -293,12 +302,12 @@ function synthRefChildOfJoin(env: TypeEnv, ref: Ref): TypeTag {
 /* Infers the type for a Ref */
 function synthRef(env: TypeEnv, ref: Ref): TypeTag {
 
-    console.log(`[synthRef] reftxt: ${ref.value.$refText}`);
+    typecheckLogger.trace(`[synthRef] reftxt: ${ref.value.$refText}`);
 
     if (ref.value.ref) return synth(env, ref.value.ref);
 
     // Ref hasn't been linked.
-    // Is the ref's parent a field access / join?
+    // So let's check: Is the ref's parent a field access / join?
     const parent = ref.$container;
     if (isJoinExpr(parent)) return synthRefChildOfJoin(env, ref);
 
@@ -306,7 +315,7 @@ function synthRef(env: TypeEnv, ref: Ref): TypeTag {
 }
 
 export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
-    console.log(`\n--[synthNewNode] term: ${term.$type}`);
+    typecheckLogger.trace(`--- [synthNewNode] -- term: ${term.$type}`);
 
     let typeTag: TypeTag = new ErrorTypeTag(term, 'Could not infer type');
 
@@ -326,12 +335,12 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = term.varType ? synth(env, term.varType) : synth(env, term.value);
 
     } else if (isParam(term)) {
-        console.log(`(isParam) trying to synth param's parent, ${term.$container.$type}`);
+        typecheckLogger.trace(`\t\t(isParam) trying to synth param's parent, ${term.$container.$type}`);
         const typeOfParent = synth(env, term.$container);
-        console.log(`(isParam) typeOfParent: ${typeOfParent.toString()}`);
+        typecheckLogger.trace(`\t\t(isParam) typeOfParent: ${typeOfParent.toString()}`);
         if (isFunctionTTag(typeOfParent)) {
             const paramType = typeOfParent.getTypeOfParam(term);
-            console.log(`paramType: ${paramType?.toString()}`);
+            typecheckLogger.trace(`paramType: ${paramType?.toString()}`);
             typeTag = paramType ?? new ErrorTypeTag(term, "param either not a param of function or lacks a type annotation");
         } else {
             typeTag = new ErrorTypeTag(term, "param either not a param of function or lacks a type annotation");
@@ -403,10 +412,11 @@ export function getSigAncestors(sig: SigDecl): SigDecl[] {
         }
     }
 
-    console.log(`seen: ${seen}`)
-
     // Sets preserve insertion order
-    return Array.from(seen);
+    const seenArr = Array.from(seen);
+    typecheckLogger.silly('seenArr:', seenArr.map(sig => sig.name));
+
+    return seenArr;
 }
 
 

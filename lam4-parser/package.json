@@ -37,6 +37,7 @@
         "monaco-editor-wrapper": "~3.5.0",
         "monaco-languageclient": "~7.2.0",
         "ts-pattern": "^5.2.0",
+        "tslog": "^4.9.3",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
     },
