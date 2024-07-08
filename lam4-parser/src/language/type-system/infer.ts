@@ -11,6 +11,7 @@ Status, as of Jul 8 2024:
     to support a more type-safe scoping mechanism for record field access / joins.
     
 Biggest TODOs:
+    * Augment Lam4 parser and type checker with support for type annotations with more structure, e.g. "(A => B) => C" 
     * Think about rewriting / desguaring FunDecls to a more convenient representation (esp. re param types)
     * Support LET
     * Support anon func
