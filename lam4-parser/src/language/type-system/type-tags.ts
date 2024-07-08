@@ -1,4 +1,4 @@
-import { toString } from 'langium/generate';
+
 import { AstNode } from "langium";
 import {
     SigDecl,
@@ -6,9 +6,10 @@ import {
     StringLiteral,
     NumberLiteral,
     Param,
-    Relation,
-    isRelation,
+    Relation
 } from "../generated/ast.js"; 
+import { zip } from "../../utils.js"
+import {NodeTypePair} from "./infer.js";
 
 export interface TypeTag {
     readonly tag: string;
@@ -98,6 +99,7 @@ export function isIntegerTTag(tag: TypeTag): tag is IntegerTTag {
 }
 
 
+// FOR FUTURE WORK:
 /*============= Fraction ================================ */
 
 // export class FractionTTag implements TypeTag {
@@ -132,23 +134,22 @@ export function isIntegerTTag(tag: TypeTag): tag is IntegerTTag {
 //     return tag.$type === "Date";
 // }
 
-/*============= Function ================================ */
-
+/*============= Functions and predicates ================================ */
 
 export class FunctionTTag implements TypeTag {
     readonly tag = "Function";
     readonly returnType: TypeTag;
-    private readonly parameters: FunctionParameter[];
-    constructor(parameters: FunctionParameter[], returnType: TypeTag) {
+    private readonly parameters: FunctionParameterTypePairSequence;
+
+    constructor(parameters: FunctionParameterTypePair[], returnType: TypeTag) {
         this.returnType = returnType;
-        this.parameters = parameters;
+        this.parameters = new FunctionParameterTypePairSequence(parameters);
     }
     toString() {
-        const params = this.parameters.map(p => p.toString()).join(', ');
-        return `(${params}) => ${this.returnType.toString()}`;
+        return `(${this.parameters.toString()}) => ${this.returnType.toString()}`;
     }
 
-    getParameters(): FunctionParameter[] {
+    getParameterTypePairs(): FunctionParameterTypePairSequence {
         return this.parameters;
     }
 
@@ -156,68 +157,68 @@ export class FunctionTTag implements TypeTag {
         return this.returnType;
     }
 
-    // Make a ParamSeq class too? argh
-    getTypeOfParam(param: Param): TypeTag | null {
-        const matchingFunparam = this.parameters.find(funparam => funparam.getParam() === param);
-        return matchingFunparam ? matchingFunparam.getType() : null;
+    sameSignatureAs(other: FunctionTTag) {
+        const myParameterPairs = this.getParameterTypePairs();
+        const otherParameterPairs = other.getParameterTypePairs();
 
-    }
-
-    private paramTagsCoincide(other: TypeTag) {
-        if (!isFunctionTTag(other)) return false;
-
-        if (this.parameters.length !== other.parameters.length) return false;  
-        for (let i = 0; i < this.parameters.length; i++) {
-            if (!this.parameters[i].getType().sameTypeAs(other.parameters[i].getType())) return false;
-        }
-        return this.getReturnType().sameTypeAs(other.getReturnType());
+        return myParameterPairs.isAlphaEquivalentTo(otherParameterPairs) && this.getReturnType().sameTypeAs(other.getReturnType());
     }
 
     sameTypeAs(other: TypeTag): boolean {
-        return this.paramTagsCoincide(other);
+        return isFunctionTTag(other) && this.sameSignatureAs(other);
     }
 }
 
-export class PredicateTTag implements TypeTag{
-    readonly tag = "Predicate";
-    private readonly parameters: PredicateParameter[];
-    private readonly funTag: FunctionTTag;
 
-    constructor(parameters: PredicateParameter[]) {
-        this.parameters = parameters;
+export class FunctionParameterTypePairSequence {
+    private readonly pairs: FunctionParameterTypePair[]
+    private readonly length: number;
 
-        this.funTag = new FunctionTTag(parameters, new BooleanTTag());
+    constructor(pairs: FunctionParameterTypePair[]) {
+        this.pairs = pairs;
+        this.length = this.pairs.length;
+    }
+
+    getPairs() {
+        return this.pairs;
+    }
+
+    getTypes(): TypeTag[] {
+        return this.getPairs().map(p => p.getType());
+    }
+
+     /** Helper for type checking / inference: Returns the type of the param, if available
+     * In a function declaration, the types are typically annotated / declared
+     * before the params. That's why it's possible to encounter a param by itself
+     */
+    findMatchingParam(param: Param): TypeTag | null {
+        const matchingPair = this.getPairs().find(
+            (funparam: FunctionParameterTypePair)  => funparam.getParameter() === param);
+        return matchingPair ? matchingPair.getType() : null;
+    }
+
+    isAlphaEquivalentTo(other: FunctionParameterTypePairSequence) {
+        const myPairs = this.pairs;
+        const otherPairs = other.getPairs();
+
+        if (myPairs.length !== other.length) return false;
+        const zipped = zip(myPairs, otherPairs);
+        return zipped.every(([myParamPair, otherParamPair]) => myParamPair.sameTypeAs(otherParamPair));
+    }
+
+    // convenience method for extending TypeEnv
+    asNodeTypePairs(): NodeTypePair[] {
+        return this.getPairs().map(pair => ({node: pair.getParameter(), 
+                                            type: pair.getType()} as NodeTypePair))
     }
 
     toString() {
-        const params = this.parameters.map(p => p.toString()).join(', ');
-        return `Predicate[(${params})]`;
-    }
-    getParameters(): PredicateParameter[] {
-        return this.parameters;
-    }
-
-    getTypeOfParam(param: Param): TypeTag | null {
-        return this.funTag.getTypeOfParam(param);
-    }
-
-    // TODO: check and streamline this 
-    paramTagsCoincide(other: TypeTag) {
-        if (!isPredicateTTag(other)) return false;
-
-        if (this.parameters.length !== other.parameters.length) return false;  
-        for (let i = 0; i < this.parameters.length; i++) {
-            if (!this.parameters[i].getType().sameTypeAs(other.parameters[i].getType())) return false;
-        }
-        return true;
-    }
-
-    sameTypeAs(other: TypeTag): boolean {
-        return this.paramTagsCoincide(other);
+        const params = this.getPairs().map(p => p.toString()).join(', ');
+        return params;
     }
 }
 
-export class FunctionParameter {
+export class FunctionParameterTypePair {
     private readonly param: Param;
     private readonly type: TypeTag;
 
@@ -226,30 +227,66 @@ export class FunctionParameter {
         this.type = paramType;
     }
 
-    getParam() {
+    getParameter() {
         return this.param;
     }
 
-    /** Returns type of the param */
+    sameTypeAs(other: FunctionParameterTypePair) {
+        return this.getType().sameTypeAs(other.getType())
+    }
+
     getType() {
         return this.type;
     }
 
     toString() {
-        return `${this.getParam().name}: ${this.getType().toString()}`;
+        return `${this.getParameter().name}: ${this.getType().toString()}`;
     }
 }
 
-// export interface FunctionParameter {
-//     param: Param;
-//     type: TypeTag;
-// }
-
-export class PredicateParameter extends FunctionParameter {};
 
 export function isFunctionTTag(tag: TypeTag): tag is FunctionTTag {
     return tag.tag === "Function";
 }
+
+
+export class PredicateParameterTypePair extends FunctionParameterTypePair {};
+
+
+// We don't need a 'PredicateContext', at least not right now, 
+// because Predicates have the params embedded in ParamTypePairs
+
+export class PredicateTTag implements TypeTag {
+    readonly tag = "Predicate";
+    private readonly parameters: FunctionParameterTypePairSequence;
+    private readonly funTag: FunctionTTag;
+
+    constructor(parameters: PredicateParameterTypePair[]) {
+        this.funTag = new FunctionTTag(parameters, new BooleanTTag());
+        this.parameters = this.funTag.getParameterTypePairs();
+    }
+
+    toString() {
+        const params = this.parameters.toString();
+        return `Predicate[(${params})]`;
+    }
+
+    getParameterTypePairs(): FunctionParameterTypePairSequence {
+        return this.parameters;
+    }
+
+    sameSignature(other: PredicateTTag) {
+        const myParameterPairs = this.getParameterTypePairs();
+        const otherParameterPairs = other.getParameterTypePairs();
+
+        return myParameterPairs.isAlphaEquivalentTo(otherParameterPairs);
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return isPredicateTTag(other) && this.sameSignature(other);
+    }
+}
+
 
 export function isPredicateTTag(tag: TypeTag): tag is PredicateTTag {
     return tag.tag === "Predicate";

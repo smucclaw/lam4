@@ -3,7 +3,7 @@ import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, D
 import { Logger } from "tslog";
 import { SigDecl, Join } from "./generated/ast.js";
 import {isJoinExpr} from "./lam4-lang-utils.js";
-import { getSigAncestors, synth, TypeEnv } from "./type-system/infer.js";
+import { getSigAncestors, inferType, TypeEnv } from "./type-system/infer.js";
 import { isSigTTag } from "./type-system/type-tags.js";
 
 const scopeLogger = new Logger({ 
@@ -65,7 +65,7 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
       // Return the members in scope in `left` iff `left` is a sig
       // (If the target of the join / field deref is not a sig, 
       // it's a primitive type or type resolution error)
-      const typeOfLeft = synth(new TypeEnv(), parentJoin.left);
+      const typeOfLeft = inferType(new TypeEnv(), parentJoin.left);
       scopeLogger.trace(`           left sib ::`, typeOfLeft.toString());
       const returnScope = isSigTTag(typeOfLeft) ? 
                           this.scopeSigMembers(typeOfLeft.getSig()) : EMPTY_SCOPE
