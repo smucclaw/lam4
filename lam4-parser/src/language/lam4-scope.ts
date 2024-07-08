@@ -20,7 +20,9 @@ export class Lam4ScopeComputation extends DefaultScopeComputation {
     const parent = node.$container;
     const grandparent = node.$container?.$container;
 
-    // --- To make params available to body of predicates ----
+    // To make params that are embedded in a ParamTypePair available to the body of predicates,
+    // we need to override the default scope computation
+    // In particular, need to attach the node descriptions to the grandparent instead of the parent
     // Note: CANNOT use isParam and isParamTypePair without running into issues with the reflection
     const nodeIsParamEmbeddedInParamTypePair = parent && grandparent && node.$type === "Param" && parent.$type === "ParamTypePair"
     if (nodeIsParamEmbeddedInParamTypePair) {
