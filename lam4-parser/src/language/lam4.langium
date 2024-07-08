@@ -5,26 +5,30 @@ grammar Lam4
 How to see this in action
 ==========================
 
-Langium playground: https://langium.org/playground/
-Go to the playground and paste the grammar in the editor to see the generated parser in action!
+If you don't need to use record field access or predicate declarations:
+    you can paste the grammar into the playground (https://langium.org/playground/) to see the generated parser in action!
+
+If you do need either of those:
+   1. `npm run langium:generate;  npm run build`
+   2. Then either print to console the resulting AST with `node ./bin/cli printAstForHumans <name of .l4 file>` 
+   or build a VSCode extension with `vsce package --allow-missing-repository
+` and install it from VSCode
 
 =======
 TO DOs
 =======
-* Finish supporting join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
-  by implementing the analogue of https://langium.org/docs/recipes/scoping/class-member/
-* May need to use TokenBuilder or smtg like that to support "'s" --- right now the ast.ts seems to use single quotes for 
+* Look into how to enable language server support for non-VSCode editors
+* Test the type checking / inference and scoping more
 * Check if adding LetExpr to the grammar in way I have is compositional enough
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
 * Check if the handling of number literals is good enough
 
-For v2:
-* Add FACTs back in for v2, 
+
 after first draft of bidir type checker is done
+* Add Let, anon func to the type checker
 * Add Fractions back in 
 * Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
-* Look into whether we can avoid having to use type annots for predicate decls
 
 
 
