@@ -9,10 +9,12 @@ Status, as of Jul 8 2024:
     This __hasn't__ been thoroughly tested.
     The goal was just to get something simple 
     to support a more type-safe scoping mechanism for record field access / joins.
-
+    
 Biggest TODOs:
+    * Think about rewriting / desguaring FunDecls to a more convenient representation (esp. re param types)
     * Support LET
     * Support anon func
+    * The type inference/checking is currently only triggered from the scoper when certain constructs are present --- need to wire it up more systematically.
 
 Some intuition on bidirectional typechecking, for those unfamiliar with it:
 -----------------------------------------------------------------------------
@@ -38,7 +40,7 @@ Some intuition on bidirectional typechecking, for those unfamiliar with it:
 */
 
 
-import { AstNode, Reference } from "langium";
+import { AstNode, Reference, isReference } from "langium";
 
 import { 
     Param,
@@ -48,8 +50,12 @@ import {
     isPredicateDecl,
     isParam,
     Ref,
-    Join} from "../generated/ast.js";
-import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag} from "./type-tags.js";
+    Join,
+    FunctionApplication,
+    InfixPredicateApplication,
+    NamedElement,
+    isInfixPredicateApplication} from "../generated/ast.js";
+import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunclikeTTag, isFunclikeTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
 import { isJoinExpr } from "../lam4-lang-utils.js";
 
@@ -69,10 +75,9 @@ const typecheckLogger = new Logger({
 
 
 const ARITH_OPERATORS = ['OpPlus', 'OpMinus', 'OpMult', 'OpDiv'];
-const LOGICAL_OPERATORS = ['OpAnd', 'OpOr'];
+const BOOL_OPERATORS = ['OpAnd', 'OpOr'];
 
 export type NodeTypePair = {node: AstNode, type: TypeTag};
-// Branded<{node: AstNode, type: TypeTag}, "NodeTypePair">;
 
 export class TypeEnv {
     private readonly envMap: Map<AstNode, TypeTag>;
@@ -123,6 +128,8 @@ function synthTypeAnnot(env: TypeEnv, typeAnnot: TypeAnnot): TypeTag {
                 return new IntegerTTag();
             case "Boolean":
                 return new BooleanTTag();
+            case "Unit":
+                return new UnitTTag();
             default:
                 return annot as never;
         }
@@ -151,7 +158,7 @@ function synthTypeAnnot(env: TypeEnv, typeAnnot: TypeAnnot): TypeTag {
 function synthBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
     typecheckLogger.trace(`[synthBinExpr]`);
 
-    const isBoolExpr = isComparisonOp(expr.op) || (LOGICAL_OPERATORS.includes(expr.op.$type));
+    const isBoolExpr = isComparisonOp(expr.op) || (BOOL_OPERATORS.includes(expr.op.$type));
     let binType: TypeTag;
     if (isBoolExpr) {
         binType = new BooleanTTag();
@@ -170,10 +177,16 @@ function predicateTTagFromPredDecl(env: TypeEnv, predDecl: PredicateDecl): TypeT
     return predicateType;
 }
 
-
+// TODO: Think about rewriting / desguaring FunDecls to a more convenient representation (esp. re param types)
 function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
     const paramAndRetTypes = fundecl.types.map(inferType.bind(undefined, env));
     const argTypes = paramAndRetTypes.slice(0, -1);
+    argTypes.forEach((arg, idx) => {
+        if (isUnitTTag(arg)) {
+            const unitParam: Param = {$container: fundecl, $type: 'Param', name: 'Unit'};
+            fundecl.params.splice(idx, 0, unitParam);
+        }
+    });
     const retType = paramAndRetTypes[paramAndRetTypes.length - 1];
 
     if (argTypes.length !== fundecl.params.length) return new ErrorTypeTag(fundecl, "Number of parameters and parameter types do not match");
@@ -293,20 +306,7 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
     } else if (isFunctionApplication(term)) {
         const inferredFuncType = inferType(env, term.func);
         if (isFunctionTTag(inferredFuncType)) {
-            // Check that Γ |- arg : expected type, for each of the (arg, expected type) pairs
-            const inferredArgTypes = inferredFuncType.getParameterTypePairs().getTypes();
-
-            let checkPassed = true;
-            for (const [arg, expectedType] of zip(term.args, inferredArgTypes)) {
-                const checkRetType = check(env, arg as AstNode, expectedType as TypeTag);
-                if (isErrorTypeTag(checkRetType)) {
-                    typeTag = checkRetType;
-                    checkPassed = false;
-                }
-            }
-            if (checkPassed) {
-                typeTag = inferredFuncType.returnType;
-            }
+            typeTag = checkFunclikeApplication(env, term, inferredFuncType);
         } else {
             typeTag = new ErrorTypeTag(term.func, `We expected a function type because of the function application, but this is not a function type. (The inferred type was ${inferredFuncType.tag}`);
         }
@@ -314,6 +314,14 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
     } else if (isPredicateDecl(term)) {
         const predType = predicateTTagFromPredDecl(env, term);
         typeTag = check(env, term, predType);
+    } else if (isInfixPredicateApplication(term)) {
+        const predType = inferType(env, term.predicate);
+        if (isPredicateTTag(predType)) {
+            typeTag = checkFunclikeApplication(env, term, predType);   
+        } else {
+            typeTag = new ErrorTypeTag(term.predicate, `We expected a predicate type because of the predicate application, but this is not a predicate type.`);
+        }
+
     } else {
         typeTag = new ErrorTypeTag(term, `Type of term cannot be inferred. Note that Let and Anon Func haven't been implemented`);
     }
@@ -325,6 +333,31 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
 /* ===========================
  *      Check 
  * =========================== */
+
+export type FunclikeApplication = InfixPredicateApplication | FunctionApplication;
+
+/** Check that Γ |- arg : expected type, for each of the (arg, expected type) pairs */
+function checkFunclikeApplication(env: TypeEnv, term: FunclikeApplication, inferredFunclikeType: FunclikeTTag) {
+    let typeTag: TypeTag  = new ErrorTypeTag(term, 'Could not check fun / pred application');
+    const inferredArgTypes = inferredFunclikeType.getParameterTypePairs().getTypes();
+
+    const args = term.args.map(arg => isReference(arg) ? arg.ref : arg).filter(arg => arg) as AstNode[];
+    if (args.length !== inferredArgTypes.length) {
+        return new ErrorTypeTag(term, "Number of args do not match the number of declared params (there may have been an unlinked reference)");
+    }
+    
+    let checkPassed = true;
+    for (const [arg, expectedType] of zip(args, inferredArgTypes)) {
+        const checkRetType = check(env, arg as AstNode, expectedType as TypeTag);
+        if (isErrorTypeTag(checkRetType)) {
+            typeTag = checkRetType;
+            checkPassed = false;
+        }
+    }
+    if (checkPassed) typeTag = inferredFunclikeType.getReturnType();
+    
+    return typeTag;
+}
 
 /** Check that 
  * 

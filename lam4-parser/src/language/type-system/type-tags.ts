@@ -136,6 +136,11 @@ export function isIntegerTTag(tag: TypeTag): tag is IntegerTTag {
 
 /*============= Functions and predicates ================================ */
 
+export type FunclikeTTag = FunctionTTag | PredicateTTag;
+export function isFunclikeTTag(typeTag: TypeTag): typeTag is FunclikeTTag {
+    return isFunctionTTag(typeTag) || isPredicateTTag(typeTag);
+}
+
 export class FunctionTTag implements TypeTag {
     readonly tag = "Function";
     readonly returnType: TypeTag;
@@ -275,7 +280,11 @@ export class PredicateTTag implements TypeTag {
         return this.parameters;
     }
 
-    sameSignature(other: PredicateTTag) {
+    getReturnType() { 
+        return this.funTag.getReturnType();
+    };
+
+    isAlphaEquivalentTo(other: PredicateTTag) {
         const myParameterPairs = this.getParameterTypePairs();
         const otherParameterPairs = other.getParameterTypePairs();
 
@@ -283,7 +292,7 @@ export class PredicateTTag implements TypeTag {
     }
 
     sameTypeAs(other: TypeTag): boolean {
-        return isPredicateTTag(other) && this.sameSignature(other);
+        return isPredicateTTag(other) && this.isAlphaEquivalentTo(other);
     }
 }
 
