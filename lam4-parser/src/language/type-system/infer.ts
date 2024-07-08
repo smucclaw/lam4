@@ -181,15 +181,17 @@ function predicateTTagFromPredDecl(env: TypeEnv, predDecl: PredicateDecl): TypeT
 function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
     const paramAndRetTypes = fundecl.types.map(inferType.bind(undefined, env));
     const argTypes = paramAndRetTypes.slice(0, -1);
-    argTypes.forEach((arg, idx) => {
-        if (isUnitTTag(arg)) {
-            const unitParam: Param = {$container: fundecl, $type: 'Param', name: 'Unit'};
-            fundecl.params.splice(idx, 0, unitParam);
+    // TODO: Think more about whether we need to also handle non-0-idx Units
+    for (let argIdx = 0; argIdx < argTypes.length; argIdx++) {
+        const argType = argTypes[argIdx];
+        if (isUnitTTag(argType)) {
+            if (argIdx === 0) {
+                const unitParam: Param = {$container: fundecl, $type: 'Param', name: 'Unit'};
+                fundecl.params.splice(argIdx, 0, unitParam);
+            }
         }
-    });
+    }
     const retType = paramAndRetTypes[paramAndRetTypes.length - 1];
-
-    if (argTypes.length !== fundecl.params.length) return new ErrorTypeTag(fundecl, "Number of parameters and parameter types do not match");
     
     const argTypeTags: FunctionParameterTypePair[] = 
           zip(fundecl.params, argTypes)
