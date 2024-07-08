@@ -1,7 +1,14 @@
-
-CONCEPT F {
-    a: Integer
+CONCEPT Applicant {
+    publications: Integer
 }
 
-F => Integer
-f(x) = x `s` a
+Applicant => Integer
+numberOfPublications(applicant) = applicant`s` publications
+
+GIVEN (x IS_A Applicant)
+DECIDE `eligible for grant`
+IF x`s` publications > 10
+
+GIVEN (x IS_A Applicant)
+DECIDE `happy`
+IF x IS `eligible for grant`

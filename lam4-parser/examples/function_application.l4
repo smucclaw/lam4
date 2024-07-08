@@ -1,0 +1,8 @@
+// placeholder function for illustration
+Integer => Integer
+sumIntegers(x, y) = x + y
+
+GIVEN ()
+DECIDE `some predicate`
+IF sumIntegers(1, 2) > 2
+
