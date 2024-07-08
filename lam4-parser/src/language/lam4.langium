@@ -101,7 +101,6 @@ entry Program:
 
 ToplevelElement:
     SigDecl | PredicateDecl | FunDecl
-    // TODO: Add Facts in v2!
 ;
 
 /* ========================================
@@ -135,19 +134,6 @@ SpecificMetadataBlock:
         properties+=MetadataKVPair+
     '-/'
 ;
-
-/* ========================================
-       Facts
-======================================== */
-// TODO -- for v2!
-
-// these would be the global vars (usually constants). These would prob just be sugar for a `let...in`
-// in the future, would want to think about how to support things like Representations and Warranties (which go beyond mere statements of facts)
-// Facts:
-//     'FACTS' '{'
-//         facts+=VarDecl+
-//     '}'
-// ;
 
 /* ========================================
        Rules
@@ -191,13 +177,6 @@ FunDecl:
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
     ( '=' | 'EQUALS') 
     body=Expr
-    // whereDecls=WhereBlock? 
-    // TODO: Set linking rules to make it possible to link to vars tt are defined only in the where decls
-    // See https://github.com/eclipse-langium/langium/discussions/1486
-    // https://langium.org/docs/reference/document-lifecycle/
-    // https://langium.org/docs/recipes/scoping/ 
-    // https://langium.org/docs/recipes/scoping/class-member/
-    // in the short term, might be easier to just use a LET
 ;
 
 // When doing concrete (as opposed to symbolic) execution, 
@@ -214,28 +193,8 @@ PredicateDecl:
     since "the law implicitly assumes a condition is false unless specified otherwise" 
     (https://catala-lang.org/en/examples/tutorial)
     In this way this is similar to Catala's 'Rule' */
-    // whereDecls=WhereBlock?
 ;
 
-
-// ------- Statements -------
-
-// WhereBlock:
-//     'WHERE' StatementBlock
-// ;
-
-// StatementBlock:
-//     '{'
-//     statement+=Statement+
-// '}';
-
-// Statement:
-//     ThenIfStatement | VarDecl
-// ;
-
-// ThenIfStatement infers Statement:
-//     then=VarDecl 'IF' condition=Expr
-// ;
 
 VarDecl returns NamedElement:
     {infer VarDecl} name=ID (':' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
@@ -264,6 +223,7 @@ AndExpr infers Expr:
     (ComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op=OpAnd right=(ComparisonExpr| IfThenElseExpr))*
 ;
 
+// TODO: Not sure if VarDecl the best thing to use for the inner stuff
 LetExpr:
     ('LET' | 'DEFINE') '{' (vars+=VarDecl)+ '}' 'IN' '{' body=OrExpr '}'
 ;
@@ -413,22 +373,12 @@ type CustomType = SigDecl;
 // | Alias
 // ;
 
-/* The idea of 'Multiplicity' is from Alloy:
-    set of: a set of values (i.e., this field may contain any number of objects);
-    one: a singleton value (this field always contains a single object); and
-    lone: either a singleton value or no value (this field contains 0 or 1 object).
-*/
-// Multiplicity returns string:
-//     "SET_OF" | "ONE" | "LONE"
-// ;
-
 
 Relation:
     PotentiallyWithSpecificMetadataBlock
 
     name=ID optional?='?'? 
     (':' | 'IS_A') 
-    // multiplicity=Multiplicity?
     relatum=TypeAnnot // TODO: Support plural relata 
     nullable?='?'? 
     description=SINGLELINE_METADATA_ANNOTATION?
@@ -441,7 +391,6 @@ CustomTypeDef:
     annot = [CustomType:ID]
 ;
 
-// type Rule = FunDecl | PredicateDecl;
 type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | FunDecl  | Relation | SigDecl | Relation;
 
 /* ========================================
@@ -461,11 +410,6 @@ BuiltinTypeAnnot returns string:
     //  'Fraction' 
     //  'Date'
 ;
-// Shelving Money for now, but let's revisit this soon
-// TODO: Factor out the currencies
-// BuiltinMoneyFormats returns string:
-//     'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Other)'
-// ;
 
 
 /* ========================================
@@ -506,7 +450,6 @@ terminal BACK_TICKED_ID:
     '`' -> '`'
 ;
 
-// TODO: Figure out how to just drop the "--.."
 // matches --
 terminal SINGLELINE_METADATA_ANNOTATION: /--([^\n\r]*)/;
 
