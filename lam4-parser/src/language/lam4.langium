@@ -288,8 +288,8 @@ FunctionApplication:
 
 // sugar for func app, when doing *concrete* evaluation
 InfixPredicateApplication: 
-   ( args+=[NamedElement:ID] 'IS' predicate=Expr ) 
-   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE') predicate=Expr )
+   ( args+=[NamedElement:ID] 'IS'? predicate=Expr ) // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
+   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=Expr )
 ;
 
 // This is meant for programmers to implement libraries with; 
