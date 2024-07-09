@@ -310,7 +310,7 @@ export class SigTTag implements TypeTag {
         this.sig = sig;
     }
     toString() {
-        return `${this.tag}: ${this.sig.name}`;
+        return `Concept ${this.sig.name}`;
     }
 
     getSig(): SigDecl {
