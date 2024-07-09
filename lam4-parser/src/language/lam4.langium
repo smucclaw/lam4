@@ -391,7 +391,7 @@ CustomTypeDef:
     annot = [CustomType:ID]
 ;
 
-type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | FunDecl  | Relation | SigDecl | Relation;
+type NamedElement = VarDecl | Param | PredicateDecl | FunDecl  | Relation | SigDecl | Relation;
 
 /* ========================================
          BUILT IN and PRIMITIVE types
