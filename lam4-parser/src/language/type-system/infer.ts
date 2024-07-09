@@ -55,7 +55,9 @@ import {
     FunctionApplication,
     InfixPredicateApplication,
     NamedElement,
-    isInfixPredicateApplication} from "../generated/ast.js";
+    isInfixPredicateApplication,
+    isUnaryExpr,
+    UnaryExpr} from "../generated/ast.js";
 import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunclikeTTag, isFunclikeTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
 import { isJoinExpr } from "../lam4-lang-utils.js";
@@ -76,7 +78,7 @@ const typecheckLogger = new Logger({
 
 
 const ARITH_OPERATORS = ['OpPlus', 'OpMinus', 'OpMult', 'OpDiv'];
-const BOOL_OPERATORS = ['OpAnd', 'OpOr'];
+const BOOL_OPERATORS = ['OpAnd', 'OpOr', 'OpNot'];
 
 export type NodeTypePair = {node: AstNode, type: TypeTag};
 
@@ -159,9 +161,8 @@ function synthTypeAnnot(env: TypeEnv, typeAnnot: TypeAnnot): TypeTag {
 function synthBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
     typecheckLogger.trace(`[synthBinExpr]`);
 
-    const isBoolExpr = isComparisonOp(expr.op) || (BOOL_OPERATORS.includes(expr.op.$type));
     let binType: TypeTag;
-    if (isBoolExpr) {
+    if (isBoolExpr(expr.op)) {
         binType = new BooleanTTag();
     } else if (ARITH_OPERATORS.includes(expr.op.$type)) {
         binType = new IntegerTTag();
@@ -300,7 +301,12 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = isSigDecl(term.$container) ?
             new RelationTTag(term, (inferType(env, term.$container) as SigTTag), inferType(env, term.relatum)) :
             new ErrorTypeTag(term, "Relation should have a Concept as its parent");
-
+    } else if (term.$type === "UnaryExpr") {
+        if (isBoolExpr((term as UnaryExpr).op)) {
+            typeTag = new BooleanTTag();
+        } else if (ARITH_OPERATORS.includes((term as UnaryExpr).op.$type)) {
+            typeTag = new IntegerTTag();
+        }
     } else if (isBinExpr(term)) {
         const putativeBinType = synthBinExpr(env, term);
         typeTag = check(env, term, putativeBinType);
@@ -419,6 +425,9 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
 /* ===========================
  *      Utils 
  * =========================== */
+
+const isBoolExpr = (op: AstNode) => isComparisonOp(op) || (BOOL_OPERATORS.includes(op.$type));
+
 
 /** Get Sig ancestors via DFS */
 export function getSigAncestors(sig: SigDecl): SigDecl[] {
