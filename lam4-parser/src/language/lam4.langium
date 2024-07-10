@@ -247,6 +247,7 @@ ComparisonExpr infers Expr:
 
 OpPlus: {infer OpPlus} '+';
 OpMinus: {infer OpMinus} '-';
+OpNot: {infer OpNot} 'NOT';
 Add infers Expr:
     Mult ({infer BinExpr.left=current} op=(OpPlus | OpMinus) right=Mult)*
 ;
@@ -310,7 +311,7 @@ Ref:
     value=[NamedElement:IDOrBackTickedID];
 
 UnaryExpr:
-    op=(OpMinus) value=Expr
+    op=(OpMinus | OpNot) value=Expr
 ;
 
 
