@@ -16,6 +16,9 @@ Biggest TODOs:
     * Support LET
     * Support anon func
     * The type inference/checking is currently only triggered from the scoper when certain constructs are present --- need to wire it up more systematically.
+    * Think about treating records as tuples or arrays / desugaring them into that
+        * Keep a bidir mapping between anme of field and pos in tuple
+        * 
 
 Some intuition on bidirectional typechecking, for those unfamiliar with it:
 -----------------------------------------------------------------------------
