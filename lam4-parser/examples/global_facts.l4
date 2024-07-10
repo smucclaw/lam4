@@ -1,6 +1,0 @@
-FACTS {
-    min_payout = 100 -- How much the life assured will get, at minimum, if they are eligible to claim for their injury or accident.
-    some_other_constant = False
-}
-
-min_payout(payout) = IF payout < min_payout THEN min_payout ELSE payout

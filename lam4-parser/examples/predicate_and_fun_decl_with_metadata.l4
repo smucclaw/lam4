@@ -1,6 +1,14 @@
+CONCEPT Accident { // placeholder
+}
+
+CONCEPT LifeAssured {
+  
+}
+
 /-
 description_for_semantic_parser: "Calculates how much the life assured can get for their claim."
 -/
+LifeAssured => Accident => Integer
 payout(life_assured, accident) = 0
   
 // if `description_for_semantic_parser` not present but `description` is,

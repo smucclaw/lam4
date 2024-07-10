@@ -19,7 +19,11 @@ The goal is to get something that
 
 ## Understanding the grammar / working with it
 
+If you don't need to use record field access or predicate declarations, you can paste the grammar into the playground (https://langium.org/playground/) to see the generated parser in action.
+
 ### To build / generate
+
+If you do need either of those:
 
 ```bash
 npm install
@@ -35,6 +39,7 @@ After building:
 * To print to std out a **human-readable version of the concrete syntax** (i.e., a version without the metadata): `node ./bin/cli printAstForHumans <lam4program filename>.l4`
 * To **serialize and save to a file the concrete syntax**: `node ./bin/cli toAst <lam4program filename>.l4`
   * Note that this is still more like concrete than abstract syntax --- I hope to be able to do that desugaring / simplfiying within the next 1-1.5 weeks. I'll aim to target Andres' AST for concrete evaluation, but I'll probably also experiment with another version on the side that has a few more constructs for symbolic execution.
+* To **generate a VSCode extension**: `vsce package --allow-missing-repository`
 
 ## Noteworthy TODOs
 

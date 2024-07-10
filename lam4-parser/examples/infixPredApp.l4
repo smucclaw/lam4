@@ -1,10 +1,12 @@
+// Demonstrates the various kinds of infix predicate application
+
+CONCEPT Person {}
+
 GIVEN (x: Person 
-       y 
+       y: Person 
        z: Person)
 DECIDE special
 IF True
-
-CONCEPT Person {}
 
 GIVEN (
     person1: Person
@@ -14,6 +16,10 @@ GIVEN (
 DECIDE eligible 
 IF (person1, person2, person3) ARE special
 
-GIVEN (x)
+GIVEN (person: Person)
+DECIDE fun
+IF True
+
+GIVEN (x: Person)
 DECIDE bleh
-IF x IS special
+IF x IS fun

@@ -5,21 +5,30 @@ grammar Lam4
 How to see this in action
 ==========================
 
-Langium playground: https://langium.org/playground/
-Go to the playground and paste the grammar in the editor to see the generated parser in action!
+If you don't need to use record field access or predicate declarations:
+    you can paste the grammar into the playground (https://langium.org/playground/) to see the generated parser in action!
+
+If you do need either of those:
+   1. `npm run langium:generate;  npm run build`
+   2. Then either print to console the resulting AST with `node ./bin/cli printAstForHumans <name of .l4 file>` 
+   or build a VSCode extension with `vsce package --allow-missing-repository
+` and install it from VSCode
 
 =======
 TO DOs
 =======
-* Finish supporting join / relational composition operator (which can also be thought of as a 'member/field dereferencing')
-  by implementing the analogue of https://langium.org/docs/recipes/scoping/class-member/
-* May need to use TokenBuilder or smtg like that to support "'s" --- right now the ast.ts seems to use single quotes for 
+* Look into how to enable language server support for non-VSCode editors
+* Test the type checking / inference and scoping more
 * Check if adding LetExpr to the grammar in way I have is compositional enough
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
-* Think about what a more user-friendly name for `SIG` might be -- perhaps `CONCEPT`?
-* Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
 * Check if the handling of number literals is good enough
+
+
+after first draft of bidir type checker is done
+* Add Let, anon func to the type checker
+* Add Fractions back in 
+* Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
 
 
 
@@ -91,7 +100,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    Facts | SigDecl | PredicateDecl | FunDecl
+    SigDecl | PredicateDecl | FunDecl
 ;
 
 /* ========================================
@@ -127,25 +136,13 @@ SpecificMetadataBlock:
 ;
 
 /* ========================================
-       Facts
-======================================== */
-
-// these would be the global vars (usually constants). These would prob just be sugar for a `let...in`
-// in the future, would want to think about how to support things like Representations and Warranties (which go beyond mere statements of facts)
-Facts:
-    'FACTS' '{'
-        facts+=VarDecl+
-    '}'
-;
-
-/* ========================================
        Rules
 ======================================== */
 
 // ------- Params -------
-GivenParamBlock:
+fragment GivenParamBlock:
     'GIVEN' '('
-        params+=(ParamTypePair | Param)*
+        params+=ParamTypePair*
     ')' 
 ;
 
@@ -153,7 +150,7 @@ Param:
     name=ID;
 
 ParamTypePair:
-    name=ID ('::' | 'IS_A') paramType=TypeAnnot
+    param=Param (':' | 'IS_A') type=TypeAnnot
 ;
 
 // ------- PredicateDecl, FunDecl -------
@@ -165,7 +162,7 @@ fragment PotentiallyWithSpecificMetadataBlock:
 // Not expecting non-programmers to understand this in the textual form
 // This would be visualized / rendered in more accessible ways for non-programmers
 fragment FunDeclTypeAnnot:
-    paramTypes+=TypeAnnot ('=>' paramTypes+=TypeAnnot)+
+    types+=TypeAnnot ('=>' types+=TypeAnnot)+
 ;
 
 // a terse FunDecl
@@ -173,19 +170,13 @@ FunDecl:
     PotentiallyWithSpecificMetadataBlock
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
-    FunDeclTypeAnnot?
+    // Require annotations for top level func decl, since required for bidir type checking
+    FunDeclTypeAnnot
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
     ( '=' | 'EQUALS') 
     body=Expr
-    // whereDecls=WhereBlock? 
-    // TODO: Set linking rules to make it possible to link to vars tt are defined only in the where decls
-    // See https://github.com/eclipse-langium/langium/discussions/1486
-    // https://langium.org/docs/reference/document-lifecycle/
-    // https://langium.org/docs/recipes/scoping/ 
-    // https://langium.org/docs/recipes/scoping/class-member/
-    // in the short term, might be easier to just use a LET
 ;
 
 // When doing concrete (as opposed to symbolic) execution, 
@@ -195,42 +186,22 @@ PredicateDecl:
     PotentiallyWithSpecificMetadataBlock
 
     GivenParamBlock
-    'DECIDE' name=PredicateOrFuncID 
+    'DECIDE' name=IDOrBackTickedID 
     // can think of 'name' as 'head'
     'IF' body=Expr 
     /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
     since "the law implicitly assumes a condition is false unless specified otherwise" 
     (https://catala-lang.org/en/examples/tutorial)
     In this way this is similar to Catala's 'Rule' */
-    // whereDecls=WhereBlock?
 ;
 
-
-// ------- Statements -------
-
-// WhereBlock:
-//     'WHERE' StatementBlock
-// ;
-
-// StatementBlock:
-//     '{'
-//     statement+=Statement+
-// '}';
-
-// Statement:
-//     ThenIfStatement | VarDecl
-// ;
-
-// ThenIfStatement infers Statement:
-//     then=VarDecl 'IF' condition=Expr
-// ;
 
 VarDecl returns NamedElement:
-    {infer VarDecl} name=ID ('::' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
+    {infer VarDecl} name=ID (':' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 
-PredicateOrFuncID returns string:
+IDOrBackTickedID returns string:
     ID | BACK_TICKED_ID
 ;
 
@@ -242,14 +213,17 @@ Expr:
     // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
 ;
 
+OpOr: {infer OpOr} 'OR';
 OrExpr infers Expr:
-    AndExpr ({infer BinExpr.left=current} op='OR' right=AndExpr)*
+    AndExpr ({infer BinExpr.left=current} op=OpOr right=AndExpr)*
 ;
 
+OpAnd: {infer OpAnd} 'AND';
 AndExpr infers Expr:
-    (NumComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op='AND' right=(NumComparisonExpr| IfThenElseExpr))*
+    (ComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op=OpAnd right=(ComparisonExpr| IfThenElseExpr))*
 ;
 
+// TODO: Not sure if VarDecl the best thing to use for the inner stuff
 LetExpr:
     ('LET' | 'DEFINE') '{' (vars+=VarDecl)+ '}' 'IN' '{' body=OrExpr '}'
 ;
@@ -265,10 +239,10 @@ OpGt: {infer OpGt} '>';
 OpGte: {infer OpGte} '>=';
 OpEquals: {infer OpEquals} 'EQUALS' | '==';
 OpNotEquals: {infer OpNotEquals} "DIFFERS_FROM" | "!=";
-NumComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
+ComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
 
-NumComparisonExpr infers Expr:
-    Add ({infer BinExpr.left=current} op=NumComparisonOp right=Add)*
+ComparisonExpr infers Expr:
+    Add ({infer BinExpr.left=current} op=ComparisonOp right=Add)*
 ;
 
 OpPlus: {infer OpPlus} '+';
@@ -283,7 +257,6 @@ Mult infers Expr:
     Join ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Join)*
 ;
 
-OpJoin: {infer OpJoin} '`s';
 /*
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
@@ -295,8 +268,14 @@ The relationship between relational join and a more conventional member access o
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
 Join infers Expr:
-    FunctionApplication ({infer Join.left=current} op=OpJoin right=FunctionApplication)*
-    // TODO: Temporarily using `s instead of 's because I'm worried the single quote might cause issues (they use single quotes when generating the AST). 
+    FunctionApplication ({infer Join.left=current} '`s`' right=Ref)*
+    // Right can't be [NamedElement:ID]
+    // because we want the scoper to visit `left` first,
+    // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
+    // This allows us to then use that resolved reference
+    // as a base case in figuring out the reference for `right`
+
+    // TODO: 's and `s don't work out of the box
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
@@ -309,8 +288,8 @@ FunctionApplication:
 
 // sugar for func app, when doing *concrete* evaluation
 InfixPredicateApplication: 
-   ( args+=[NamedElement:ID] 'IS' predicate=Expr ) | 
-   ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE') predicate=Expr )
+   ( args+=[NamedElement:ID] 'IS'? predicate=Expr ) // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
+   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=Expr )
 ;
 
 // This is meant for programmers to implement libraries with; 
@@ -328,7 +307,7 @@ PrimitiveExpr infers Expr:
 ;
 
 Ref:
-    value=[NamedElement:ID];
+    value=[NamedElement:IDOrBackTickedID];
 
 UnaryExpr:
     op=(OpMinus) value=Expr
@@ -394,22 +373,12 @@ type CustomType = SigDecl;
 // | Alias
 // ;
 
-/* The idea of 'Multiplicity' is from Alloy:
-    set of: a set of values (i.e., this field may contain any number of objects);
-    one: a singleton value (this field always contains a single object); and
-    lone: either a singleton value or no value (this field contains 0 or 1 object).
-*/
-Multiplicity returns string:
-    "SET_OF" | "ONE" | "LONE"
-;
-
 
 Relation:
     PotentiallyWithSpecificMetadataBlock
 
     name=ID optional?='?'? 
     (':' | 'IS_A') 
-    multiplicity=Multiplicity?
     relatum=TypeAnnot // TODO: Support plural relata 
     nullable?='?'? 
     description=SINGLELINE_METADATA_ANNOTATION?
@@ -419,11 +388,10 @@ TypeAnnot:
     CustomTypeDef | BuiltinType
 ;
 CustomTypeDef:
-    label = [CustomType:ID]
+    annot = [CustomType:ID]
 ;
 
-// type Rule = FunDecl | PredicateDecl;
-type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | FunDecl  | Relation | SigDecl;
+type NamedElement = VarDecl | Param | PredicateDecl | FunDecl  | Relation | SigDecl | Relation;
 
 /* ========================================
          BUILT IN and PRIMITIVE types
@@ -431,36 +399,17 @@ type NamedElement = VarDecl | Param | ParamTypePair | PredicateDecl | FunDecl  |
 
 // TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
-BuiltinNumberFormats returns string:
-    'Integer' | 'Fraction'
-;
-
-BuiltinStringFormats returns string:
-    'String'
+BuiltinType:
+    annot = BuiltinTypeAnnot
 ;
 
 // TODO: Think about whether to add DateTime, Time and Duration (days)
 // https://json-schema.org/understanding-json-schema/reference/string
-BuiltinDateTimeRelated returns string:
-    'Date'
+BuiltinTypeAnnot returns string:
+     'Integer' | 'String' |  'Boolean' | 'Unit'
+    //  'Fraction' 
+    //  'Date'
 ;
-
-BuiltinBoolFormat returns string:
-    "Boolean"
-;
-
-BuiltinType:
-    label = BuiltinTypeString
-;
-
-BuiltinTypeString returns string:
-    BuiltinStringFormats | BuiltinBoolFormat | BuiltinNumberFormats | BuiltinDateTimeRelated
-;
-// Shelving Money for now, but let's revisit this soon
-// TODO: Factor out the currencies
-// BuiltinMoneyFormats returns string:
-//     'Money(USDCents)' | 'Money(SGDCents)' | 'Money(Other)'
-// ;
 
 
 /* ========================================
@@ -501,7 +450,6 @@ terminal BACK_TICKED_ID:
     '`' -> '`'
 ;
 
-// TODO: Figure out how to just drop the "--.."
 // matches --
 terminal SINGLELINE_METADATA_ANNOTATION: /--([^\n\r]*)/;
 

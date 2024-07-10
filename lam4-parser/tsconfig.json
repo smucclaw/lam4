@@ -1,16 +1,16 @@
 {
     "compilerOptions": {
-        "target": "ES2017",
+        "inlineSourceMap": true, // allows tslog to reference a correct line number in the TS source code
+        "target": "es2020",
         "module": "Node16",
         "lib": [
             "ESNext",
             "DOM",
             "WebWorker"
         ],
-        "sourceMap": true,
         "outDir": "out",
         "strict": true,
-        "noUnusedLocals": true,
+        "noUnusedLocals": false,
         "noImplicitReturns": true,
         "noImplicitOverride": true,
         "moduleResolution": "Node16",

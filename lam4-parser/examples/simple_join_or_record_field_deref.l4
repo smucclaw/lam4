@@ -1,0 +1,14 @@
+CONCEPT Applicant {
+    publications: Integer
+}
+
+Applicant => Integer
+numberOfPublications(applicant) = applicant`s` publications
+
+GIVEN (x IS_A Applicant)
+DECIDE `eligible for grant`
+IF x`s` publications > 10
+
+GIVEN (x IS_A Applicant)
+DECIDE `happy`
+IF x IS `eligible for grant`
