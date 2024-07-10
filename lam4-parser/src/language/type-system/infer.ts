@@ -54,9 +54,7 @@ import {
     Join,
     FunctionApplication,
     InfixPredicateApplication,
-    NamedElement,
     isInfixPredicateApplication,
-    isUnaryExpr,
     UnaryExpr} from "../generated/ast.js";
 import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunclikeTTag, isFunclikeTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
