@@ -58,8 +58,12 @@ import {
     FunctionApplication,
     InfixPredicateApplication,
     isInfixPredicateApplication,
-    UnaryExpr} from "../generated/ast.js";
-import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionTTag, isFunctionTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunclikeTTag, isFunclikeTTag} from "./type-tags.js";
+    UnaryExpr,
+    PrimitiveTypeAnnot,
+    BuiltinTypeAnnot,
+    VarDecl,
+    ParamTypePair} from "../generated/ast.js";
+import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
 import { isJoinExpr } from "../lam4-lang-utils.js";
 
@@ -122,7 +126,16 @@ export function inferType(env: TypeEnv, term: AstNode): TypeTag {
     }
 }
 
-function synthTypeAnnot(env: TypeEnv, typeAnnot: TypeAnnot): TypeTag {
+function isBasecaseTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
+    return annot.$type === "BuiltinType" || annot.$type === "CustomTypeDef";
+}
+
+function isBasecaseFunctionTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
+    return annot.$type === "TypeAnnot" && annot.right && isBasecaseTypeAnnot(annot.right);
+}
+
+function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): TypeTag {
+    typecheckLogger.trace(`[synthTypeAnnot]`);
     function builtinTypeAnnotToTypeTag(typeAnnot: BuiltinType) {
         const annot = typeAnnot.annot;
         switch (annot) {
@@ -147,14 +160,29 @@ function synthTypeAnnot(env: TypeEnv, typeAnnot: TypeAnnot): TypeTag {
         return new SigTTag(customType as SigDecl);
     }
 
+    // Base cases
+    if (annot.$type === "BuiltinType") {
+        return builtinTypeAnnotToTypeTag(annot as BuiltinType);
+    } else if (annot.$type === "CustomTypeDef") {
+        return customTypeAnnotToTypeTag(annot as CustomTypeDef);
 
-    // Get the type annot
-    if (isBuiltinType(typeAnnot)) {
-        return builtinTypeAnnotToTypeTag(typeAnnot);
-    } else if (isCustomTypeDef(typeAnnot)) {
-        return customTypeAnnotToTypeTag(typeAnnot);
+    // Inductive case
+    } else if (annot.$type === "TypeAnnot") {
+        typecheckLogger.trace(`[synthTypeAnnot -- inductive]`);
+        let argTypes = [inferType(env, annot.left)];
+        let rightmost = annot.right;
+
+        while (!isBasecaseTypeAnnot(rightmost) && !isBasecaseFunctionTypeAnnot(rightmost)) {
+            rightmost = (rightmost as TypeAnnot).right;
+
+            let newArgType = inferType(env, (rightmost as TypeAnnot).left);
+            argTypes.push(newArgType);
+        }
+
+        return new ParamlessFunctionTTag(argTypes, inferType(env, rightmost));
+
     } else {
-        return new ErrorTypeTag(typeAnnot, `Type annotation ${typeAnnot} not recognized`);
+        return new ErrorTypeTag(annot, `Type annotation ${annot} not recognized`);
     }
 }
 
@@ -180,29 +208,28 @@ function predicateTTagFromPredDecl(env: TypeEnv, predDecl: PredicateDecl): TypeT
     return predicateType;
 }
 
+
 // TODO: Think about rewriting / desguaring FunDecls to a more convenient representation (esp. re param types)
 function functionTTagFromFuncDecl(env: TypeEnv, fundecl: FunDecl): TypeTag {
-    const paramAndRetTypes = fundecl.types.map(inferType.bind(undefined, env));
-    const argTypes = paramAndRetTypes.slice(0, -1);
-    // TODO: Think more about whether we need to also handle non-0-idx Units
-    for (let argIdx = 0; argIdx < argTypes.length; argIdx++) {
-        const argType = argTypes[argIdx];
-        if (isUnitTTag(argType)) {
-            if (argIdx === 0) {
-                const unitParam: Param = {$container: fundecl, $type: 'Param', name: 'Unit'};
-                fundecl.params.splice(argIdx, 0, unitParam);
-            }
-        }
+    const paramlessFuncType = inferType(env, fundecl.funType);
+    if (!isParamlessFunctionTTag(paramlessFuncType)) {
+        return new ErrorTypeTag(fundecl, "A function declaration must have a function type!");
     }
-    const retType = paramAndRetTypes[paramAndRetTypes.length - 1];
+
+    const argTypes = paramlessFuncType.getParameterTypes();
+    const firstArgType = argTypes.getTypeAt(0);
+    if (isUnitTTag(firstArgType)) {
+        const unitParam: Param = {$container: fundecl, $type: 'Param', name: 'Unit'};
+        fundecl.params.splice(0, 0, unitParam);
+    }
     
     const argTypeTags: FunctionParameterTypePair[] = 
-          zip(fundecl.params, argTypes)
+          zip(fundecl.params, argTypes.getTypes())
           .map(paramTypeTuple => new FunctionParameterTypePair(paramTypeTuple[0] as Param, paramTypeTuple[1] as TypeTag));
 
-    const funcType = new FunctionTTag(argTypeTags, retType);
-    typecheckLogger.trace(`[functionTTagFromFuncDecl] synth'd ${funcType.toString()}`);
-    return funcType;
+    const funcDeclType = new FunctionDeclTTag(argTypeTags, paramlessFuncType.getReturnType());
+    typecheckLogger.trace(`[functionTTagFromFuncDecl] synth'd ${funcDeclType.toString()}`);
+    return funcDeclType;
 }
 
 function synthRef(env: TypeEnv, ref: Ref): TypeTag {
@@ -267,16 +294,17 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = synthJoin(env, term as Join);
 
     // Constructs whose types can be easily read off the term
-    } else if (isStringLiteral(term)) {
+    } else if (term.$type == "StringLiteral") {
         typeTag = new StringTTag(term as StringLiteral);
-    } else if (isBooleanLiteral(term)) {
+    } else if (term.$type == "BooleanLiteral") {
         typeTag = new BooleanTTag(term as BooleanLiteral);
-    } else if (isNumberLiteral(term)) {
+    } else if (term.$type == "NumberLiteral") {
         typeTag = new IntegerTTag(term as NumberLiteral);
-    } else if (isVarDecl(term)) {
-        typeTag = term.varType ? inferType(env, term.varType) : inferType(env, term.value);
+    } else if (term.$type == "VarDecl") {
+        const varTerm = term as VarDecl;
+        typeTag = varTerm.varType ? inferType(env, varTerm.varType) : inferType(env, varTerm.value);
 
-    } else if (isParam(term)) {
+    } else if (term.$type === "Param" && term.$container) {
         const parent = term.$container;
         typecheckLogger.trace(`\t\t(isParam) trying to synth param's parent, ${parent.$type}`);
         const typeOfParent = inferType(env, parent);
@@ -284,18 +312,22 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
 
         if (isParamTypePair(parent)) {
             typeTag = typeOfParent;
-        } else if (isFunctionTTag(typeOfParent)) {
-            const paramType = typeOfParent.getParameterTypePairs().findMatchingParam(term);
+        } else if (isFunctionDeclTTag(typeOfParent)) {
+            const paramType = typeOfParent.getParameterTypePairs().findMatchingParam(term as Param);
             typecheckLogger.trace(`paramType: ${paramType?.toString()}`);
             typeTag = paramType ?? new ErrorTypeTag(term, "param either not a param of function or lacks a type annotation");
         } else {
             typeTag = new ErrorTypeTag(term, "param either not a param of function or lacks a type annotation");
         }
-    } else if (isParamTypePair(term)) {
-        typeTag = inferType(env, term.type);
-    } else if (isTypeAnnot(term)) {
-        typeTag = synthTypeAnnot(env, term);
-    
+    } else if (term.$type === "ParamTypePair") {
+        typeTag = inferType(env, (term as ParamTypePair).type);
+    } else if (term.$type === "TypeAnnot") {
+        typeTag = synthTypeAnnot(env, term as TypeAnnot);
+    } else if (term.$type === "CustomTypeDef") {
+        typeTag = synthTypeAnnot(env, term as CustomTypeDef);
+    } else if (term.$type === "BuiltinType") {
+        typeTag = synthTypeAnnot(env, term as BuiltinType);
+        
     } else if (isSigDecl(term)) {
         typeTag = new SigTTag(term);
     } else if (isRelation(term)) {
@@ -315,7 +347,7 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = functionTTagFromFuncDecl(env, term);
     } else if (isFunctionApplication(term)) {
         const inferredFuncType = inferType(env, term.func);
-        if (isFunctionTTag(inferredFuncType)) {
+        if (isFunctionDeclTTag(inferredFuncType)) {
             typeTag = checkFunclikeApplication(env, term, inferredFuncType);
         } else {
             typeTag = new ErrorTypeTag(term.func, `We expected a function type because of the function application, but this is not a function type. (The inferred type was ${inferredFuncType.tag}`);
@@ -347,9 +379,9 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
 export type FunclikeApplication = InfixPredicateApplication | FunctionApplication;
 
 /** Check that Γ |- arg : expected type, for each of the (arg, expected type) pairs */
-function checkFunclikeApplication(env: TypeEnv, term: FunclikeApplication, inferredFunclikeType: FunclikeTTag) {
+function checkFunclikeApplication(env: TypeEnv, term: FunclikeApplication, inferredFunOrPredDeclTTag: FunOrPredDeclTTag) {
     let typeTag: TypeTag  = new ErrorTypeTag(term, 'Could not check fun / pred application');
-    const inferredArgTypes = inferredFunclikeType.getParameterTypePairs().getTypes();
+    const inferredArgTypes = inferredFunOrPredDeclTTag.getParameterTypePairs().getTypes();
 
     const args = term.args.map(arg => isReference(arg) ? arg.ref : arg).filter(arg => arg) as AstNode[];
     if (args.length !== inferredArgTypes.length) {
@@ -364,7 +396,7 @@ function checkFunclikeApplication(env: TypeEnv, term: FunclikeApplication, infer
             checkPassed = false;
         }
     }
-    if (checkPassed) typeTag = inferredFunclikeType.getReturnType();
+    if (checkPassed) typeTag = inferredFunOrPredDeclTTag.getReturnType();
     
     return typeTag;
 }
@@ -397,8 +429,8 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
                 return checkChildrenHaveSameType(env, binE, type);
             })
 
-        .with([P.when(isFunDecl), P.when(isFunctionTTag)],
-            ([fundecl, type]) => checkFunType(env, type.getParameterTypePairs(), type.returnType, fundecl.body))
+        .with([P.when(isFunDecl), P.when(isFunctionDeclTTag)],
+            ([fundecl, type]) => checkFunType(env, type.getParameterTypePairs(), type.getReturnType(), fundecl.body))
         .with([P.when(isFunDecl), P._],
             ([fundecl, _]) => new ErrorTypeTag(fundecl, "Function declaration must be annotated with a function type"))
 
