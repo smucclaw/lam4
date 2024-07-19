@@ -159,19 +159,13 @@ fragment PotentiallyWithSpecificMetadataBlock:
     metadata=(SpecificMetadataBlock)?
 ;
 
-// Not expecting non-programmers to understand this in the textual form
-// This would be visualized / rendered in more accessible ways for non-programmers
-fragment FunDeclTypeAnnot:
-    types+=TypeAnnot ('=>' types+=TypeAnnot)+
-;
-
 // a terse FunDecl
 FunDecl:
     PotentiallyWithSpecificMetadataBlock
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
-    FunDeclTypeAnnot
+    funType=TypeAnnot
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
@@ -385,9 +379,17 @@ Relation:
     description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
+// Not expecting non-programmers to understand the more complicated type annotations in the textual form
+// This would be visualized / rendered in more accessible ways for non-programmers
 TypeAnnot:
-    CustomTypeDef | BuiltinType
+    // `=>` is right-associative (c.f. https://www.typefox.io/blog/parsing-expressions-with-xtext/)
+    PrimitiveTypeAnnot ({infer TypeAnnot.left=current} '=>' right=TypeAnnot)?
 ;
+
+PrimitiveTypeAnnot:
+    CustomTypeDef | BuiltinType | '(' TypeAnnot ')'
+;
+
 CustomTypeDef:
     annot = [CustomType:ID]
 ;
