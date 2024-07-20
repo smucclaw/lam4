@@ -136,10 +136,9 @@ export function isIntegerTTag(tag: TypeTag): tag is IntegerTTag {
 
 /*============= Functions and predicates ================================ */
 
+// ----- ParamlessFunctionTTag, FunctionDeclTTag, FunOrPredDeclTTag -----
+
 export type FunOrPredDeclTTag = FunctionDeclTTag | PredicateTTag;
-export function isFunOrPredDeclTTag(typeTag: TypeTag): typeTag is FunOrPredDeclTTag {
-    return isFunctionDeclTTag(typeTag) || isPredicateTTag(typeTag);
-}
 
 export abstract class FunctionTTag {
     abstract getReturnType(): TypeTag;
@@ -181,9 +180,6 @@ export class ParamlessFunctionTTag extends FunctionTTag implements TypeTag {
     }
 }
 
-export function isParamlessFunctionTTag(typeTag: TypeTag): typeTag is ParamlessFunctionTTag {
-    return typeTag.tag === "Function";
-}
 
 export class FunctionDeclTTag extends FunctionTTag implements TypeTag {
     readonly tag = "FunctionDecl";
@@ -216,6 +212,8 @@ export class FunctionDeclTTag extends FunctionTTag implements TypeTag {
         return isFunctionDeclTTag(other) && this.sameSignatureAs(other);
     }
 }
+
+// ----- FunctionParameter related -------------
 
 export class FunctionParameterTypeSequence {
     private readonly types: TypeTag[]
@@ -269,15 +267,6 @@ export class FunctionParameterTypePairSequence extends FunctionParameterTypeSequ
         return matchingPair ? matchingPair.getType() : null;
     }
 
-    // isAlphaEquivalentTo(other: FunctionParameterTypePairSequence) {
-    //     const myPairs = this.pairs;
-    //     const otherPairs = other.getPairs();
-
-    //     if (myPairs.length !== other.length) return false;
-    //     const zipped = zip(myPairs, otherPairs);
-    //     return zipped.every(([myParamPair, otherParamPair]) => myParamPair.sameTypeAs(otherParamPair));
-    // }
-
     // convenience method for extending TypeEnv
     asNodeTypePairs(): NodeTypePair[] {
         return this.getPairs().map(pair => ({node: pair.getParameter(), 
@@ -316,6 +305,16 @@ export class FunctionParameterTypePair {
     }
 }
 
+// ----- type guard predicates ------------------
+
+export function isFunOrPredDeclTTag(typeTag: TypeTag): typeTag is FunOrPredDeclTTag {
+    return isFunctionDeclTTag(typeTag) || isPredicateTTag(typeTag);
+}
+
+export function isParamlessFunctionTTag(typeTag: TypeTag): typeTag is ParamlessFunctionTTag {
+    return typeTag.tag === "Function";
+}
+
 export function isBaseFunctionTTag(tag: TypeTag): tag is ParamlessFunctionTTag {
     return tag.tag === "Function";
 }
@@ -324,6 +323,7 @@ export function isFunctionDeclTTag(tag: TypeTag): tag is FunctionDeclTTag {
     return tag.tag === "FunctionDecl";
 }
 
+// ----- Predicates ------------------
 
 export class PredicateParameterTypePair extends FunctionParameterTypePair {};
 

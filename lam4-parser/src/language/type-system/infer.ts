@@ -60,7 +60,6 @@ import {
     isInfixPredicateApplication,
     UnaryExpr,
     PrimitiveTypeAnnot,
-    BuiltinTypeAnnot,
     VarDecl,
     ParamTypePair} from "../generated/ast.js";
 import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag} from "./type-tags.js";
@@ -126,13 +125,6 @@ export function inferType(env: TypeEnv, term: AstNode): TypeTag {
     }
 }
 
-function isBasecaseTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
-    return annot.$type === "BuiltinType" || annot.$type === "CustomTypeDef";
-}
-
-function isBasecaseFunctionTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
-    return annot.$type === "TypeAnnot" && annot.right && isBasecaseTypeAnnot(annot.right);
-}
 
 function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): TypeTag {
     typecheckLogger.trace(`[synthTypeAnnot]`);
@@ -159,6 +151,14 @@ function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | Bu
         }
         return new SigTTag(customType as SigDecl);
     }
+
+    function isBasecaseTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
+        return annot.$type === "BuiltinType" || annot.$type === "CustomTypeDef";
+    }
+    
+    function isBasecaseFunctionTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
+        return annot.$type === "TypeAnnot" && annot.right && isBasecaseTypeAnnot(annot.right);
+    }    
 
     // Base cases
     if (annot.$type === "BuiltinType") {
