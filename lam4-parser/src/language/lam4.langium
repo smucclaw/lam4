@@ -156,12 +156,18 @@ ParamTypePair:
 // ------- PredicateDecl, FunDecl -------
 
 fragment PotentiallyWithSpecificMetadataBlock:
-    metadata=(SpecificMetadataBlock)?
+    metadata=(SpecificMetadataBlock)
+;
+
+// TODO: Figure out how best to add support for clauses -- i.e. for things like §10(a) or §10(1)(a)
+OriginalRuleRef:
+    ('SECTION' | '§') section=NUMBER
 ;
 
 // a terse FunDecl
 FunDecl:
-    PotentiallyWithSpecificMetadataBlock
+    originalRuleRef=OriginalRuleRef?
+    PotentiallyWithSpecificMetadataBlock?
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
@@ -177,7 +183,9 @@ FunDecl:
 // a predicate amounts to a special case of a function; 
 // namely, a function whose return type is Boolean
 PredicateDecl:
-    PotentiallyWithSpecificMetadataBlock
+    originalRuleRef=OriginalRuleRef?
+    
+    PotentiallyWithSpecificMetadataBlock?
 
     GivenParamBlock
     'DECIDE' name=IDOrBackTickedID 
@@ -445,7 +453,6 @@ BooleanLiteral:
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
 terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
-// terminal INT returns number: /[0-9]+/;
 // terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 // terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
