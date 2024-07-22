@@ -94,8 +94,8 @@ See also
 */
 
 entry Program:
-    ("GENERAL_METADATA_FOR_TYPES" gen_metadata=GeneralMetadataBlock)*
-    ("GENERAL_METADATA_FOR_RULES" gen_metadata=GeneralMetadataBlock)*
+    // ("GENERAL_METADATA_FOR_TYPES" gen_metadata=GeneralMetadataBlock)*
+    // ("GENERAL_METADATA_FOR_RULES" gen_metadata=GeneralMetadataBlock)*
     elements+=ToplevelElement*
 ;
 
