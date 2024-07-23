@@ -263,8 +263,6 @@ Mult infers Expr:
 /*
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
-ISSUE: Linking to 'fields' will require implementing something like https://langium.org/docs/recipes/scoping/class-member/ --- in particular, this seems to involve adding some kind of type system? Not clear now that it's worth using Langium.
-
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 
 The relationship between relational join and a more conventional member access operator:
@@ -407,8 +405,6 @@ type NamedElement = VarDecl | Param | PredicateDecl | FunDecl  | Relation | SigD
 /* ========================================
          BUILT IN and PRIMITIVE types
  ======================================== */
-
-// TODO: Go through these more carefully; remove the ones we don't need or won't be able to support in the very short term
 
 BuiltinType:
     annot = BuiltinTypeAnnot
