@@ -381,7 +381,6 @@ Relation:
     name=ID optional?='?'? 
     (':' | 'IS_A') 
     relatum=TypeAnnot // TODO: Support plural relata 
-    nullable?='?'? 
     description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
