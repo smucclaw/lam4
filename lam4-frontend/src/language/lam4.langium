@@ -155,8 +155,8 @@ ParamTypePair:
 
 // ------- PredicateDecl, FunDecl -------
 
-fragment PotentiallyWithSpecificMetadataBlock:
-    metadata=(SpecificMetadataBlock)
+fragment WithSpecificMetadataBlock:
+    metadata=SpecificMetadataBlock
 ;
 
 // TODO: Figure out how best to add support for clauses -- i.e. for things like §10(a) or §10(1)(a)
@@ -167,7 +167,7 @@ OriginalRuleRef:
 // a terse FunDecl
 FunDecl:
     originalRuleRef=OriginalRuleRef?
-    PotentiallyWithSpecificMetadataBlock?
+    WithSpecificMetadataBlock?
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
@@ -185,7 +185,7 @@ FunDecl:
 PredicateDecl:
     originalRuleRef=OriginalRuleRef?
     
-    PotentiallyWithSpecificMetadataBlock?
+    WithSpecificMetadataBlock?
 
     GivenParamBlock
     'DECIDE' name=IDOrBackTickedID 
@@ -358,7 +358,7 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 */
 // TODO: Add support for `CONCEPT sig1, sig2, ..., sig_n SPECIALIZES OrigSig`
 SigDecl:
-    PotentiallyWithSpecificMetadataBlock
+    WithSpecificMetadataBlock?
 
     'DECLARE'? 'CONCEPT' 
     name=ID 
@@ -376,7 +376,7 @@ type CustomType = SigDecl;
 
 
 Relation:
-    PotentiallyWithSpecificMetadataBlock
+    WithSpecificMetadataBlock?
 
     name=ID optional?='?'? 
     (':' | 'IS_A') 
