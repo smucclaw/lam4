@@ -244,13 +244,13 @@ OpNotEquals: {infer OpNotEquals} "DIFFERS_FROM" | "!=";
 ComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
 
 ComparisonExpr infers Expr:
-    Add ({infer BinExpr.left=current} op=ComparisonOp right=Add)*
+    Plus ({infer BinExpr.left=current} op=ComparisonOp right=Plus)*
 ;
 
 OpPlus: {infer OpPlus} '+';
 OpMinus: {infer OpMinus} '-';
 OpNot: {infer OpNot} 'NOT';
-Add infers Expr:
+Plus infers Expr:
     Mult ({infer BinExpr.left=current} op=(OpPlus | OpMinus) right=Mult)*
 ;
 
