@@ -199,7 +199,8 @@ PredicateDecl:
 
 
 VarDecl returns NamedElement:
-    {infer VarDecl} name=ID (':' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
+    {infer VarDecl} name=ID (':' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr 
+    // description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 
