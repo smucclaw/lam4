@@ -378,7 +378,8 @@ type CustomType = SigDecl;
 Relation:
     WithSpecificMetadataBlock?
 
-    name=ID optional?='?'? 
+    name=ID 
+    // optional?='?'? 
     (':' | 'IS_A') 
     relatum=TypeAnnot // TODO: Support plural relata 
     description=SINGLELINE_METADATA_ANNOTATION?
