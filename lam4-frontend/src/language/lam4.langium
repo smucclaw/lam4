@@ -434,7 +434,7 @@ StringLiteral:
 ;
 
 BooleanLiteral:
-    value='True' | 'False'
+    value=('True' | 'False')
 ;
 
 // Decimal returns number:
