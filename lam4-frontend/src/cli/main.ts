@@ -23,7 +23,7 @@ export async function getProgramAst(fileName: string) {
     return program;
 } 
 
-export async function printAstForHumans(fileName: string) {
+export async function toMinimalAst(fileName: string, opts: GenerateOptions) {
     const noMetadataSerializationConfig = {
         space: 4,
         refText: true,
@@ -33,10 +33,11 @@ export async function printAstForHumans(fileName: string) {
     }
 
     const program = await getProgramAst(fileName);
-    // const noMetadataAstString = 
-    serializeProgramToJson(program, noMetadataSerializationConfig) as string;
+    const noMetadataAstString = serializeProgramToJson(program, noMetadataSerializationConfig) as string;
+    const astJsonOutPath = writeToDisk(noMetadataAstString, fileName, 
+        "", opts.destination);
+    console.log(chalk.green(`AST without source metadata serialized to JSON at ${astJsonOutPath}`));
 
-    // return noMetadataAstString;
 }
 
 export const toAstAction = async (fileName: string, opts: GenerateOptions): Promise<void> => {
@@ -46,7 +47,7 @@ export const toAstAction = async (fileName: string, opts: GenerateOptions): Prom
     // console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 
     const astString = serializeProgramToJson(program) as string;
-    const astJsonOutPath = writeToDisk(astString, fileName, opts.destination);
+    const astJsonOutPath = writeToDisk(astString, fileName, "_with_source_metadata", opts.destination);
     console.log(chalk.green(`AST serialized to JSON at ${astJsonOutPath}`));
 };
 
@@ -61,17 +62,18 @@ export default function(): void {
 
     const fileExtensions = Lam4LanguageMetaData.fileExtensions.join(', ');
     program
-        .command('toAst')
+        .command('toAstWithSrcMetadata')
         .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
         .option('-d, --destination <dir>', 'destination directory')
-        .description('serialize concrete syntax to JSON')
+        .description('print and serialize concrete syntax (with source text metadata) to JSON')
         .action(toAstAction);
 
     program
-        .command('printAstForHumans')
+        .command('toMinimalAst')
         .argument('<file>', `source file (possible file extensions: ${fileExtensions})`)
-        .description('print human readable version of concrete syntax -- i.e., *without metadata*')
-        .action(printAstForHumans);
+        .option('-d, --destination <dir>', 'destination directory')
+        .description('print and serialize more minimal version of concrete syntax -- i.e., *without metadata*')
+        .action(toMinimalAst);
 
     program.parse(process.argv);
 }

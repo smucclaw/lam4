@@ -29,9 +29,10 @@ export function serializeProgramToJson(program: Program, serializationConfig: Js
     return astJson as JSONString;
 }
 
-export function writeToDisk(data: string, filePath: string, destination: string | undefined, fileExt: string = ".json"): string {
+export function writeToDisk(data: string, filePath: string, nameModifier: string = "", destination: string | undefined, fileExt: string = ".json"): string {
     const filepath = extractDestinationAndName(filePath, destination);
-    const outFilePath = `${path.join(filepath.destination, filepath.name)}${fileExt}`;
+    const finalFileName = filepath.name + nameModifier;
+    const outFilePath = `${path.join(filepath.destination, finalFileName)}${fileExt}`;
 
     if (!fs.existsSync(filepath.destination)) {
         fs.mkdirSync(filepath.destination, { recursive: true });
