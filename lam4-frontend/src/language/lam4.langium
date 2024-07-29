@@ -161,7 +161,7 @@ fragment WithSpecificMetadataBlock:
 
 // TODO: Figure out how best to add support for clauses -- i.e. for things like §10(a) or §10(1)(a)
 OriginalRuleRef:
-    ('SECTION' | '§') section=NUMBER
+    ('SECTION' | '§') section=INTEGER
 ;
 
 // a terse FunDecl
@@ -303,7 +303,7 @@ AnonFunction:
 ;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixPredicateApplication | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -422,11 +422,10 @@ BuiltinTypeAnnot returns string:
         LITERALS
 ======================================== */
 
-Literal: NumberLiteral | StringLiteral | BooleanLiteral;
+Literal: IntegerLiteral | StringLiteral | BooleanLiteral;
 
-NumberLiteral:
-    value=NUMBER
-    // SIGNED_NUMBER|UNSIGNED_NUMBER|INT|Decimal
+IntegerLiteral:
+    value=INTEGER
 ;
 
 StringLiteral:
@@ -437,7 +436,7 @@ BooleanLiteral:
     value=('True' | 'False')
 ;
 
-// Decimal returns number:
+// Decimal returns string:
 //     INT ('.' INT)?;
 
 
@@ -447,9 +446,10 @@ BooleanLiteral:
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
-terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
+terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;
+// terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
 // terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
-// terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
+// terminal UNSIGNED_NUMBER returns string: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 terminal BACK_TICKED_ID:
     '`' -> '`'
