@@ -50,6 +50,7 @@ library
 
     exposed-modules:
         Base
+        Base.IntMap
         Base.Map
         Base.Text
         Base.Aeson
