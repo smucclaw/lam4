@@ -41,33 +41,38 @@ common defaults
     OverloadedRecordDot
     OverloadedStrings
     OverloadedLabels
+    LambdaCase
 
 library
     import:           defaults
-    exposed-modules: 
-          Base
-        -- , Lam4.Expr.Concrete
-
-    -- Modules included in this library but not exported.
-    -- other-modules:
-
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
+    hs-source-dirs:   src
     default-language: GHC2021
 
-    hs-source-dirs:   src
-    build-depends:    
-        base ^>=4.18.2.0,
+    exposed-modules:
+        Base
+        Base.IntMap
+        Base.Map
+        Base.Text
+        Base.Aeson
+        -- Base.MyAesonValueParser
+        Lam4.Expr.ConcreteSyntax
+
+
+    build-depends:
+        base,
         containers,
         optics,
         mtl,
         prettyprinter,
         text,
-        aeson
+        aeson,
+        aeson-value-parser,
+        jsonpath,
+        bytestring
 
 
 executable lam4-backend
-    
+
     import:           defaults
     main-is:          Main.hs
 
@@ -76,10 +81,11 @@ executable lam4-backend
 
     default-language: GHC2021
 
-    hs-source-dirs:   app    
+    hs-source-dirs:   app
     build-depends:
         base ^>=4.18.2.0,
         optparse-applicative,
+        bytestring,
         lam4-backend
 
 -- test-suite lam4-backend-test

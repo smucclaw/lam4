@@ -48,7 +48,7 @@ import { AstNode, Reference, isReference } from "langium";
 
 import { 
     Param,
-    SigDecl, isSigDecl, isStringLiteral, StringLiteral, isBooleanLiteral, BooleanLiteral, NumberLiteral, isNumberLiteral, isVarDecl, isTypeAnnot, TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
+    SigDecl, isSigDecl, isStringLiteral, StringLiteral, isBooleanLiteral, BooleanLiteral, IntegerLiteral, isIntegerLiteral, isVarDecl, isTypeAnnot, TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
     isFunctionApplication,
     PredicateDecl,
     isPredicateDecl,
@@ -298,8 +298,8 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = new StringTTag(term as StringLiteral);
     } else if (term.$type == "BooleanLiteral") {
         typeTag = new BooleanTTag(term as BooleanLiteral);
-    } else if (term.$type == "NumberLiteral") {
-        typeTag = new IntegerTTag(term as NumberLiteral);
+    } else if (term.$type == "IntegerLiteral") {
+        typeTag = new IntegerTTag(term as IntegerLiteral);
     } else if (term.$type == "VarDecl") {
         const varTerm = term as VarDecl;
         typeTag = varTerm.varType ? inferType(env, varTerm.varType) : inferType(env, varTerm.value);

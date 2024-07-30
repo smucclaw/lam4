@@ -4,7 +4,7 @@ import {
     SigDecl,
     BooleanLiteral,
     StringLiteral,
-    NumberLiteral,
+    IntegerLiteral,
     Param,
     Relation
 } from "../generated/ast.js"; 
@@ -81,8 +81,8 @@ export function isUnitTTag(tag: TypeTag): tag is UnitTTag {
 
 export class IntegerTTag implements TypeTag {
     readonly tag = "Integer";
-    readonly literal?: NumberLiteral;
-    constructor(literal?: NumberLiteral) {
+    readonly literal?: IntegerLiteral;
+    constructor(literal?: IntegerLiteral) {
         this.literal = literal;
     }
     toString() {

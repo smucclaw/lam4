@@ -155,19 +155,19 @@ ParamTypePair:
 
 // ------- PredicateDecl, FunDecl -------
 
-fragment PotentiallyWithSpecificMetadataBlock:
-    metadata=(SpecificMetadataBlock)
+fragment WithSpecificMetadataBlock:
+    metadata=SpecificMetadataBlock
 ;
 
 // TODO: Figure out how best to add support for clauses -- i.e. for things like §10(a) or §10(1)(a)
 OriginalRuleRef:
-    ('SECTION' | '§') section=NUMBER
+    ('SECTION' | '§') section=INTEGER
 ;
 
 // a terse FunDecl
 FunDecl:
     originalRuleRef=OriginalRuleRef?
-    PotentiallyWithSpecificMetadataBlock?
+    WithSpecificMetadataBlock?
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
@@ -185,7 +185,7 @@ FunDecl:
 PredicateDecl:
     originalRuleRef=OriginalRuleRef?
     
-    PotentiallyWithSpecificMetadataBlock?
+    WithSpecificMetadataBlock?
 
     GivenParamBlock
     'DECIDE' name=IDOrBackTickedID 
@@ -199,7 +199,8 @@ PredicateDecl:
 
 
 VarDecl returns NamedElement:
-    {infer VarDecl} name=ID (':' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr description=SINGLELINE_METADATA_ANNOTATION?
+    {infer VarDecl} name=ID (':' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr 
+    // description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 
@@ -244,13 +245,13 @@ OpNotEquals: {infer OpNotEquals} "DIFFERS_FROM" | "!=";
 ComparisonOp: OpLt | OpLte | OpGt | OpGte | OpEquals | OpNotEquals;
 
 ComparisonExpr infers Expr:
-    Add ({infer BinExpr.left=current} op=ComparisonOp right=Add)*
+    Plus ({infer BinExpr.left=current} op=ComparisonOp right=Plus)*
 ;
 
 OpPlus: {infer OpPlus} '+';
 OpMinus: {infer OpMinus} '-';
 OpNot: {infer OpNot} 'NOT';
-Add infers Expr:
+Plus infers Expr:
     Mult ({infer BinExpr.left=current} op=(OpPlus | OpMinus) right=Mult)*
 ;
 
@@ -303,7 +304,7 @@ AnonFunction:
 ;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | Ref | UnaryExpr | NumberLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixPredicateApplication | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -358,7 +359,7 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 */
 // TODO: Add support for `CONCEPT sig1, sig2, ..., sig_n SPECIALIZES OrigSig`
 SigDecl:
-    PotentiallyWithSpecificMetadataBlock
+    WithSpecificMetadataBlock?
 
     'DECLARE'? 'CONCEPT' 
     name=ID 
@@ -376,12 +377,12 @@ type CustomType = SigDecl;
 
 
 Relation:
-    PotentiallyWithSpecificMetadataBlock
+    WithSpecificMetadataBlock?
 
-    name=ID optional?='?'? 
+    name=ID 
+    // optional?='?'? 
     (':' | 'IS_A') 
     relatum=TypeAnnot // TODO: Support plural relata 
-    nullable?='?'? 
     description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
@@ -423,11 +424,10 @@ BuiltinTypeAnnot returns string:
         LITERALS
 ======================================== */
 
-Literal: NumberLiteral | StringLiteral | BooleanLiteral;
+Literal: IntegerLiteral | StringLiteral | BooleanLiteral;
 
-NumberLiteral:
-    value=NUMBER
-    // SIGNED_NUMBER|UNSIGNED_NUMBER|INT|Decimal
+IntegerLiteral:
+    value=INTEGER
 ;
 
 StringLiteral:
@@ -435,10 +435,10 @@ StringLiteral:
 ;
 
 BooleanLiteral:
-    value='True' | 'False'
+    value=('True' | 'False')
 ;
 
-// Decimal returns number:
+// Decimal returns string:
 //     INT ('.' INT)?;
 
 
@@ -448,9 +448,10 @@ BooleanLiteral:
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
-terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
+terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;
+// terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
 // terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
-// terminal UNSIGNED_NUMBER returns number: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
+// terminal UNSIGNED_NUMBER returns string: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 terminal BACK_TICKED_ID:
     '`' -> '`'
