@@ -55,8 +55,9 @@ library
         Base.Text
         Base.Aeson
         -- Base.MyAesonValueParser
+        Lam4.Expr.Name
         Lam4.Expr.ConcreteSyntax
-
+        Lam4.Parser.Type
 
     build-depends:
         base,

@@ -1,7 +1,12 @@
-module Lam4.Parser.Type where
+module Lam4.Parser.Type (
+    CSTParser
+  , CSTParserError
+  , CSTParserState
+  , Env            
+  ) where
 
 import Base
-import qualified Base.IntMap as IM
+import Base.IntMap (IntMap)
 -- import Lam4.Expr.Name (Name(..))
 import Lam4.Expr.ConcreteSyntax
 
@@ -10,7 +15,8 @@ import Control.Monad.Except()
 import Control.Monad.Reader()
 
 -- | Env for identifier Names
-type Env = IM.IntMap Expr
+newtype Env = MkEnv (IntMap Expr)
+  deriving newtype (Eq, Show)
 
 data CSTParserState = MkCSTParserState { env :: Env
                                        , maxUnique :: !Int }
