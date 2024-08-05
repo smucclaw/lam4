@@ -10,7 +10,7 @@ import Control.Monad.State as X
 import Data.Coerce as X
 -- import Data.IORef as X
 import Data.Kind as X
-import Data.List as X
+import Data.List as X hiding (uncons)
 import Data.Map.Strict as X (Map, (!))
 import Data.Maybe as X
 import Data.Set as X (Set)
@@ -20,5 +20,7 @@ import Data.Void as X
 import GHC.Generics as X (Generic)
 import Optics.Setter as X
 import Optics.State as X
+import Optics.At as X
+import Optics as X
 import Prettyprinter as X (Doc, Pretty(..), (<+>))
 import System.IO as X
