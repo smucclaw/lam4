@@ -54,10 +54,13 @@ library
         Base.Map
         Base.Text
         Base.Aeson
+        Base.ByteString
         -- Base.MyAesonValueParser
         Lam4.Expr.Name
         Lam4.Expr.ConcreteSyntax
         Lam4.Parser.Type
+        Lam4.Parser.Monad
+
 
     build-depends:
         base,
@@ -68,8 +71,10 @@ library
         text,
         aeson,
         aeson-value-parser,
+        aeson-optics,
         jsonpath,
-        bytestring
+        bytestring,
+        either
 
 
 executable lam4-backend

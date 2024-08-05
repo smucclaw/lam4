@@ -20,6 +20,7 @@ import Data.Void as X
 import GHC.Generics as X (Generic)
 import Optics.Setter as X
 import Optics.State as X
+import Optics.State.Operators as X ((.=), (%=), (<%=))
 import Optics.At as X
 import Optics as X
 import Prettyprinter as X (Doc, Pretty(..), (<+>))
