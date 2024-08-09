@@ -73,7 +73,6 @@ library
         prettyprinter,
         text,
         aeson,
-        -- aeson-value-parser,
         aeson-optics,
         aeson-combinators,
         jsonpath,
