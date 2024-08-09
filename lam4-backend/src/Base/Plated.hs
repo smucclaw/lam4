@@ -1,4 +1,4 @@
-module Base.Plated (cosmos) where
+module Base.Plated (cosmos, Plated, plate) where
 
 import           Base
 import           Control.Lens.Plated (Plated, plate)
