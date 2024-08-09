@@ -35,9 +35,23 @@ data Expr
   | Predicate  [Name] Expr          -- Differs from a function when doing symbolic evaluation
   | Let        Name Expr Expr
   | Letrec     Name Expr Expr
+  | SeqOfExpr  SeqExpr
   | Sig        [Name] [Expr]        -- Sig parents relations
   | Relation   Relatum (Maybe Text) -- Relation relatum description
   deriving stock (Eq, Show, Ord)
+
+newtype SeqExpr = MkSeqExpr [Expr]
+  deriving stock (Show, Generic, Eq, Ord)
+  deriving (Semigroup, Monoid) via [Expr]
+
+seqExpToExprs :: SeqExpr -> [Expr]
+seqExpToExprs = coerce
+
+exprsToSeqExp :: [Expr] -> SeqExpr
+exprsToSeqExp = coerce
+
+consSeqExpr :: Expr -> SeqExpr -> SeqExpr
+consSeqExpr expr (MkSeqExpr exprs) = exprsToSeqExp $ expr : exprs
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
 data Literal
