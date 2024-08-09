@@ -1,6 +1,8 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
 module Lam4.Parser.Type (
   -- * Parser related
-  CSTParser(..),
+  Parser(..),
   ParserError,
   ParserState(..),
 
@@ -10,6 +12,7 @@ module Lam4.Parser.Type (
 ) where
 
 import           Base
+import qualified Base.Aeson             as A
 import           Lam4.Expr.Name         (Unique)
 
 import           Control.Monad.Except   ()
@@ -30,7 +33,7 @@ __Examples:__
 -}
 type RefPath = Text
 
--- | Environment for Parser: map from RefPath to Uniques/Ints
+-- | Environment for Parser: map from RefPaths to Uniques/Ints
 type Env = Map RefPath Unique
 
 {----------------------------
@@ -44,12 +47,18 @@ data ParserState = MkParserState
   deriving stock (Show, Generic)
 
 -- | Concrete Syntax Parser monad, for parsing the concrete syntax json serialized from the Langium parser
-type CSTParser :: Type -> Type
-newtype CSTParser a
-  = MkParser (ParserState -> (Either ParserError a, ParserState))
+type Parser :: Type -> Type
+newtype Parser a
+  = MkParser (ParserState -> A.Parser ( Either ParserError a, ParserState) )
   deriving
     (Functor, Applicative, Monad, MonadState ParserState, MonadError ParserError)
-    via ExceptT ParserError (StateT ParserState Identity)
+    via ExceptT ParserError (StateT ParserState A.Parser)
+
+{-
+ExceptT ParserError (StateT ParserState A.Parser) a
+= StateT ParserState A.Parser (Either ParserError a)
+= ParserState -> A.Parser ( (Either ParserError a), ParserState) )
+-}
 
 -- Prob won't really need much ParseError support
 -- since this is parsing something that's valid by lights of Langium parser and validator
