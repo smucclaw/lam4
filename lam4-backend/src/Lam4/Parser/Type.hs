@@ -16,9 +16,11 @@ import           Base
 import qualified Base.Aeson             as A
 import           Lam4.Expr.Name         (Unique)
 
+import           Control.Monad.Base
 import           Control.Monad.Except   ()
 import           Control.Monad.Identity ()
 import           Control.Monad.Reader   ()
+
 
 {- | JSONPath for Refs
 
@@ -44,7 +46,7 @@ type Env = Map RefPath Unique
 data ParserState = MkParserState
   { refPathEnv :: !Env
   , maxUnique  :: !Unique -- ^ for making fresh int vars
-  , input      :: A.Object
+  , input      :: A.Value
   }
   deriving stock (Show, Generic)
 
@@ -58,13 +60,15 @@ newtype Parser a
     (Functor, Applicative, Monad, MonadState ParserState)
     via (StateT ParserState AesonParser)
 
+instance MonadBase AesonParser Parser where
+  liftBase :: AesonParser a -> Parser a
+  liftBase aesonParser = MkParser $ \s -> fmap (, s) aesonParser
+
 
   -- = MkParser (ParserState -> A.Parser ( Either ParserError a, ParserState) )
   -- deriving
   --   (Functor, Applicative, Monad, MonadState ParserState, MonadError ParserError)
   --   via ExceptT ParserError (StateT ParserState A.Parser)
-
-
 {-
 
 ExceptT ParserError (StateT ParserState A.Parser) a

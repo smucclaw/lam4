@@ -70,6 +70,7 @@ library
         lens,
         optics,
         mtl,
+        transformers-base,
         prettyprinter,
         text,
         aeson,
