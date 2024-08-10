@@ -1,13 +1,17 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Redundant lambda" #-}
+{-# HLINT ignore "Avoid lambda" #-}
 module Lam4.Parser.Monad
   (
-    parseNodeObject
-  , runParser
+    -- parseNodeObject
+    runParser
+  -- , evalParser
+  , initialParserState
 
   -- * JSON-related operations
   , (.:)
   , (.:?)
+  , parseFieldWith
 
   -- * Unique related
   -- , getFresh
@@ -28,42 +32,53 @@ module Lam4.Parser.Monad
 where
 
 import           Base
-import qualified Base.Aeson       as A
-import           Base.Map         as M
-import           Lam4.Expr.Name   (Unique)
+import qualified Base.Aeson         as A
+import           Base.Map           as M
+import           Control.Monad.Base
+import           Lam4.Expr.Name     (Unique)
 import           Lam4.Parser.Type
 
 
-makeInitialParserState :: A.Object -> ParserState
-makeInitialParserState obj = MkParserState emptyEnv 0 obj
+initialParserState :: ParserState
+initialParserState = MkParserState emptyEnv 0
 
-parseNodeObject ::
-  ParserError
-  -> Parser a
+-- parseNodeObject ::
+--   ParserError
+--   -> Parser a
+--   -> (A.Object -> ParserState)
+--   -> A.Value -> AesonParser a
+-- parseNodeObject errorStr parser restOfParserState = A.withObject errorStr (evalParserWithObj parser restOfParserState)
+
+-- -- TODO: Figure out how to anti-unify `runParserWithObj` and `runParser` (maybe with type applications?)
+-- evalParserWithObj :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
+-- evalParserWithObj (MkParser parser) withRestOfParserState =
+--   \object -> fst <$> parser (withRestOfParserState object)
+
+runParser ::
+  Parser a
   -> (A.Object -> ParserState)
-  -> A.Value -> AesonParser a
-parseNodeObject errorStr parser initialRestOfParserState = A.withObject errorStr (runParser parser initialRestOfParserState)
+  -> (A.Object -> AesonParser (a, ParserState))
+runParser (MkParser parser) withRestOfParserState =
+  \obj -> parser (withRestOfParserState obj)
 
-runParser :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
-runParser (MkParser parser) mkParserState = \nodeObj -> fst <$> parser (mkParserState nodeObj)
-
+-- evalParser :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
+-- evalParser mparser withRestOfParserState = fmap fst . runParser mparser withRestOfParserState
 
 {---------------------------
     JSON-related operations
 -----------------------------}
 
--- TODO: Refactor to remove redundancy
-
 (.:) :: (A.FromJSON a) => A.Object -> A.Key -> Parser a
-(.:) obj key = MkParser $
-  \s -> fmap (, s) (obj A..: key)
+(.:) obj key = liftBase (obj A..: key)
 
 (.:?) :: (A.FromJSON a) => A.Object -> A.Key -> Parser (Maybe a)
-(.:?) obj key = MkParser $
-  \s -> fmap (, s) (obj A..:? key)
+(.:?) obj key = liftBase (obj A..:? key)
 
-explicitParseField :: (A.Value -> Parser a) -> A.Object -> A.Key -> Parser a
-explicitParseField p obj key = undefined --TODO
+parseFieldWith :: (A.Value -> Parser b) -> A.KeyMap A.Value -> A.Key -> Parser b
+parseFieldWith parse obj key = case A.lookup key obj of
+    Nothing -> error $ "key " ++ show key ++ " not found"
+    Just val  -> parse val
+
 
 {--------------------
     RefPath x Env

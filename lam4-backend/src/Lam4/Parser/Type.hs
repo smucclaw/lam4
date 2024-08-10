@@ -43,10 +43,10 @@ type Env = Map RefPath Unique
     ParserState, Parser
 -----------------------------}
 
+-- | does NOT include the input object / value
 data ParserState = MkParserState
   { refPathEnv :: !Env
   , maxUnique  :: !Unique -- ^ for making fresh int vars
-  , input      :: A.Value
   }
   deriving stock (Show, Generic)
 
