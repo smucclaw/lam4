@@ -1,6 +1,13 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Redundant lambda" #-}
 module Lam4.Parser.Monad
   (
-    runParser
+    parseNodeObject
+  , runParser
+
+  -- * JSON-related operations
+  , (.:)
+  , (.:?)
 
   -- * Unique related
   -- , getFresh
@@ -21,16 +28,42 @@ module Lam4.Parser.Monad
 where
 
 import           Base
-import qualified Base.Aeson       as AE
+import qualified Base.Aeson       as A
 import           Base.Map         as M
 import           Lam4.Expr.Name   (Unique)
 import           Lam4.Parser.Type
 
-initialParserState :: ParserState
-initialParserState = MkParserState emptyEnv 0
 
-runParser :: Parser a -> AE.Parser (Either ParserError a, ParserState)
-runParser (MkParser parser) = parser initialParserState
+makeInitialParserState :: A.Object -> ParserState
+makeInitialParserState obj = MkParserState emptyEnv 0 obj
+
+parseNodeObject ::
+  ParserError
+  -> Parser a
+  -> (A.Object -> ParserState)
+  -> A.Value -> AesonParser a
+parseNodeObject errorStr parser initialRestOfParserState = A.withObject errorStr (runParser parser initialRestOfParserState)
+
+runParser :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
+runParser (MkParser parser) mkParserState = \nodeObj -> fst <$> parser (mkParserState nodeObj)
+
+
+{---------------------------
+    JSON-related operations
+-----------------------------}
+
+-- TODO: Refactor to remove redundancy
+
+(.:) :: (A.FromJSON a) => A.Object -> A.Key -> Parser a
+(.:) obj key = MkParser $
+  \s -> fmap (, s) (obj A..: key)
+
+(.:?) :: (A.FromJSON a) => A.Object -> A.Key -> Parser (Maybe a)
+(.:?) obj key = MkParser $
+  \s -> fmap (, s) (obj A..:? key)
+
+explicitParseField :: (A.Value -> Parser a) -> A.Object -> A.Key -> Parser a
+explicitParseField p obj key = undefined --TODO
 
 {--------------------
     RefPath x Env
@@ -42,7 +75,7 @@ refPathToUnique :: RefPath -> Parser Unique
 refPathToUnique refpath = do
   env <- getEnv
   case lookupInEnv refpath env of
-    Nothing -> throwError "the input program is assumed to be well-scoped"
+    Nothing -> error "the input program is assumed to be well-scoped"
     Just v  -> pure v
 
 -- processRefPath :: RefPath -> CSTParser ()

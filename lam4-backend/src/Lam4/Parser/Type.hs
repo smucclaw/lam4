@@ -3,8 +3,9 @@
 module Lam4.Parser.Type (
   -- * Parser related
   Parser(..),
-  ParserError,
   ParserState(..),
+  AesonParser,
+  ParserError,
 
   -- * RefPath, Env
   RefPath,
@@ -43,18 +44,29 @@ type Env = Map RefPath Unique
 data ParserState = MkParserState
   { refPathEnv :: !Env
   , maxUnique  :: !Unique -- ^ for making fresh int vars
+  , input      :: A.Object
   }
   deriving stock (Show, Generic)
+
+type AesonParser = A.Parser
 
 -- | Concrete Syntax Parser monad, for parsing the concrete syntax json serialized from the Langium parser
 type Parser :: Type -> Type
 newtype Parser a
-  = MkParser (ParserState -> A.Parser ( Either ParserError a, ParserState) )
+  = MkParser (ParserState -> AesonParser (a, ParserState))
   deriving
-    (Functor, Applicative, Monad, MonadState ParserState, MonadError ParserError)
-    via ExceptT ParserError (StateT ParserState A.Parser)
+    (Functor, Applicative, Monad, MonadState ParserState)
+    via (StateT ParserState AesonParser)
+
+
+  -- = MkParser (ParserState -> A.Parser ( Either ParserError a, ParserState) )
+  -- deriving
+  --   (Functor, Applicative, Monad, MonadState ParserState, MonadError ParserError)
+  --   via ExceptT ParserError (StateT ParserState A.Parser)
+
 
 {-
+
 ExceptT ParserError (StateT ParserState A.Parser) a
 = StateT ParserState A.Parser (Either ParserError a)
 = ParserState -> A.Parser ( (Either ParserError a), ParserState) )
