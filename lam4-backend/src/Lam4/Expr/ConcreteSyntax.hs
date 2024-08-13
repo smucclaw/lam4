@@ -16,10 +16,18 @@ data Relatum
 data BuiltinTypeForRelation = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
   deriving stock (Eq, Show, Ord, Generic)
 
+{- | References to where in the original source this corresponds to; e.g., §10.
+      In the future, the structure will be more complicated --- want to be able to support things like `§10(1)(a)`
+-}
+newtype OriginalRuleRef
+  = MkOriginalRuleRef Integer
+  deriving newtype (Eq, Ord)
+  deriving stock (Show)
 
--- newtype Program = MkProgram [Expr]
---   deriving stock (Show)
---   deriving newtype (Eq, Ord)
+data Decl =
+    NonRec Name Expr
+  | Rec    Name Expr
+  deriving stock Show
 
 -- TODO: think more about Sigs!
 data Expr
@@ -31,27 +39,13 @@ data Expr
   | FunApp     Expr [Expr]
   | PredApp    Expr [Expr]
   | Join       Expr Expr
-  | Fun        [Name] Expr          -- Function
-  | Predicate  [Name] Expr          -- Differs from a function when doing symbolic evaluation
+  | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
+  | Predicate  [Name] Expr (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
   | Let        Name Expr Expr
   | Letrec     Name Expr Expr
-  -- | SeqOfExpr  SeqExpr
-  | Sig        [Name] [Expr]        -- Sig parents relations
-  | Relation   Relatum (Maybe Text) -- Relation relatum description
+  | Sig        [Name] [Expr]                       -- Sig parents relations
+  | Relation   Relatum (Maybe Text)                -- Relation relatum description
   deriving stock (Eq, Show, Ord)
-
--- newtype SeqExpr = MkSeqExpr [Expr]
---   deriving stock (Show, Generic, Eq, Ord)
---   deriving (Semigroup, Monoid) via [Expr]
-
--- seqExpToExprs :: SeqExpr -> [Expr]
--- seqExpToExprs = coerce
-
--- exprsToSeqExp :: [Expr] -> SeqExpr
--- exprsToSeqExp = coerce
-
--- consSeqExpr :: Expr -> SeqExpr -> SeqExpr
--- consSeqExpr expr (MkSeqExpr exprs) = exprsToSeqExp $ expr : exprs
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
 data Literal
