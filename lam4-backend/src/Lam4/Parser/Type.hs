@@ -6,6 +6,7 @@ module Lam4.Parser.Type (
   ParserState(..),
   AesonParser,
   ParserError,
+  liftBase,
 
   -- * RefPath, Env
   RefPath,

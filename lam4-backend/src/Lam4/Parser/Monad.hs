@@ -19,6 +19,7 @@ module Lam4.Parser.Monad
   -- * RefPath related
   -- , processRefPath
   , refPathToUnique
+  , refPathToMaybeUnique
 
   -- * Env related
   , getEnv
@@ -41,18 +42,6 @@ import           Lam4.Parser.Type
 
 initialParserState :: ParserState
 initialParserState = MkParserState emptyEnv 0
-
--- parseNodeObject ::
---   ParserError
---   -> Parser a
---   -> (A.Object -> ParserState)
---   -> A.Value -> AesonParser a
--- parseNodeObject errorStr parser restOfParserState = A.withObject errorStr (evalParserWithObj parser restOfParserState)
-
--- -- TODO: Figure out how to anti-unify `runParserWithObj` and `runParser` (maybe with type applications?)
--- evalParserWithObj :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
--- evalParserWithObj (MkParser parser) withRestOfParserState =
---   \object -> fst <$> parser (withRestOfParserState object)
 
 runParser ::
   Parser a
@@ -93,6 +82,10 @@ refPathToUnique refpath = do
     Nothing -> error "the input program is assumed to be well-scoped"
     Just v  -> pure v
 
+refPathToMaybeUnique :: RefPath -> Parser (Maybe Unique)
+refPathToMaybeUnique refpath = lookupInEnv refpath <$> getEnv
+
+
 -- processRefPath :: RefPath -> CSTParser ()
 -- processRefPath refpath = do
 --   env <- getEnv
@@ -132,6 +125,21 @@ extendEnv = flip M.union
 -----------------------------------------------------------
 -- Aug 10: Commenting out stuff that I'm not sure is needed
 -----------------------------------------------------------
+
+-- parseNodeObject ::
+--   ParserError
+--   -> Parser a
+--   -> (A.Object -> ParserState)
+--   -> A.Value -> AesonParser a
+-- parseNodeObject errorStr parser restOfParserState = A.withObject errorStr (evalParserWithObj parser restOfParserState)
+
+-- -- TODO: Figure out how to anti-unify `runParserWithObj` and `runParser` (maybe with type applications?)
+-- evalParserWithObj :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
+-- evalParserWithObj (MkParser parser) withRestOfParserState =
+--   \object -> fst <$> parser (withRestOfParserState object)
+
+----------------------
+
 
 -- insertEnv :: RefPath -> Unique -> CSTParser ()
 -- insertEnv refPath uniqueV = do
