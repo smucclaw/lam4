@@ -20,7 +20,7 @@ data BuiltinTypeForRelation = BuiltinTypeString | BuiltinTypeInteger | BuiltinTy
       In the future, the structure will be more complicated --- want to be able to support things like `§10(1)(a)`
 -}
 newtype OriginalRuleRef
-  = MkOriginalRuleRef Integer
+  = MkOriginalRuleRef Text
   deriving newtype (Eq, Ord)
   deriving stock (Show)
 
@@ -35,16 +35,16 @@ data Expr
   | Literal    Literal
   | Unary      UnaryOp Expr
   | BinExpr    BinOp Expr Expr
+  | IfThenElse Expr Expr Expr
   -- | ListExpr   ListOp [Expr]
   | FunApp     Expr [Expr]
   | PredApp    Expr [Expr]
-  | Join       Expr Expr
   | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
   | Predicate  [Name] Expr (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
   | Let        Name Expr Expr
   | Letrec     Name Expr Expr
   | Sig        [Name] [Expr]                       -- Sig parents relations
-  | Relation   Relatum (Maybe Text)                -- Relation relatum description
+  | Relation   Name Name Relatum (Maybe Text)      -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Ord)
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
@@ -64,12 +64,14 @@ data BinOp
   | Plus
   | Minus
   | Mult
+  | Div
   | Lt
   | Lte
   | Gt
   | Gte
   | Equals
   | NotEquals
+  | Join
    deriving stock (Eq, Show, Ord)
 
 data UnaryOp = Not | UnaryMinus

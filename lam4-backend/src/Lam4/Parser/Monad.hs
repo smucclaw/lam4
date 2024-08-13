@@ -3,17 +3,21 @@
 {-# HLINT ignore "Avoid lambda" #-}
 module Lam4.Parser.Monad
   (
-    -- parseNodeObject
-    runParser
-  -- , evalParser
-  , initialParserState
+    evalParserFromScratch
+  , evalParser
+  , runParser
+  , runMaybeParser
+  , defaultInitialParserState
 
   -- * JSON-related operations
   , (.:)
+  , objAtKey
+  , getObjectsAtField
   , (.:?)
   , parseFieldWith
 
-  -- * Unique related
+  -- * Name / Unique related
+
   -- , getFresh
 
   -- * RefPath related
@@ -34,28 +38,40 @@ where
 
 import           Base
 import qualified Base.Aeson         as A
+import Base.Aeson (_Object, _Array)
 import           Base.Map           as M
 import           Control.Monad.Base
 import           Lam4.Expr.Name     (Unique)
 import           Lam4.Parser.Type
 
+-- | Entrypoint
+runParser :: Parser a -> ParserState -> Either String (a, ParserState)
+runParser (MkParser parser) = A.parseEither parser
 
-initialParserState :: ParserState
-initialParserState = MkParserState emptyEnv 0
+runMaybeParser :: Parser a -> ParserState -> Maybe (a, ParserState)
+runMaybeParser (MkParser parser) = A.parseMaybe parser
 
-runParser ::
-  Parser a
-  -> (A.Object -> ParserState)
-  -> (A.Object -> AesonParser (a, ParserState))
-runParser (MkParser parser) withRestOfParserState =
-  \obj -> parser (withRestOfParserState obj)
+evalParser :: Parser b -> ParserState -> Either String b
+evalParser parser parserState = fst <$> runParser parser parserState
 
--- evalParser :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
--- evalParser mparser withRestOfParserState = fmap fst . runParser mparser withRestOfParserState
+evalParserFromScratch :: Parser b -> Either String b
+evalParserFromScratch parser = evalParser parser defaultInitialParserState
+
+
+defaultInitialParserState :: ParserState
+defaultInitialParserState = MkParserState emptyEnv 0
 
 {---------------------------
     JSON-related operations
 -----------------------------}
+
+-- | Use this only with non-optional keys/values
+objAtKey :: (JoinKinds (IxKind s) A_Prism k, Is k An_AffineFold, Ixed s,  A.AsValue (IxValue s)) => s -> Index s -> A.KeyMap A.Value
+objAtKey node field = node ^?! ix field % _Object
+
+getObjectsAtField :: (JoinKinds k1 A_Prism k2, JoinKinds k3 A_Fold k1,  JoinKinds (IxKind s) A_Prism k3, Is k2 A_Fold, Ixed s,  A.AsValue (IxValue s)) => s -> Index s -> [A.Object]
+getObjectsAtField node field = node ^.. ix field  % _Array % folded % _Object
+
 
 (.:) :: (A.FromJSON a) => A.Object -> A.Key -> Parser a
 (.:) obj key = liftBase (obj A..: key)
@@ -126,14 +142,7 @@ extendEnv = flip M.union
 -- Aug 10: Commenting out stuff that I'm not sure is needed
 -----------------------------------------------------------
 
--- parseNodeObject ::
---   ParserError
---   -> Parser a
---   -> (A.Object -> ParserState)
---   -> A.Value -> AesonParser a
--- parseNodeObject errorStr parser restOfParserState = A.withObject errorStr (evalParserWithObj parser restOfParserState)
-
--- -- TODO: Figure out how to anti-unify `runParserWithObj` and `runParser` (maybe with type applications?)
+-- -- TODO: Figure out how to anti-unify `runParserWithObj` and `runMaybeParser` (maybe with type applications?)
 -- evalParserWithObj :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
 -- evalParserWithObj (MkParser parser) withRestOfParserState =
 --   \object -> fst <$> parser (withRestOfParserState object)

@@ -79,7 +79,8 @@ library
         aeson-combinators,
         jsonpath,
         bytestring,
-        either
+        either,
+        pretty-show
 
 
 executable lam4-backend
