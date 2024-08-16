@@ -119,7 +119,8 @@ GeneralMetadataBlock:
     '}'
 ;
 MetadataKey returns string:
-    ID | "description" | "description_for_semantic_parser"
+    ID | "description" 
+    // | "description_for_semantic_parser"
 ;
 
 MetadataKVPair:
