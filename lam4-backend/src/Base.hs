@@ -24,3 +24,4 @@ import           Optics.Operators.Unsafe as X
 import           Optics.State.Operators  as X ((%=), (.=), (<%=))
 import           Prettyprinter           as X (Doc, Pretty (..), (<+>))
 import           System.IO               as X
+import           Text.Show.Pretty        as X (pPrint, ppShow)
