@@ -11,6 +11,10 @@
       4. is valid, according to the other static semantic checks / validators
 
 In short: the expression conforms, not just to the Lam4 grammar, but also to its semantics.
+
+The parsing/translation in Parser.hs preserves well-scopedness etc
+  because the translation maps constructs in the Langium grammar to concrete syntax in a 1-to-1 way.
+  The NamedElements are basically just relabelled with unique integers.
 -}
 
 module Lam4.Expr.Parser (
@@ -89,8 +93,9 @@ parseProgram program = do
       -- list of JSON paths for every NamedElement in the program
       nodePaths = elementValues ^.. folded % cosmos % ix "nodePath" % _String
 
-  -- Make Env of nodePaths => Uniques
-  -- All that's needed, for now, is *some* canonical order on the Uniques
+  {- Make Env of nodePaths => Uniques
+    All that's needed, for now, is *some* canonical order on the Uniques
+  -}
   setEnv (zip nodePaths [1 .. ])
   parseDecls elementObjects
 
