@@ -20,10 +20,10 @@ optionsConfig :: Options.ParserInfo Options
 optionsConfig =
   info (optionsDescription <**> helper)
     (  fullDesc
-    <> header "Lam4 Backend"
+    <> header "Lam4 Backend. This is an *internal*, *unstable* cli that can see breaking changes any time --- use at your own risk!"
     )
 
-
+-- | This will be wired up to an evaluator instead of just the parser in the near future
 main :: IO ()
 main = do
   options <- Options.execParser optionsConfig
