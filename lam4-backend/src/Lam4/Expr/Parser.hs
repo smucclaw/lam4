@@ -12,22 +12,20 @@
 
 In short: the expression conforms, not just to the Lam4 grammar, but also to its semantics.
 -}
-{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Lam4.Expr.Parser (
-  parseProgramByteStr, 
-  parseProgram, 
-  parseExpr) 
+  parseProgramByteStr,
+  parseProgram,
+  parseExpr)
   where
 
 import           Base
 import           Base.Aeson               (FromJSON, _Integer, _Object, _String,
-                                           values)
+                                           values, cosmos)
 import qualified Base.Aeson               as A
-import qualified Data.Set                 as Set
 import           Base.ByteString          (ByteString)
-import           Base.Plated              (Plated, cosmos, plate)
 import qualified Base.Text                as T
+import qualified Data.Set                 as Set
 -- import qualified Data.List.NonEmpty as NE
 import qualified Data.Foldable            as F
 import           Lam4.Expr.ConcreteSyntax
@@ -35,11 +33,6 @@ import           Lam4.Expr.Name           (Name (..))
 import           Lam4.Parser.Monad
 import           Lam4.Parser.Type
 
-instance Plated A.Value where
-  plate f (A.Object o) = A.Object <$> traverse f o
-  plate f (A.Array a)  = A.Array <$> traverse f a
-  plate _ xs           = pure xs
-  {-# INLINE plate #-}
 
 -- | The Langium-parser ASTNode `$type`s that correspond to recursive exprs
 recursiveTypes :: Set Text
@@ -153,16 +146,12 @@ parseExpr node = do
     Relation related
 -----------------------}
 
-parseBuiltinTypeForRelation :: A.Value -> Parser BuiltinTypeForRelation
-parseBuiltinTypeForRelation = liftBase . A.parseJSON
-
-instance FromJSON BuiltinTypeForRelation where
-  parseJSON :: A.Value -> AesonParser BuiltinTypeForRelation
-  parseJSON = A.withText "BuiltinTypeForRelation" $ \case
+parseBuiltinTypeForRelation :: Text -> Parser BuiltinTypeForRelation
+parseBuiltinTypeForRelation = \case
     "Integer" -> pure BuiltinTypeInteger
     "String"  -> pure BuiltinTypeString
     "Boolean" -> pure BuiltinTypeBoolean
-    other     -> fail ("Unexpected type " <> T.unpack other)
+    other     -> error ("Unexpected type " <> T.unpack other)
 
 parseRelatum :: A.Object -> Parser Relatum
 parseRelatum node = do
@@ -171,7 +160,7 @@ parseRelatum node = do
       name <- relabelBareRef $ coerce $ node `objAtKey` "annot"
       pure $ CustomType name
     "BuiltinType"   -> do
-      builtinType <- parseBuiltinTypeForRelation =<< (node .: "annot")
+      builtinType <- parseBuiltinTypeForRelation =<< (node .: "annot" :: Parser Text)
       pure $ BuiltinType builtinType
     _               -> error "unrecognized relatum"
 
@@ -343,7 +332,7 @@ parseIntegerLiteral literalNode = do
     let literalVal = literalNode ^? ix "value" % _String % _Integer
     case literalVal of
       Just litVal -> pure . Literal $ IntegerLiteral litVal
-      Nothing -> error $ "Failed to parse integer value. Node: " <> show literalNode
+      Nothing -> error $ "Failed to parse integer value. Node: " <> ppShow literalNode
 
 parseLiteral :: FromJSON t => (t -> Literal) -> A.Object -> Parser Expr
 parseLiteral literalExprCtor literalNode = do

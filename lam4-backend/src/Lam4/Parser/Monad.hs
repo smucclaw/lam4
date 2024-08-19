@@ -14,14 +14,8 @@ module Lam4.Parser.Monad
   , objAtKey
   , getObjectsAtField
   , (.:?)
-  , parseFieldWith
-
-  -- * Name / Unique related
-
-  -- , getFresh
 
   -- * RefPath related
-  -- , processRefPath
   , refPathToUnique
   , refPathToMaybeUnique
 
@@ -30,15 +24,12 @@ module Lam4.Parser.Monad
   , setEnv
   , emptyEnv
   , lookupInEnv
-  , extendEnv
-  -- , withEnv
-  -- , insertEnv
   )
 where
 
 import           Base
+import           Base.Aeson         (_Array, _Object)
 import qualified Base.Aeson         as A
-import Base.Aeson (_Object, _Array)
 import           Base.Map           as M
 import           Control.Monad.Base
 import           Lam4.Expr.Name     (Unique)
@@ -79,10 +70,10 @@ getObjectsAtField node field = node ^.. ix field  % _Array % folded % _Object
 (.:?) :: (A.FromJSON a) => A.Object -> A.Key -> Parser (Maybe a)
 (.:?) obj key = liftBase (obj A..:? key)
 
-parseFieldWith :: (A.Value -> Parser b) -> A.KeyMap A.Value -> A.Key -> Parser b
-parseFieldWith parse obj key = case A.lookup key obj of
-    Nothing -> error $ "key " ++ show key ++ " not found"
-    Just val  -> parse val
+-- parseFieldWith :: (A.Value -> Parser b) -> A.KeyMap A.Value -> A.Key -> Parser b
+-- parseFieldWith parse obj key = case A.lookup key obj of
+--     Nothing -> error $ "key " ++ show key ++ " not found"
+--     Just val  -> parse val
 
 
 {--------------------
@@ -100,16 +91,6 @@ refPathToUnique refpath = do
 
 refPathToMaybeUnique :: RefPath -> Parser (Maybe Unique)
 refPathToMaybeUnique refpath = lookupInEnv refpath <$> getEnv
-
-
--- processRefPath :: RefPath -> CSTParser ()
--- processRefPath refpath = do
---   env <- getEnv
---   unless (M.member refpath env) $
---     do
---       newUnique <- getFresh
---       insertEnv refpath newUnique
-
 
 {--------------------
     Env Operations
@@ -133,31 +114,35 @@ lookupInEnv = M.lookup
 emptyEnv :: Env
 emptyEnv = M.empty
 
--- | Second environment wins over first.
-extendEnv :: Env -> Env -> Env
-extendEnv = flip M.union
 
 
------------------------------------------------------------
--- Aug 10: Commenting out stuff that I'm not sure is needed
------------------------------------------------------------
+{-----------------------------------------------------------
+  Aug 10: The following isn't currently needed
+          because I'm currently making a dictionary of the refpaths at the start,
+          instead of doing it *as* I parse the .json cst
+-----------------------------------------------------------}
+-- -- | Second environment wins over first.
+-- extendEnv :: Env -> Env -> Env
+-- extendEnv = flip M.union
 
--- -- TODO: Figure out how to anti-unify `runParserWithObj` and `runMaybeParser` (maybe with type applications?)
--- evalParserWithObj :: Parser a -> (A.Object -> ParserState) -> (A.Object -> AesonParser a)
--- evalParserWithObj (MkParser parser) withRestOfParserState =
---   \object -> fst <$> parser (withRestOfParserState object)
+-- processRefPath :: RefPath -> Parser ()
+-- processRefPath refpath = do
+--   env <- getEnv
+--   unless (M.member refpath env) $
+--     do
+--       newUnique <- getFresh
+--       insertEnv refpath newUnique
 
-----------------------
+------------
 
-
--- insertEnv :: RefPath -> Unique -> CSTParser ()
+-- insertEnv :: RefPath -> Unique -> Parser ()
 -- insertEnv refPath uniqueV = do
 --   env <- getEnv
 --   let newEnv = M.insert refPath uniqueV env
 --   assign' #refPathEnv newEnv
 
 -- adapted from Simala's evaluator
--- withEnv :: Env -> CSTParser a -> CSTParser a
+-- withEnv :: Env -> Parser a -> Parser a
 -- withEnv env m = do
 --   savedEnv <- getEnv
 --   assign' #refPathEnv env
@@ -169,6 +154,5 @@ extendEnv = flip M.union
     Unique related
 ---------------------}
 
--- TODO: may not need this
--- getFresh :: CSTParser Unique
+-- getFresh :: Parser Unique
 -- getFresh = do #maxUnique <%= (+ 1)

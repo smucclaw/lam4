@@ -36,7 +36,7 @@ data Expr
   | Unary      UnaryOp Expr
   | BinExpr    BinOp Expr Expr
   | IfThenElse Expr Expr Expr
-  -- | ListExpr   ListOp [Expr]
+  -- | ListExpr   ListOp [Expr] -- TODO: Not Yet Implemented
   | FunApp     Expr [Expr]
   | PredApp    Expr [Expr]
   | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
