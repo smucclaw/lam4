@@ -44,6 +44,7 @@ data Expr
   | Let        Name Expr Expr
   | Letrec     Name Expr Expr
   | Sig        [Name] [Expr]                       -- Sig parents relations
+  | Join       Expr Expr                           -- Relational join (similar to record projection)
   | Relation   Name Name Relatum (Maybe Text)      -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Ord)
 
@@ -71,7 +72,6 @@ data BinOp
   | Gte
   | Equals
   | NotEquals
-  | Join
    deriving stock (Eq, Show, Ord)
 
 data UnaryOp = Not | UnaryMinus

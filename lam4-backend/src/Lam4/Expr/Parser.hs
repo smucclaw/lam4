@@ -208,7 +208,7 @@ parseJoin ::  A.Object -> Parser Expr
 parseJoin node = do
   left <- parseExpr =<< node .: "left"
   right <- parseExpr =<< node .: "right"
-  pure $ BinExpr Join left right
+  pure $ Join left right
 
 parseBinOp :: A.Object -> Parser BinOp
 parseBinOp opObj = do
