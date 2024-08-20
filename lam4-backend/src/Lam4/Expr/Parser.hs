@@ -23,9 +23,9 @@ module Lam4.Expr.Parser (
   parseExpr)
   where
 
-import           Base
+import           Base                     hiding (throwError)
 import           Base.Aeson               (FromJSON, _Integer, _Object, _String,
-                                           values, cosmos)
+                                           cosmos, values)
 import qualified Base.Aeson               as A
 import           Base.ByteString          (ByteString)
 import qualified Base.Text                as T
@@ -73,7 +73,7 @@ relabelRefHelper getRef getRefText (MkRef node) = do
     (Just refPath', Just refText') -> do
       refUnique <- refPathToUnique refPath'
       pure $ MkName refText' refUnique
-    _ -> error $ ppShow node <> " impossible"
+    _ -> throwError $ ppShow node <> " impossible"
 
 {----------------------
     Program
@@ -144,7 +144,7 @@ parseExpr node = do
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
 
-    typestr          -> error $ T.unpack typestr <> " not yet implemented"
+    typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
 
 
 {----------------------
@@ -156,7 +156,7 @@ parseBuiltinTypeForRelation = \case
     "Integer" -> pure BuiltinTypeInteger
     "String"  -> pure BuiltinTypeString
     "Boolean" -> pure BuiltinTypeBoolean
-    other     -> error ("Unexpected type " <> T.unpack other)
+    other     -> throwError ("Unexpected type " <> T.unpack other)
 
 parseRelatum :: A.Object -> Parser Relatum
 parseRelatum node = do
@@ -167,7 +167,7 @@ parseRelatum node = do
     "BuiltinType"   -> do
       builtinType <- parseBuiltinTypeForRelation =<< (node .: "annot" :: Parser Text)
       pure $ BuiltinType builtinType
-    _               -> error "unrecognized relatum"
+    _               -> throwError "unrecognized relatum"
 
 parseRelation :: Name -> A.Object -> Parser Expr
 parseRelation parentSigName relationNode = do
@@ -226,7 +226,7 @@ parseBinOp opObj = do
     "OpGte"       -> pure Gte
     "OpEquals"    -> pure Equals
     "OpNotEquals" -> pure NotEquals
-    _             -> error $ "Unknown operator: " <> opStr
+    _             -> throwError $ "Unknown operator: " <> opStr
 
 parseUnaryExpr :: A.Object -> Parser Expr
 parseUnaryExpr node = do
@@ -235,7 +235,7 @@ parseUnaryExpr node = do
     case op of
         "OpMinus" -> pure $ Unary UnaryMinus value
         "OpNot"   -> pure $ Unary Not value
-        _         -> error $ "Unknown unary operator: " <> op
+        _         -> throwError $ "Unknown unary operator: " <> op
 
 parseIfThenElse :: A.Object -> Parser Expr
 parseIfThenElse obj = do
@@ -337,7 +337,7 @@ parseIntegerLiteral literalNode = do
     let literalVal = literalNode ^? ix "value" % _String % _Integer
     case literalVal of
       Just litVal -> pure . Literal $ IntegerLiteral litVal
-      Nothing -> error $ "Failed to parse integer value. Node: " <> ppShow literalNode
+      Nothing -> throwError $ "Failed to parse integer value. Node: " <> ppShow literalNode
 
 parseLiteral :: FromJSON t => (t -> Literal) -> A.Object -> Parser Expr
 parseLiteral literalExprCtor literalNode = do

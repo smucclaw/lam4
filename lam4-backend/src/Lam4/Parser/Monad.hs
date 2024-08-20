@@ -9,6 +9,8 @@ module Lam4.Parser.Monad
   , runMaybeParser
   , defaultInitialParserState
 
+  , throwError
+
   -- * JSON-related operations
   , (.:)
   , objAtKey
@@ -27,7 +29,7 @@ module Lam4.Parser.Monad
   )
 where
 
-import           Base
+import           Base               hiding (throwError)
 import           Base.Aeson         (_Array, _Object)
 import qualified Base.Aeson         as A
 import           Base.Map           as M
@@ -51,6 +53,14 @@ evalParserFromScratch parser = evalParser parser defaultInitialParserState
 
 defaultInitialParserState :: ParserState
 defaultInitialParserState = MkParserState emptyEnv 0
+
+{-| This is the unsafe @error@. 
+But that's OK, because any errors here are programmer errors,
+since user errors would already have been caught by the upstream
+parser, validator, scoper in the Langium framework.
+ -}
+throwError :: [Char] -> Parser a
+throwError = error
 
 {---------------------------
     JSON-related operations

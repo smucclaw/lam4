@@ -66,17 +66,4 @@ instance MonadBase AesonParser Parser where
   liftBase aesonParser = MkParser $ \s -> fmap (, s) aesonParser
 
 
-  -- = MkParser (ParserState -> A.Parser ( Either ParserError a, ParserState) )
-  -- deriving
-  --   (Functor, Applicative, Monad, MonadState ParserState, MonadError ParserError)
-  --   via ExceptT ParserError (StateT ParserState A.Parser)
-{-
-
-ExceptT ParserError (StateT ParserState A.Parser) a
-= StateT ParserState A.Parser (Either ParserError a)
-= ParserState -> A.Parser ( (Either ParserError a), ParserState) )
--}
-
--- Prob won't really need much ParseError support
--- since this is parsing something that's valid by lights of Langium parser and validator
 type ParserError = String
