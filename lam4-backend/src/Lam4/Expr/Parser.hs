@@ -249,7 +249,7 @@ parseIfThenElse obj = do
     Let
 -------------------------}
 
-type Row = (Name, Expr)
+type Binding = (Name, Expr)
 
 parseLet :: A.Object -> Parser Expr
 parseLet obj = do
@@ -257,13 +257,13 @@ parseLet obj = do
   body <- parseExpr $ obj `objAtKey` "body"
   makeNestedLet body rows
     where
-      makeNestedLet :: Expr -> [Row] -> Parser Expr
+      makeNestedLet :: Expr -> [Binding] -> Parser Expr
       makeNestedLet body rows = F.foldrM nestLet body rows
 
-      nestLet :: Row -> Expr -> Parser Expr
+      nestLet :: Binding -> Expr -> Parser Expr
       nestLet (name, valE) accE = pure $ Let name valE accE
 
-parseVarDecl :: A.Object -> Parser Row
+parseVarDecl :: A.Object -> Parser Binding
 parseVarDecl varDecl = do
   name <- getName varDecl
   val <- parseExpr (getValueFieldOfNode varDecl)
