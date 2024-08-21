@@ -52,24 +52,35 @@ library
         Base
         Base.IntMap
         Base.Map
+        Base.Plated
         Base.Text
         Base.Aeson
-        -- Base.MyAesonValueParser
+        Base.AesonCombinators
+        Base.ByteString
         Lam4.Expr.Name
         Lam4.Expr.ConcreteSyntax
+        Lam4.Expr.Parser
         Lam4.Parser.Type
+        Lam4.Parser.Monad
+
 
     build-depends:
         base,
         containers,
+        foldable1-classes-compat,
+        lens,
         optics,
         mtl,
+        transformers-base,
         prettyprinter,
         text,
         aeson,
-        aeson-value-parser,
+        aeson-optics,
+        aeson-combinators,
         jsonpath,
-        bytestring
+        bytestring,
+        either,
+        pretty-show
 
 
 executable lam4-backend
@@ -84,7 +95,7 @@ executable lam4-backend
 
     hs-source-dirs:   app
     build-depends:
-        base ^>=4.18.2.0,
+        base,
         optparse-applicative,
         bytestring,
         lam4-backend

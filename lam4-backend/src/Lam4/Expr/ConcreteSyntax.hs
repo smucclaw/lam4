@@ -5,8 +5,8 @@ TODO:
 
 module Lam4.Expr.ConcreteSyntax where
 
-import Base
-import Lam4.Expr.Name (Name(..))
+import           Base
+import           Lam4.Expr.Name (Name (..))
 
 data Relatum
   = CustomType  Name
@@ -14,27 +14,38 @@ data Relatum
   deriving stock (Eq, Show, Ord, Generic)
 
 data BuiltinTypeForRelation = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
-  deriving stock (Eq, Show, Ord, Generic) 
+  deriving stock (Eq, Show, Ord, Generic)
 
+{- | References to where in the original source this corresponds to; e.g., §10.
+      In the future, the structure will be more complicated --- want to be able to support things like `§10(1)(a)`
+-}
+newtype OriginalRuleRef
+  = MkOriginalRuleRef Text
+  deriving newtype (Eq, Ord)
+  deriving stock (Show)
 
--- newtype Program = MkProgram [Expr]
---   deriving stock (Show)
---   deriving newtype (Eq, Ord)
+data Decl =
+    NonRec Name Expr
+  | Rec    Name Expr
+  deriving stock Show
 
 -- TODO: think more about Sigs!
 data Expr
-  = Unary      UnaryOp Expr
-  | BinExpr    BinOp Expr Expr 
-  -- | ListExpr   ListOp [Expr]
-  | Let        Name Expr Expr
+  = Var Name
+  | Literal    Literal
+  | Unary      UnaryOp Expr
+  | BinExpr    BinOp Expr Expr
+  | IfThenElse Expr Expr Expr
+  -- | ListExpr   ListOp [Expr] -- TODO: Not Yet Implemented
   | FunApp     Expr [Expr]
   | PredApp    Expr [Expr]
-  | Join       Expr Expr
-  | Fun        [Name] Expr          -- Function
-  | Predicate  [Name] Expr          -- Differs from a function when doing symbolic evaluation 
-  | Sig        [Name] [Expr]        -- Sig parents relations
-  | Relation   Relatum (Maybe Text) -- Relation relatum description
-  | Literal    Literal
+  | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
+  | Predicate  [Name] Expr (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
+  | Let        Name Expr Expr
+  | Letrec     Name Expr Expr
+  | Sig        [Name] [Expr]                       -- Sig parents relations
+  | Join       Expr Expr                           -- Relational join (similar to record projection)
+  | Relation   Name Name Relatum (Maybe Text)      -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Ord)
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
@@ -54,6 +65,7 @@ data BinOp
   | Plus
   | Minus
   | Mult
+  | Div
   | Lt
   | Lte
   | Gt
@@ -62,6 +74,6 @@ data BinOp
   | NotEquals
    deriving stock (Eq, Show, Ord)
 
-data UnaryOp = Not | UnaryMinus 
+data UnaryOp = Not | UnaryMinus
   deriving stock (Eq, Show, Ord)
 

@@ -1,24 +1,30 @@
+{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 {- |
 The treatment of names is adapted from http://blog.vmchale.com/article/intern-identifiers
 -}
 
-module Lam4.Expr.Name (Name (..), Unique (..)) where
+module Lam4.Expr.Name (Name(..), Unique) where
 
 import Base.Text qualified as T
+import Base (makeFieldLabelsNoPrefix)
 
-newtype Unique = Unique {unUnique :: Int}
-  deriving newtype (Eq, Ord, Show)
+type Unique = Int
 
-data Name = Name
+data Name = MkName
   { name :: T.Text
   , unique :: !Unique
   }
+makeFieldLabelsNoPrefix ''Name
 
 instance Eq Name where
-  (==) (Name _ u) (Name _ u') = u == u'
+  (==) (MkName _ u) (MkName _ u') = u == u'
 
 instance Ord Name where
-  compare (Name _ u) (Name _ u') = compare u u'
+  compare (MkName _ u) (MkName _ u') = compare u u'
 
 instance Show Name where
-    show (Name t u) = show t <> "_" <> show u
+    show (MkName t u) = show t <> "_" <> show u

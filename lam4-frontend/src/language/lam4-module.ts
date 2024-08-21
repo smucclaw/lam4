@@ -4,6 +4,7 @@ import { Lam4GeneratedModule, Lam4GeneratedSharedModule } from './generated/modu
 import { Lam4Validator, registerValidationChecks } from './lam4-validator.js';
 import { Lam4ScopeProvider, Lam4ScopeComputation } from './lam4-scope.js';
 import { Lam4HoverProvider } from './lsp/lam4-hover-provider.js';
+import {WithNamedEltRefPathJsonSerializer} from "./lam4-json-serializer.js";
 
 /**
  * Declaration of custom services - add your own service classes here.
@@ -35,6 +36,9 @@ export const Lam4Module: Module<Lam4Services, PartialLangiumServices & Lam4Added
     },
     lsp: {
         HoverProvider: (services) => new Lam4HoverProvider(services)
+    },
+    serializer: {
+        JsonSerializer: (services) => new WithNamedEltRefPathJsonSerializer(services)
     }
 };
 

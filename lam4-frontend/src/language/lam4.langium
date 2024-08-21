@@ -1,6 +1,12 @@
 grammar Lam4
 
 /*
+=================
+Guiding Principle
+=================
+    * Keep the syntax relatively simple and constrained, while still being readable
+    * Use UI/UX, AI, program synthesis, formal methods etc to make it easy for non-technical users to understand and program in or do things with Lam4
+
 =========================
 How to see this in action
 ==========================
@@ -113,7 +119,8 @@ GeneralMetadataBlock:
     '}'
 ;
 MetadataKey returns string:
-    ID | "description" | "description_for_semantic_parser"
+    ID | "description" 
+    // | "description_for_semantic_parser"
 ;
 
 MetadataKVPair:
