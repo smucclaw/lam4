@@ -127,9 +127,9 @@ parseExpr node = do
     "SigDecl"        -> parseSigE           node
 
     -- literals
-    "IntegerLiteral" -> parseIntegerLiteral node
-    "StringLiteral"  -> parseLiteral StringLiteral node
-    "BooleanLiteral" -> parseLiteral BooleanLiteral node
+    "IntLit" -> parseIntegerLiteral node
+    "StringLiteral"  -> parseLiteral StringLit node
+    "BooleanLiteral" -> parseLiteral BoolLit node
 
     "LetExpr"        -> parseLet            node
     "FunDecl"        -> parseFunE           node
@@ -219,13 +219,14 @@ parseBinOp opObj = do
     "OpPlus"      -> pure Plus
     "OpMinus"     -> pure Minus
     "OpMult"      -> pure Mult
-    "OpDiv"       -> pure Div
+    "OpDiv"       -> pure Divide
     "OpLt"        -> pure Lt
-    "OpLte"       -> pure Lte
+    "OpLte"       -> pure Le
     "OpGt"        -> pure Gt
-    "OpGte"       -> pure Gte
-    "OpEquals"    -> pure Equals
-    "OpNotEquals" -> pure NotEquals
+    "OpGte"       -> pure Ge
+    "OpEquals"    -> pure Eq
+    "OpNotEquals" -> pure Ne
+    "OpModulo"    -> pure Modulo
     _             -> throwError $ "Unknown operator: " <> opStr
 
 parseUnaryExpr :: A.Object -> Parser Expr
@@ -334,15 +335,15 @@ parseFunApp funApp = do
 
 parseIntegerLiteral :: A.Object -> Parser Expr
 parseIntegerLiteral literalNode = do
-    let literalVal = literalNode ^? ix "value" % _String % _Integer
+    let literalVal = literalNode ^? ix "value" % _String % _Integer % to fromInteger
     case literalVal of
-      Just litVal -> pure . Literal $ IntegerLiteral litVal
+      Just litVal -> pure . Lit $ IntLit litVal
       Nothing -> throwError $ "Failed to parse integer value. Node: " <> ppShow literalNode
 
-parseLiteral :: FromJSON t => (t -> Literal) -> A.Object -> Parser Expr
+parseLiteral :: FromJSON t => (t -> Lit) -> A.Object -> Parser Expr
 parseLiteral literalExprCtor literalNode = do
     literalVal <- literalNode .: "value"
-    return $ Literal $ literalExprCtor literalVal
+    return $ Lit $ literalExprCtor literalVal
 
 {----------------------
     Utils
