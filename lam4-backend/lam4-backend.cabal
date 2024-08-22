@@ -55,7 +55,6 @@ library
         Base.Plated
         Base.Text
         Base.Aeson
-        Base.AesonCombinators
         Base.ByteString
         Lam4.Expr.Name
         Lam4.Expr.ConcreteSyntax
@@ -76,11 +75,11 @@ library
         text,
         aeson,
         aeson-optics,
-        aeson-combinators,
-        jsonpath,
         bytestring,
         either,
-        pretty-show
+        pretty-show,
+        grisette >= 0.8
+
 
 
 executable lam4-backend
