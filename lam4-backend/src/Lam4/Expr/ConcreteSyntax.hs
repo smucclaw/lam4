@@ -23,7 +23,7 @@ TODO:
 -}
 data Expr
   = Var        Name
-  | Literal    Literal
+  | Lit        Lit
   | Unary      UnaryOp Expr
   | BinExpr    BinOp Expr Expr
   | IfThenElse Expr Expr Expr
@@ -80,10 +80,10 @@ data BuiltinTypeForRelation = BuiltinTypeString | BuiltinTypeInteger | BuiltinTy
   deriving stock (Eq, Show, Ord, Generic)
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
-data Literal
-  = IntegerLiteral Integer
-  | BooleanLiteral Bool
-  | StringLiteral Text
+data Lit
+  = IntLit Int
+  | BoolLit Bool
+  | StringLit Text -- TODO: not clear that we need this
   deriving stock (Eq, Show, Ord)
 
 {-
@@ -95,14 +95,15 @@ data BinOp
   | And
   | Plus
   | Minus
+  | Modulo   -- ^ (integer) remainder
   | Mult
-  | Div
+  | Divide
   | Lt
-  | Lte
+  | Le
   | Gt
-  | Gte
-  | Equals
-  | NotEquals
+  | Ge      -- ^ greater-than-or-equal
+  | Eq      -- ^ equality (of Booleans, numbers or atoms)
+  | Ne      -- ^ inequality (of Booleans, numbers or atoms)
    deriving stock (Eq, Show, Ord)
 
 data UnaryOp = Not | UnaryMinus
