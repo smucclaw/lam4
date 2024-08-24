@@ -106,7 +106,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    SigDecl | PredicateDecl | FunDecl
+    RecordDecl | SigDecl | PredicateDecl | FunDecl
 ;
 
 /* ========================================
@@ -265,10 +265,16 @@ Plus infers Expr:
 OpMult: {infer OpMult} '*';
 OpDiv: {infer OpDiv} '/';
 Mult infers Expr:
-    Join ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Join)*
+    Project ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Project)*
 ;
 
-/*
+/* Projects or Selects the value of a from a record */
+Project infers Expr:
+    FunctionApplication ({infer Project.left=current} '`s`' right=Ref)*
+;
+/* ---------------------------------------------------
+Aug 24 2024: Join is currently deprecated
+-------------------------------------------------------
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
@@ -320,6 +326,19 @@ Ref:
 
 UnaryExpr:
     op=(OpMinus | OpNot) value=Expr
+;
+
+/* ============================
+   A normal record 
+=============================== */
+RecordDecl:
+    WithSpecificMetadataBlock?
+
+    'STRUCTURE' 
+    name=ID 
+    ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )? '{'
+        rows+=Row*
+    '}'
 ;
 
 
@@ -382,6 +401,14 @@ type CustomType = SigDecl;
 // | Alias
 // ;
 
+Row:
+    WithSpecificMetadataBlock?
+
+    name=ID 
+    (':' | 'IS_A') 
+    value=TypeAnnot
+    description=SINGLELINE_METADATA_ANNOTATION?
+;
 
 Relation:
     WithSpecificMetadataBlock?
