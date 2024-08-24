@@ -2,11 +2,20 @@
 TODO:
 * Add Builtin list operations
 -}
-module Lam4.Expr.ConcreteSyntax where
+module Lam4.Expr.ConcreteSyntax
+  ( Decl(..)
+  , Expr(..)
+  , Lit(..)
+  , OriginalRuleRef(..)
+  , UnaryOp(..)
+  , BinOp(..)
+  , Relatum(..)
+  , BuiltinTypeForRelation(..)) 
+  where
 
 import           Base
 import           Lam4.Expr.Name (Name (..))
-
+import          Lam4.Expr.CommonSyntax
 
 data Decl =
     NonRec Name Expr
@@ -24,6 +33,7 @@ TODO:
 data Expr
   = Var        Name
   | Lit        Lit
+  | List       [Expr]                              -- construct a list
   | Unary      UnaryOp Expr
   | BinExpr    BinOp Expr Expr
   | IfThenElse Expr Expr Expr
@@ -42,7 +52,7 @@ data Expr
   ============================-}
 
   -- WIP deontics-related things
-  | NormExpr   [NormativeClause]
+  -- | NormExpr   [Norm]
 
   {------------------------------------------------------------
   Stuff that's more relevant for analysis / symbolic evaluation
@@ -59,54 +69,12 @@ data Expr
   | Relation   Name Name Relatum (Maybe Text)      -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Ord)
 
-type Row a = [(Name, a)]
-
-{- | References to where in the original source this corresponds to; e.g., §10.
-     WIP -- In the future, the structure will be more complicated.
-     Want to be able to support things like `§10(1)(a)`
--}
-newtype OriginalRuleRef
-  = MkOriginalRuleRef Text
-  deriving newtype (Eq, Ord)
-  deriving stock (Show)
-
-
-data Relatum
-  = CustomType  Name
-  | BuiltinType BuiltinTypeForRelation
-  deriving stock (Eq, Show, Ord, Generic)
-
-data BuiltinTypeForRelation = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
-  deriving stock (Eq, Show, Ord, Generic)
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
 data Lit
   = IntLit Int
   | BoolLit Bool
-  | StringLit Text -- TODO: not clear that we need this
-  deriving stock (Eq, Show, Ord)
-
-{-
-TO ADD:
- Modulo / (integer) remainder
--}
-data BinOp
-  = Or
-  | And
-  | Plus
-  | Minus
-  | Modulo   -- ^ (integer) remainder
-  | Mult
-  | Divide
-  | Lt
-  | Le
-  | Gt
-  | Ge      -- ^ greater-than-or-equal
-  | Eq      -- ^ equality (of Booleans, numbers or atoms)
-  | Ne      -- ^ inequality (of Booleans, numbers or atoms)
-   deriving stock (Eq, Show, Ord)
-
-data UnaryOp = Not | UnaryMinus
+  -- | StringLit Text -- TODO: not clear that we need this
   deriving stock (Eq, Show, Ord)
 
 
@@ -119,19 +87,28 @@ data UnaryOp = Not | UnaryMinus
   * "COIR: Verifying Normative Specifications of Complex Systems"
   * The work on SLEEC
 -}
-data NormativeClause = NCDeontic Deontic
-                     | NCRef Name -- ^ Reference to another clause
+data Norm = NormDeontic Deontic
+          | NormRef Name -- ^ Reference to another clause
     deriving stock (Eq, Show, Ord)
 
 {-| Think of this, in the simplest case, as:
 
       @
-      WHEN <trigger event>
+      IF <trigger event>
       THEN <agent>
             MUST/MAY
             <action>
-            BY/WITHIN
-            <deadline>
+      @
+  
+  And potentially with a deadline:
+
+      @
+      IF <trigger event>
+      THEN <agent>
+            MUST/MAY
+            <action>
+      BY/WITHIN
+      <deadline>
       @
 -}
 data Deontic =

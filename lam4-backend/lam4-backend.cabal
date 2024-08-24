@@ -56,8 +56,10 @@ library
         Base.Text
         Base.Aeson
         Base.ByteString
+        Base.Grisette
         Lam4.Expr.Name
         Lam4.Expr.ConcreteSyntax
+        Lam4.Expr.CommonSyntax
         Lam4.Expr.Parser
         Lam4.Parser.Type
         Lam4.Parser.Monad

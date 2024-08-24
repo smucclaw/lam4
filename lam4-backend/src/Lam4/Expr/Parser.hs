@@ -124,11 +124,12 @@ parseExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "Ref"            -> parseRefToVar            (coerce node)
 
-    "SigDecl"        -> parseSigE           node
+    -- Aug 24: Disabling SigDecl etc for now
+    -- "SigDecl"        -> parseSigE           node
 
     -- literals
     "IntLit" -> parseIntegerLiteral node
-    "StringLiteral"  -> parseLiteral StringLit node
+    -- "StringLiteral"  -> parseLiteral StringLit node
     "BooleanLiteral" -> parseLiteral BoolLit node
 
     "LetExpr"        -> parseLet            node
@@ -150,6 +151,7 @@ parseExpr node = do
 {----------------------
     Relation related
 -----------------------}
+-- TODO: Adapt these to records
 
 parseBuiltinTypeForRelation :: Text -> Parser BuiltinTypeForRelation
 parseBuiltinTypeForRelation = \case
