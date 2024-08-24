@@ -106,7 +106,8 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | SigDecl | PredicateDecl | FunDecl
+    RecordDecl | PredicateDecl | FunDecl
+    //  SigDecl
 ;
 
 /* ========================================
@@ -168,7 +169,7 @@ fragment WithSpecificMetadataBlock:
 
 // TODO: Figure out how best to add support for clauses -- i.e. for things like §10(a) or §10(1)(a)
 OriginalRuleRef:
-    ('SECTION' | '§') section=INTEGER
+    ('SECTION' | '§') section=STRING
 ;
 
 // a terse FunDecl
@@ -273,7 +274,7 @@ Project infers Expr:
     FunctionApplication ({infer Project.left=current} '`s`' right=Ref)*
 ;
 /* ---------------------------------------------------
-Aug 24 2024: Join is currently deprecated
+Aug 24 2024: Join is currently disabled
 -------------------------------------------------------
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
@@ -346,7 +347,10 @@ RecordDecl:
        Sigs / Concepts
 ======================================== */
 
-/* 
+/* -----------------------------------------
+  Aug 24 2024: SigDecl is currently disabled
+--------------------------------------------
+
 For the most part, especially when just evaluating,
 can think of Concepts as records.
 
