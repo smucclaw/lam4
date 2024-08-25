@@ -10,17 +10,23 @@ module Lam4.Expr.ConcreteSyntax
   , UnaryOp(..)
   , BinOp(..)
   , Relatum(..)
-  , BuiltinTypeForRelation(..)) 
+  , BuiltinTypeForRelation(..)
+  , Statement(..)
+  , Deontic(..)
+  , ToplevelElement(..))
   where
 
 import           Base
-import           Lam4.Expr.Name (Name (..))
-import          Lam4.Expr.CommonSyntax
+import           Lam4.Expr.CommonSyntax
+import           Lam4.Expr.Name         (Name (..))
+
+data ToplevelElement = DeclElt Decl | StatementElt Statement
+  deriving stock (Show, Eq, Ord)
 
 data Decl =
     NonRec Name Expr
   | Rec    Name Expr
-  deriving stock Show
+  deriving stock (Show, Eq, Ord)
 
 {-
 TODO:
@@ -51,9 +57,6 @@ data Expr
     EXPERIMENTAL or VERY WIP
   ============================-}
 
-  -- WIP deontics-related things
-  -- | NormExpr   [Norm]
-
   {------------------------------------------------------------
   Stuff that's more relevant for analysis / symbolic evaluation
   --------------------------------------------------------------
@@ -68,6 +71,21 @@ data Expr
   | Join       Expr Expr                           -- Relational join
   | Relation   Name Name Relatum (Maybe Text)      -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Ord)
+
+
+data Statement
+  = IfStmt Expr [Statement] [Statement]
+  | Assign Name Expr
+
+  {- WIP deontics-related things
+    Thinking of deontic stuff as statements agrees,
+    not just with work in AI and AI x Law,
+    but also with a longstanding tradition in philosophy and linguistics 
+    that models them as being fundamentally *non*-truth-conditional (e.g., as 'proposals to update the conversational scoreboard')
+  -}
+  | Action Name [Name] [Statement] -- Action NameOfAction Params Body(block of statements)
+  | Norm   Deontic
+  deriving stock (Show, Eq, Ord)
 
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
@@ -86,22 +104,27 @@ data Lit
   * "Modelling and Analysis of Normative Documents"
   * "COIR: Verifying Normative Specifications of Complex Systems"
   * The work on SLEEC
+
+  Note:
+  * Using 'norm' to mean something potentially broader than a 'deontic'
 -}
-data Norm = NormDeontic Deontic
-          | NormRef Name -- ^ Reference to another clause
-    deriving stock (Eq, Show, Ord)
 
 {-| Think of this, in the simplest case, as:
+      @
+      <agent>
+      MUST/MAY
+      <action>
+      @
 
+    Or with a condition / trigger (using IfStmt):
       @
       IF <trigger event>
       THEN <agent>
             MUST/MAY
             <action>
       @
-  
-  And potentially with a deadline:
 
+    And potentially with a deadline (though that's probably for v2 / v3):
       @
       IF <trigger event>
       THEN <agent>
@@ -112,15 +135,16 @@ data Norm = NormDeontic Deontic
       @
 -}
 data Deontic =
-  MkDeontic { deonticStatus :: DeonticStatus
-            , agent         :: WIP_NotSureYet
-            , trigger       :: Expr
-            , action        :: WIP_NotSureYet
-            , deadline      :: [WIP_NotSureYet]}
+  MkDeontic { name         :: Name -- ^ Identifier for the deontic; may not need this given that Actions in effect are a way to name statements
+            , agent        :: WIP_NotSureYet
+            , deonticModal :: DeonticModal
+            , action       :: Statement
+            -- , deadline     :: WIP_NotSureYet -- only in v2 / v3
+            }
   deriving stock (Eq, Show, Ord)
 
 data WIP_NotSureYet
   deriving stock (Eq, Show, Ord)
 
-data DeonticStatus = Obligation | Permission
+data DeonticModal = Obligation | Permission
   deriving stock (Eq, Show, Ord)
