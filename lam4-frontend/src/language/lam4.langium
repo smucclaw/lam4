@@ -106,7 +106,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | PredicateDecl | FunDecl
+    RecordDecl | PredicateDecl | FunDecl | Statement
     //  SigDecl
 ;
 
@@ -243,7 +243,6 @@ IfThenElseExpr:
     'IF' condition=OrExpr 'THEN' then=OrExpr 'ELSE' else=OrExpr
 ;
 
-
 OpLt: {infer OpLt} '<' ;
 OpLte: {infer OpLte}'<=' ;
 OpGt: {infer OpGt} '>';
@@ -330,8 +329,37 @@ UnaryExpr:
 ;
 
 /* ============================
+    Statements
+=============================== */
+
+Statement:
+    IfStmt
+;
+
+IfStmt infers Statement:
+    'IF' condition=Expr 
+    // Other possibilities:
+    // Expr | ActionAtom
+    // or add a variant `ActionApp Agent Action` to Expr
+    'THEN' then=Deontic 
+    ('OTHERWISE' else=Deontic)?
+    // ('UNLESS' defeaters=+Expr)?
+;
+
+Deontic:
+    agent=Expr deonticModal=DeonticModal action=Expr // action is WIP
+;
+
+DeonticModal: MustModal | MayModal;
+
+MustModal: {infer MustModal} 'MUST';
+
+MayModal: {infer MayModal} 'MAY';
+
+/* ============================
    A normal record 
 =============================== */
+
 RecordDecl:
     WithSpecificMetadataBlock?
 
