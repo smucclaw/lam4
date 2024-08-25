@@ -48,11 +48,10 @@ import { AstNode, Reference, isReference } from "langium";
 
 import { 
     Param,
-    SigDecl, isSigDecl, isStringLiteral, StringLiteral, isBooleanLiteral, BooleanLiteral, IntegerLiteral, isIntegerLiteral, isVarDecl, isTypeAnnot, TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
+    SigDecl, isSigDecl, StringLiteral, BooleanLiteral, IntegerLiteral,TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
     isFunctionApplication,
     PredicateDecl,
     isPredicateDecl,
-    isParam,
     Ref,
     Join,
     FunctionApplication,
@@ -60,7 +59,7 @@ import {
     isInfixPredicateApplication,
     UnaryExpr,
     PrimitiveTypeAnnot,
-    VarDecl,
+    VarBinding,
     ParamTypePair} from "../generated/ast.js";
 import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
@@ -300,8 +299,8 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = new BooleanTTag(term as BooleanLiteral);
     } else if (term.$type == "IntegerLiteral") {
         typeTag = new IntegerTTag(term as IntegerLiteral);
-    } else if (term.$type == "VarDecl") {
-        const varTerm = term as VarDecl;
+    } else if (term.$type == "VarBinding") {
+        const varTerm = term as VarBinding;
         typeTag = varTerm.varType ? inferType(env, varTerm.varType) : inferType(env, varTerm.value);
 
     } else if (term.$type === "Param" && term.$container) {

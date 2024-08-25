@@ -106,7 +106,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | PredicateDecl | FunDecl
+    RecordDecl | PredicateDecl | FunDecl | Statement
     //  SigDecl
 ;
 
@@ -195,7 +195,7 @@ PredicateDecl:
     
     WithSpecificMetadataBlock?
 
-    GivenParamBlock
+    GivenParamBlock?
     'DECIDE' name=IDOrBackTickedID 
     // can think of 'name' as 'head'
     'IF' body=Expr 
@@ -205,10 +205,12 @@ PredicateDecl:
     In this way this is similar to Catala's 'Rule' */
 ;
 
+fragment Var:
+    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=Expr 
+;
 
-VarDecl returns NamedElement:
-    {infer VarDecl} name=ID (':' varType=TypeAnnot)? ( '=' | 'IS_TO_BE') value=Expr 
-    // description=SINGLELINE_METADATA_ANNOTATION?
+VarBinding returns NamedElement:
+    {infer VarBinding} Var
 ;
 
 
@@ -220,7 +222,7 @@ IDOrBackTickedID returns string:
 // ------- Expr -------
 
 Expr:
-    OrExpr | LetExpr
+    OrExpr | LetExpr | RecordIntroExpr
     // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
 ;
 
@@ -236,13 +238,21 @@ AndExpr infers Expr:
 
 // TODO: Not sure if VarDecl the best thing to use for the inner stuff
 LetExpr:
-    ('LET' | 'DEFINE') '{' (vars+=VarDecl)+ '}' 'IN' '{' body=OrExpr '}'
+    'LET' '{' (vars+=VarBinding)+ '}' 'IN' '{' body=OrExpr '}'
 ;
+
+Row:
+    label=IDOrBackTickedID ( '=' | 'is') value=Expr 
+;
+
+RecordIntroExpr:
+    '{|' rows+=Row  (',' rows+=Row )* '|}' 
+;
+
 
 IfThenElseExpr:
     'IF' condition=OrExpr 'THEN' then=OrExpr 'ELSE' else=OrExpr
 ;
-
 
 OpLt: {infer OpLt} '<' ;
 OpLte: {infer OpLte}'<=' ;
@@ -273,6 +283,7 @@ Mult infers Expr:
 Project infers Expr:
     FunctionApplication ({infer Project.left=current} '`s`' right=Ref)*
 ;
+
 /* ---------------------------------------------------
 Aug 24 2024: Join is currently disabled
 -------------------------------------------------------
@@ -317,10 +328,19 @@ AnonFunction:
     body=Expr
 ;
 
+
+
 PrimitiveExpr infers Expr:
     '(' Expr ')' | AnonFunction | InfixPredicateApplication | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
+
+// TODO: 
+// 1. Not sure we want this
+// 2. Need to add an elim rule too
+// ActionAtomDecl:
+//     '-' name=IDOrBackTickedID '-'
+// ;
 
 Ref:
     value=[NamedElement:IDOrBackTickedID];
@@ -330,15 +350,80 @@ UnaryExpr:
 ;
 
 /* ============================
+    Statements
+=============================== */
+
+ActionRef:
+    value=[ActionDecl:IDOrBackTickedID]
+;
+
+Statement:
+    VarDeclStmt | Assign | IfStmt | Deontic | ActionDecl | StatementBlock | Increment | Decrement  | ActionRef
+;
+
+/* For top level var declarations (as opposed to within the context of a LET) */
+VarDeclStmt:
+    description=SINGLELINE_METADATA_ANNOTATION?
+    'DEFINE' Var
+;
+
+Assign:
+    left=[NamedElement:IDOrBackTickedID] ('=' | 'becomes') right=Expr
+;
+
+Increment:
+    left=[NamedElement:IDOrBackTickedID] ('+=' | 'increases_by') right=Expr
+;
+Decrement:
+    left=[NamedElement:IDOrBackTickedID] ('-=' | 'decreases_by') right=Expr
+;
+
+IfStmt:
+    originalRuleRef=OriginalRuleRef?
+
+    'IF'         condition=Expr 
+    'THEN'       then=Statement
+    ('OTHERWISE' else=Statement)?
+    // ('UNLESS' defeaters=+Expr)? // for v2
+;
+
+ActionDecl:
+    GivenParamBlock?
+    'ACTION' name=IDOrBackTickedID 
+    ('=' 'DO' '{'
+    body+=Statement+ 
+    '}')?
+;
+
+StatementBlock: 'DO' '{'
+    elements+=Statement+
+'}';
+
+Deontic:
+    originalRuleRef=OriginalRuleRef?
+
+    agent=[NamedElement:ID] 
+    deonticModal=DeonticModal 
+    action=Statement
+;
+
+DeonticModal: MustModal | MayModal;
+
+MustModal: {infer MustModal} 'MUST';
+
+MayModal: {infer MayModal} 'MAY';
+
+/* ============================
    A normal record 
 =============================== */
+
 RecordDecl:
     WithSpecificMetadataBlock?
 
     'STRUCTURE' 
     name=ID 
     ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )? '{'
-        rows+=Row*
+        rowTypes+=RowType*
     '}'
 ;
 
@@ -405,7 +490,7 @@ type CustomType = SigDecl;
 // | Alias
 // ;
 
-Row:
+RowType:
     WithSpecificMetadataBlock?
 
     name=ID 
@@ -439,7 +524,8 @@ CustomTypeDef:
     annot = [CustomType:ID]
 ;
 
-type NamedElement = VarDecl | Param | PredicateDecl | FunDecl  | Relation | SigDecl | Relation;
+type NamedElement = VarBinding | Param | PredicateDecl | FunDecl  | Relation | SigDecl | RowType; 
+// | ActionAtomDecl;
 
 /* ========================================
          BUILT IN and PRIMITIVE types
