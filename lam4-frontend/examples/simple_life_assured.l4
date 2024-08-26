@@ -1,7 +1,7 @@
 /-
   description: "Information about the life assured for this policy."
 -/
-CONCEPT LifeAssured {
+STRUCTURE LifeAssured {
   policy_active: Boolean
   age: Integer
 }
