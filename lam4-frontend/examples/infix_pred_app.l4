@@ -1,6 +1,6 @@
 // Demonstrates the various kinds of infix predicate application
 
-CONCEPT Person {}
+STRUCTURE Person {}
 
 GIVEN (x: Person 
        y: Person 
