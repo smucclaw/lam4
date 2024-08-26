@@ -1,4 +1,8 @@
-{- | Parses the JSON representation of (the concrete syntax of)
+{- | 
+  Aug 26 2024: This parser hasn't yet been updated with all the recent constructs and changes in the Langium grammar. 
+  So don't expect to be able to parse into the backend concrete syntax right now.
+
+  Parses the JSON representation of (the concrete syntax of)
       an input Lam4 expression from Langium frontend
 
       ---------------------------
