@@ -19,6 +19,7 @@ module Lam4.Expr.ConcreteSyntax
 import           Base
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.Name         (Name (..))
+-- a Name can refer to an Expr or a Statement (but note that not all kinds of Statements can have names)
 
 data ToplevelElement = DeclElt Decl | StatementElt Statement
   deriving stock (Show, Eq, Ord)
@@ -120,6 +121,7 @@ data Statement
   | Assign Name Expr
   | Action Name [Name] [Statement]               -- Action NameOfAction Params Body(block of statements)
   | Norm   Deontic
+  | Breach
   deriving stock (Show, Eq, Ord)
 
 
@@ -160,6 +162,8 @@ data Statement
       BY/WITHIN
       <deadline>
       @
+
+    (For simpler use cases, deadlines/temporal constraints can also be simulated with atomic / more coarse-grained actions.)
 -}
 data Deontic =
   MkDeontic { name         :: Maybe Name
