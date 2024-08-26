@@ -5,8 +5,9 @@ ONE CONCEPT Courier {}
 ACTION `pay for bike`
 ACTION `transfer bike to Courier within two days`
 ACTION `ferry bike to Buyer within three days`
+ACTION `compensate Seller`
 
-§1
+§1: SellerTransferObligation
 IF    Buyer `pay for bike`
 THEN  Seller MUST `transfer bike to Courier within two days`
 
@@ -14,9 +15,14 @@ THEN  Seller MUST `transfer bike to Courier within two days`
 IF   Seller `transfer bike to Courier within two days`
 THEN Courier MUST `ferry bike to Buyer within three days`
 
-IF   BikeTransportRule IS_INFRINGED
+// Reparations
+
+IF   SellerTransferObligation IS_INFRINGED
 THEN Breach!
 
-// -- or:
+IF   BikeTransportRule IS_INFRINGED
+THEN Courier MUST `compensate Seller`
+
+// -- or, if we want to just talk in terms of events / actions:
 // IF NOT (Courier `ferry bike to Buyer`)
-// THEN Breach!
+// THEN Courier MUST `compensate Seller`
