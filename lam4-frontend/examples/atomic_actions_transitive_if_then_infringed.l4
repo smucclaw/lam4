@@ -1,0 +1,22 @@
+ONE CONCEPT Buyer {}
+ONE CONCEPT Seller {}
+ONE CONCEPT Courier {}
+
+ACTION `pay for bike`
+ACTION `transfer bike to Courier within two days`
+ACTION `ferry bike to Buyer within three days`
+
+§1
+IF    Buyer `pay for bike`
+THEN  Seller MUST `transfer bike to Courier within two days`
+
+§2: BikeTransportRule
+IF   Seller `transfer bike to Courier within two days`
+THEN Courier MUST `ferry bike to Buyer within three days`
+
+IF   BikeTransportRule IS_INFRINGED
+THEN Breach!
+
+// -- or:
+// IF NOT (Courier `ferry bike to Buyer`)
+// THEN Breach!

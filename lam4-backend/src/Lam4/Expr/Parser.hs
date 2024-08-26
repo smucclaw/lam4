@@ -1,4 +1,8 @@
-{- | Parses the JSON representation of (the concrete syntax of)
+{- | 
+  Aug 26 2024: This parser hasn't yet been updated with all the recent constructs and changes in the Langium grammar. 
+  So don't expect to be able to parse into the backend concrete syntax right now.
+
+  Parses the JSON representation of (the concrete syntax of)
       an input Lam4 expression from Langium frontend
 
       ---------------------------
@@ -128,7 +132,7 @@ parseExpr node = do
 
     -- literals
     "IntLit" -> parseIntegerLiteral node
-    "StringLiteral"  -> parseLiteral StringLit node
+    -- "StringLiteral"  -> parseLiteral StringLit node
     "BooleanLiteral" -> parseLiteral BoolLit node
 
     "LetExpr"        -> parseLet            node
@@ -140,9 +144,12 @@ parseExpr node = do
     "InfixPredicateApplication" -> parsePredicateApp node
 
     "BinExpr"        -> parseBinExpr        node
-    "Join"           -> parseJoin           node
+
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
+
+    -- Note: Join is in the process of being disabled / deprecated
+    "Join"           -> parseJoin           node
 
     typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
 
@@ -150,6 +157,7 @@ parseExpr node = do
 {----------------------
     Relation related
 -----------------------}
+-- TODO: Adapt these to records
 
 parseBuiltinTypeForRelation :: Text -> Parser BuiltinTypeForRelation
 parseBuiltinTypeForRelation = \case
@@ -277,7 +285,7 @@ parseVarDecl varDecl = do
 
 parseOriginalRuleRef :: Maybe A.Object -> Parser (Maybe OriginalRuleRef)
 parseOriginalRuleRef (Just origRuleRef) = do
-  let ruleRef = origRuleRef ^?! ix "section" % _String
+  let ruleRef = origRuleRef ^?! ix "section" % _Integer % to show % to T.pack
   pure $ Just $ MkOriginalRuleRef ruleRef
 parseOriginalRuleRef Nothing = pure Nothing
 
