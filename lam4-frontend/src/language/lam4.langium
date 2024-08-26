@@ -106,8 +106,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | PredicateDecl | FunDecl | Statement
-    //  SigDecl
+    RecordDecl | SigDecl | PredicateDecl | FunDecl | ToplevelStatement
 ;
 
 /* ========================================
@@ -222,7 +221,7 @@ IDOrBackTickedID returns string:
 // ------- Expr -------
 
 Expr:
-    OrExpr | LetExpr | RecordIntroExpr
+    OrExpr | LetExpr | RecordExpr
     // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
 ;
 
@@ -245,8 +244,8 @@ Row:
     label=IDOrBackTickedID ( '=' | 'is') value=Expr 
 ;
 
-RecordIntroExpr:
-    '{|' rows+=Row  (',' rows+=Row )* '|}' 
+RecordExpr:
+    '{|' (rows+=Row  (',' rows+=Row )*)? '|}' 
 ;
 
 
@@ -319,6 +318,18 @@ InfixPredicateApplication:
    | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=Expr )
 ;
 
+InfixActionApplication:
+   ( (args+=[NamedElement:IDOrBackTickedID])
+    | ( '(' args+=Expr (',' args+=Expr)* ')' ) 
+    )
+   action=[ActionDecl:IDOrBackTickedID]
+;
+
+// sugar for a predicate that checks if the referenced norm is violated
+NormIsInfringed:
+    normRef=[Statement:IDOrBackTickedID] 'IS_INFRINGED'
+;
+
 // This is meant for programmers to implement libraries with; 
 // it's not something I'm expecting ordinary, non-programmer users to use or understand
 AnonFunction:
@@ -329,18 +340,10 @@ AnonFunction:
 ;
 
 
-
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixPredicateApplication | InfixActionApplication | NormIsBreached | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
-
-// TODO: 
-// 1. Not sure we want this
-// 2. Need to add an elim rule too
-// ActionAtomDecl:
-//     '-' name=IDOrBackTickedID '-'
-// ;
 
 Ref:
     value=[NamedElement:IDOrBackTickedID];
@@ -353,12 +356,25 @@ UnaryExpr:
     Statements
 =============================== */
 
-ActionRef:
-    value=[ActionDecl:IDOrBackTickedID]
+Statement:
+    VarDeclStmt 
+    | IfStmt | Deontic 
+    | ActionDecl 
+    | Assign | Increment | Decrement
+    | PrimitiveStatement
 ;
 
-Statement:
-    VarDeclStmt | Assign | IfStmt | Deontic | ActionDecl | StatementBlock | Increment | Decrement  | ActionRef
+PrimitiveStatement infers Statement:
+    StatementRef 
+    | GotoBreach
+;
+
+GotoBreach: 
+    value="Breach!"
+;
+
+StatementRef:
+    value=[Statement:IDOrBackTickedID]
 ;
 
 /* For top level var declarations (as opposed to within the context of a LET) */
@@ -371,6 +387,7 @@ Assign:
     left=[NamedElement:IDOrBackTickedID] ('=' | 'becomes') right=Expr
 ;
 
+// Sugar for / specific cases of Assign
 Increment:
     left=[NamedElement:IDOrBackTickedID] ('+=' | 'increases_by') right=Expr
 ;
@@ -378,35 +395,44 @@ Decrement:
     left=[NamedElement:IDOrBackTickedID] ('-=' | 'decreases_by') right=Expr
 ;
 
+fragment RuleRefWithOptionalName:
+    originalRuleRef=OriginalRuleRef (':' name=IDOrBackTickedID)?
+;
+
 IfStmt:
-    originalRuleRef=OriginalRuleRef?
+    RuleRefWithOptionalName?
+
+    // TODO: add a validator that allows a name to be supplied
+    // if and only if there's a deontic in either the Then or Else.
 
     'IF'         condition=Expr 
-    'THEN'       then=Statement
-    ('OTHERWISE' else=Statement)?
+    'THEN'       then=(Statement | StatementBlock)
+    ('OTHERWISE' else=(Statement | StatementBlock))?
     // ('UNLESS' defeaters=+Expr)? // for v2
 ;
 
 ActionDecl:
     GivenParamBlock?
     'ACTION' name=IDOrBackTickedID 
-    ('=' 'DO' '{'
-    body+=Statement+ 
-    '}')?
+    ('=' StatementBlock)?
 ;
 
-StatementBlock: 'DO' '{'
-    elements+=Statement+
+fragment StatementBlock: 'DO' '{'
+    statements+=Statement+
 '}';
 
 Deontic:
-    originalRuleRef=OriginalRuleRef?
+    originalRuleRef=OriginalRuleRef? 
+    (':' name=IDOrBackTickedID)?
+    // TODO: Add validator to prevent users from adding a rule ref or name here 
+    // if the deontic appears in the scope of another Statement that already has a rule ref or name
 
     agent=[NamedElement:ID] 
     deonticModal=DeonticModal 
     action=Statement
 ;
 
+// Will add sugar like prohibitions later
 DeonticModal: MustModal | MayModal;
 
 MustModal: {infer MustModal} 'MUST';
@@ -433,7 +459,7 @@ RecordDecl:
 ======================================== */
 
 /* -----------------------------------------
-  Aug 24 2024: SigDecl is currently disabled
+  Aug 24 2024: Join is currently disabled
 --------------------------------------------
 
 For the most part, especially when just evaluating,
@@ -476,14 +502,14 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 SigDecl:
     WithSpecificMetadataBlock?
 
-    'DECLARE'? 'CONCEPT' 
+    'ONE'? 'CONCEPT' 
     name=ID 
     ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
         relations+=Relation*
     '}'
 ;
 
-type CustomType = SigDecl;
+type CustomType = SigDecl | RecordDecl;
 // CustomType:
 //     SigDecl 
 // | UnionType 
@@ -524,8 +550,9 @@ CustomTypeDef:
     annot = [CustomType:ID]
 ;
 
-type NamedElement = VarBinding | Param | PredicateDecl | FunDecl  | Relation | SigDecl | RowType; 
-// | ActionAtomDecl;
+type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | ActionDecl | Relation | SigDecl | RowType; 
+
+fragment ToplevelStatement: VarDeclStmt | ActionDecl | IfStmt | Deontic;
 
 /* ========================================
          BUILT IN and PRIMITIVE types
