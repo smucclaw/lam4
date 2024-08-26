@@ -68,7 +68,7 @@ Thinking of them as statements also agrees, not just with work in AI and AI x La
 
 The abstract syntax might be hard to understand. Here are some quick examples of what a corresponding surface syntax could look like.
 
-You can play with the corresponding surface syntax by [pasting the Langium grammar at this link](./lam4-frontend/src/language/lam4.langium) into the [Langium playground](https://langium.org/playground/). Scoping for records won't currently work in the playground (or in the current implementation), but it's good enough to get a sense for what a potential corresponding service syntax would look like.
+You can play with the corresponding surface syntax by [pasting the Langium grammar at this link](../lam4-frontend/src/language/lam4.langium) into the [Langium playground](https://langium.org/playground/). Scoping for records won't currently work in the playground (or in the current implementation), but it's good enough to get a sense for what a potential corresponding service syntax would look like.
 
 Please don't try to run these examples on the current Lam4 toolchain just yet -- the latest changes to the Langium grammar have not been integrated into the typechecker and Parser.hs yet.
 
