@@ -341,7 +341,7 @@ AnonFunction:
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | InfixActionApplication | NormIsBreached | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixPredicateApplication | InfixActionApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -519,7 +519,7 @@ type CustomType = SigDecl | RecordDecl;
 RowType:
     WithSpecificMetadataBlock?
 
-    name=ID 
+    name=IDOrBackTickedID 
     (':' | 'IS_A') 
     value=TypeAnnot
     description=SINGLELINE_METADATA_ANNOTATION?

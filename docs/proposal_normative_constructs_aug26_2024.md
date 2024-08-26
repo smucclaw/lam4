@@ -64,6 +64,17 @@ I'll get to why I prefer this grammar over the current L4 grammar later, but for
 For this reason, it's natural to model normative stuff as *statements* instead of *expressions*.
 Thinking of them as statements also agrees, not just with work in AI and AI x Law, but also with a longstanding tradition in philosophy and linguistics that models them as being fundamentally *non*-truth-conditional, stateful things (e.g., as 'proposals to update the conversational scoreboard').
 
+##### Actions
+
+Actions are WIP, but the idea is that actions are basically impure functions. When an action is taken, the Store/EvalState is mutated in the necessary ways.
+
+You can think of actions also as 'events'. This is perhaps clearest in the case of an 'atomic' action where there are no statements in its body. Such atomic actions would be very similar to events in the SLEEC language.
+
+If you prefer to think in terms of transitions, this quote from John Camilleri may be helpful:
+
+  > An action is simply a transition which can only be taken when the corresponding action ... has been performed [by the agent in question].
+  > Each action also gets a corresponding *doer* automaton which sets the status of that action to *done*
+
 ### Examples of corresponding surface syntax
 
 The abstract syntax might be hard to understand. Here are some quick examples of what a corresponding surface syntax could look like.
@@ -98,8 +109,9 @@ ONE CONCEPT Courier {}
 ACTION `pay for bike`
 ACTION `transfer bike to Courier within two days`
 ACTION `ferry bike to Buyer within three days`
+ACTION `compensate Seller`
 
-§1
+§1: SellerTransferObligation
 IF    Buyer `pay for bike`
 THEN  Seller MUST `transfer bike to Courier within two days`
 
@@ -107,13 +119,19 @@ THEN  Seller MUST `transfer bike to Courier within two days`
 IF   Seller `transfer bike to Courier within two days`
 THEN Courier MUST `ferry bike to Buyer within three days`
 
-IF   BikeTransportRule IS_INFRINGED
+// Reparations
+IF   SellerTransferObligation IS_INFRINGED
 THEN Breach!
+
+IF   BikeTransportRule IS_INFRINGED
+THEN Courier MUST `compensate Seller`
 
 // -- or, if we want to just talk in terms of events / actions:
 // IF NOT (Courier `ferry bike to Buyer`)
-// THEN Breach!
+// THEN Courier MUST `compensate Seller`
 ```
+
+Actions can also include statements in their body; see [`../lam4-frontend/examples/simple_atomic_actions_borrower_debt.l4`](../lam4-frontend/examples/simple_atomic_actions_borrower_debt.l4) for an example.
 
 ## Why go for this alternative
 
@@ -153,35 +171,36 @@ And the normative DSL SLEEC, which has constructs of the `when <trigger> then <r
 
 ### Second, it is more compositional and modular
 
-For example, jursidication A and jurisdication B agreed that there's an obligation to do something, but disagreed in what the penalties would be, there is a natural, modular way to encode that on the alternative syntax. You would declare the obligation, and then, e.g., encode that each of the jurisdictions had different reparations for that obligation in separate `IF ... THEN ...` statements.
+For example, suppose jursidication A and jurisdication B agree that there's an obligation to do something, but disagree in what the penalties would be. There is a natural, modular way to encode that on the alternative syntax. You would declare the obligation, and then, e.g., encode that each of the jurisdictions had different reparations for that obligation in separate `IF ... THEN ...` statements.
 
 ```lam4
 // File 1
-... MUST NOT spit_gum
+§3: GumSpittingProhibition
+... CANNOT spit_gum // haven't added CANNOT in yet but you get the idea
 ```
 
 ```jursidiction_A
 // import File 1 obligations
-IF ... spit_gum
-THEN MUST pay_1000_fine
+IF GumSpittingProhibition IS_INFRINGED
+THEN Spitter MUST pay_1000_fine // This syntax takes some simplifying liberties re the agent
 ```
 
 ```jursidiction_A
 // import File 1 obligations
-IF ... spit_gum
-THEN MUST pay_50_fine
+IF GumSpittingProhibition IS_INFRINGED
+THEN Spitter MUST pay_50_fine
 ```
 
 By contrast, the current L4 syntax does not give you natural way to represent this; in particular, that both jursidictions in some sense forbid *the same thing*, but differ in their penalties for it. You would have to encode this with *distinct* obligations and reparations, e.g.
 
 ```jurisdiction_A
-... MUST NOT spit_gum
+... MUSTN'T spit_gum
 LEST pay_1000_fine
-// I don't know if the current L4 AST even allows you to do a MUST NOT in this way though
+// I don't know if the current L4 AST even allows you to do a MUSTN'T in this way though
 ```
 
 ```jurisdiction_B
-... MUST NOT spit_gum
+... MUSTN'T spit_gum
 LEST pay_50_fine
 ```
 
