@@ -124,8 +124,7 @@ parseExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "Ref"            -> parseRefToVar            (coerce node)
 
-    -- Aug 24: Disabling SigDecl etc for now
-    -- "SigDecl"        -> parseSigE           node
+    "SigDecl"        -> parseSigE           node
 
     -- literals
     "IntLit" -> parseIntegerLiteral node
@@ -141,9 +140,12 @@ parseExpr node = do
     "InfixPredicateApplication" -> parsePredicateApp node
 
     "BinExpr"        -> parseBinExpr        node
-    "Join"           -> parseJoin           node
+
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
+
+    -- Note: Join is in the process of being disabled / deprecated
+    "Join"           -> parseJoin           node
 
     typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
 
