@@ -1,0 +1,7 @@
+{
+  "markdown.copyFiles.destination": {
+    "/docs/**/*": "images/",
+  },
+  "markdown.validate.enabled": true,
+  "markdown.updateLinksOnFileMove.enabled": "prompt"
+}

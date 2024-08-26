@@ -1,9 +1,7 @@
-CONCEPT Accident { // placeholder
+STRUCTURE Accident { // placeholder
 }
 
-CONCEPT LifeAssured {
-  
-}
+STRUCTURE LifeAssured {}
 
 /-
 description_for_semantic_parser: "Calculates how much the life assured can get for their claim."

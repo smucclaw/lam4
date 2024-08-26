@@ -10,7 +10,7 @@ import           Control.Monad.State     as X
 import           Data.Coerce             as X
 -- import Data.IORef as X
 import           Data.Kind               as X
-import           Data.List               as X hiding (uncons)
+import           Data.List               as X hiding (uncons, unsnoc)
 import           Data.List.NonEmpty      as X (NonEmpty (..))
 import           Data.Map.Strict         as X (Map, (!))
 import           Data.Maybe              as X
