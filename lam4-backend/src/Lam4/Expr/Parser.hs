@@ -279,7 +279,7 @@ parseVarDecl varDecl = do
 
 parseOriginalRuleRef :: Maybe A.Object -> Parser (Maybe OriginalRuleRef)
 parseOriginalRuleRef (Just origRuleRef) = do
-  let ruleRef = origRuleRef ^?! ix "section" % _String
+  let ruleRef = origRuleRef ^?! ix "section" % _Integer % to show % to T.pack
   pure $ Just $ MkOriginalRuleRef ruleRef
 parseOriginalRuleRef Nothing = pure Nothing
 

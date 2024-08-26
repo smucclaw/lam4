@@ -169,7 +169,7 @@ fragment WithSpecificMetadataBlock:
 
 // TODO: Figure out how best to add support for clauses -- i.e. for things like §10(a) or §10(1)(a)
 OriginalRuleRef:
-    ('SECTION' | '§') section=STRING
+    ('SECTION' | '§') section=INTEGER
 ;
 
 // a terse FunDecl
