@@ -1,10 +1,9 @@
-
-CONCEPT F {
+STRUCTURE F {
     a: Integer
     c: G
 }
 
-CONCEPT G {
+STRUCTURE G {
     b: Integer
 }
 
