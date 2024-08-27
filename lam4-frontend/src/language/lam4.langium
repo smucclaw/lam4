@@ -396,12 +396,12 @@ Decrement:
     left=[NamedElement:IDOrBackTickedID] ('-=' | 'decreases_by') right=Expr
 ;
 
-fragment RuleRefWithOptionalName:
+fragment OrigRuleRefWithOptionalName:
     originalRuleRef=OriginalRuleRef (':' name=IDOrBackTickedID)?
 ;
 
 IfStmt:
-    RuleRefWithOptionalName?
+    OrigRuleRefWithOptionalName?
 
     // TODO: add a validator that allows a name to be supplied
     // if and only if there's a deontic in either the Then or Else.
