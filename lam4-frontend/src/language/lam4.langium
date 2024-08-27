@@ -550,7 +550,7 @@ CustomTypeDef:
     annot = [CustomType:ID]
 ;
 
-type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | ActionDecl | Relation | SigDecl | RowType; 
+type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Deontic; 
 
 fragment ToplevelStatement: VarDeclStmt | ActionDecl | IfStmt | Deontic;
 
