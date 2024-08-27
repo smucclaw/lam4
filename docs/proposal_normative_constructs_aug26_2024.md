@@ -150,7 +150,7 @@ IF   BikeTransportRule IS_INFRINGED
 THEN Courier MUST `compensate Seller`
 
 // -- or, if we want to just talk in terms of events / actions:
-// IF NOT (Courier `ferry bike to Buyer`)
+// IF NOT (Courier `ferry bike to Buyer within three days`)
 // THEN Courier MUST `compensate Seller`
 ```
 

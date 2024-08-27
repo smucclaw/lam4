@@ -182,7 +182,7 @@ FunDecl:
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
-    ( '=' | 'EQUALS') 
+    ( '=' | 'equals') 
     body=Expr
 ;
 
@@ -341,7 +341,9 @@ AnonFunction:
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | InfixActionApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixActionApplication 
+    // InFixActionApplication must be declared before InfixPredicateApplication
+    | InfixPredicateApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -369,6 +371,7 @@ PrimitiveStatement infers Statement:
     | GotoBreach
 ;
 
+// Like CSL's `failure`. Not sure if this should be an Expr.
 GotoBreach: 
     value="Breach!"
 ;
@@ -395,12 +398,12 @@ Decrement:
     left=[NamedElement:IDOrBackTickedID] ('-=' | 'decreases_by') right=Expr
 ;
 
-fragment RuleRefWithOptionalName:
+fragment OrigRuleRefWithOptionalName:
     originalRuleRef=OriginalRuleRef (':' name=IDOrBackTickedID)?
 ;
 
 IfStmt:
-    RuleRefWithOptionalName?
+    OrigRuleRefWithOptionalName?
 
     // TODO: add a validator that allows a name to be supplied
     // if and only if there's a deontic in either the Then or Else.
@@ -433,11 +436,11 @@ Deontic:
 ;
 
 // Will add sugar like prohibitions later
-DeonticModal: MustModal | MayModal;
+DeonticModal: Must | May;
 
-MustModal: {infer MustModal} 'MUST';
+Must: {infer Must} 'MUST';
 
-MayModal: {infer MayModal} 'MAY';
+May: {infer May} 'MAY';
 
 /* ============================
    A normal record 
@@ -550,7 +553,7 @@ CustomTypeDef:
     annot = [CustomType:ID]
 ;
 
-type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | ActionDecl | Relation | SigDecl | RowType; 
+type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Deontic; 
 
 fragment ToplevelStatement: VarDeclStmt | ActionDecl | IfStmt | Deontic;
 
