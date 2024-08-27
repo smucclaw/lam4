@@ -182,7 +182,7 @@ FunDecl:
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
-    ( '=' | 'EQUALS') 
+    ( '=' | 'equals') 
     body=Expr
 ;
 
