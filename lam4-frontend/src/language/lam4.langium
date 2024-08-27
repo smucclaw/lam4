@@ -433,11 +433,11 @@ Deontic:
 ;
 
 // Will add sugar like prohibitions later
-DeonticModal: MustModal | MayModal;
+DeonticModal: Must | May;
 
-MustModal: {infer MustModal} 'MUST';
+Must: {infer Must} 'MUST';
 
-MayModal: {infer MayModal} 'MAY';
+May: {infer May} 'MAY';
 
 /* ============================
    A normal record 
