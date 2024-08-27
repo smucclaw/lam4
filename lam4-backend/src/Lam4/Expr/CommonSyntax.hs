@@ -1,7 +1,16 @@
 module Lam4.Expr.CommonSyntax where
 
 import           Base
+import           Base.Grisette
 import           Lam4.Expr.Name (Name (..))
+
+
+-- | Basically a 'Binding'
+data DeclF a =
+    NonRec      Name a
+  | Rec         Name a
+  deriving stock (Show, Eq, Ord, Generic)
+
 
 type Row a = [(Name, a)]
 
@@ -13,9 +22,12 @@ newtype OriginalRuleRef
   = MkOriginalRuleRef Text
   deriving newtype (Eq, Ord)
   deriving stock (Show, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default OriginalRuleRef)
+
 
 data UnaryOp = Not | UnaryMinus
   deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default UnaryOp)
 
 -- | Binary operators. May want to distinguish between concrete and abstract versions in the future, but for now, the CST and AST use the same set of BinOps.
 data BinOp
@@ -34,12 +46,15 @@ data BinOp
   | Ne      -- ^ inequality (of Booleans, numbers or atoms)
   | Cons    -- ^ List Cons
    deriving stock (Eq, Show, Ord, Generic)
-
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default BinOp)
 
 data Relatum
   = CustomType  Name
   | BuiltinType BuiltinTypeForRelation
   deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default Relatum)
 
 data BuiltinTypeForRelation = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
   deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default BuiltinTypeForRelation)
+

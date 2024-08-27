@@ -6,6 +6,11 @@ import           Base.Grisette
 import           Lam4.Expr.Name (Name (..))
 import           Lam4.Expr.CommonSyntax
 
+newtype Decl = MyDecl (DeclF Expr)
+  deriving newtype (Eq, Show)
+  deriving Generic
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default (DeclF Expr))
+
 data Expr
   = Var        Name
   | Lit        SymLit
@@ -18,8 +23,8 @@ data Expr
   | Record     (Row (Union Expr))                          -- record construction
   | Project    (Union Expr) Name                           -- record projection
   | Fun        [Name] (Union Expr) (Maybe OriginalRuleRef) -- Function
-  | Let        Name (Union Expr) (Union Expr)
-  | Letrec     Name (Union Expr) (Union Expr)
+  | Let        Decl Expr
+  -- | StatementBlock  (NonEmpty Statement)
 
   {-===========================
     What follows is
@@ -30,9 +35,9 @@ data Expr
   -- | NormExpr   [Norm]
 
   | Predicate  [Name] (Union Expr) (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
-  | PredApp    (Union Expr) [Union Expr]
+  -- | PredApp    (Union Expr) [Union Expr]
   -- no sig related constructs for now
-  deriving stock (Eq, Show, Ord, Generic)
+  deriving stock (Eq, Show, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default Expr)
 
 
@@ -40,5 +45,5 @@ data SymLit
   = IntLit SymInteger
   | BoolLit SymBool
   -- | StringLit Text -- TODO: not clear that we need this
-  deriving stock (Eq, Show, Ord, Generic)
-  deriving (Mergeable, SymEq) via (Default SymLit)
+  deriving stock (Eq, Show, Generic)
+  deriving (Mergeable, EvalSym, ExtractSym, SymEq) via (Default SymLit)

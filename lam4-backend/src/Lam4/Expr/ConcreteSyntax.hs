@@ -3,7 +3,13 @@ TODO:
 * Add Builtin list operations
 -}
 module Lam4.Expr.ConcreteSyntax
-  ( Decl(..)
+  (
+  -- * Decl and convenience constructors
+    Decl
+  , mkStatementBlockDecl
+  , mkSingletonStatementDecl
+
+  -- * Expr
   , Expr(..)
   , Lit(..)
   , OriginalRuleRef(..)
@@ -11,23 +17,26 @@ module Lam4.Expr.ConcreteSyntax
   , BinOp(..)
   , Relatum(..)
   , BuiltinTypeForRelation(..)
+
+  -- * Statements
   , Statement(..)
-  , Deontic(..)
-  , ToplevelElement(..))
+  , DeonticModal(..)
+)
   where
 
-import           Base
+import           Base                   hiding (singleton)
+import           Base.NonEmpty          (singleton)
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.Name         (Name (..))
 -- a Name can refer to an Expr or a Statement (but note that not all kinds of Statements can have names)
 
-data ToplevelElement = DeclElt Decl | StatementElt Statement
-  deriving stock (Show, Eq, Ord)
+type Decl = DeclF Expr
 
-data Decl =
-    NonRec Name Expr
-  | Rec    Name Expr
-  deriving stock (Show, Eq, Ord)
+mkStatementBlockDecl :: Name -> NonEmpty Statement -> Decl
+mkStatementBlockDecl name statements = NonRec name $ StatementBlock statements
+
+mkSingletonStatementDecl :: Name -> Statement -> Decl
+mkSingletonStatementDecl name statement = mkStatementBlockDecl name $ singleton statement
 
 {-
 TODO:
@@ -50,8 +59,8 @@ data Expr
   | Record     (Row Expr)                          -- record construction
   | Project    Expr Name                           -- record projection
   | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
-  | Let        Name Expr Expr
-  | Letrec     Name Expr Expr
+  | Let        Decl Expr
+  | StatementBlock  (NonEmpty Statement)
 
   {-===========================
     What follows is
@@ -115,37 +124,23 @@ data Lit
   Misc:
   * Currently distinguishing between Actions and Functions in the surface syntax,
     because I think that having different syntax for pure vs impure functions will be helpful for end users. But not sure.
--}
-data Statement
-  = IfStmt Expr (NonEmpty Statement) [Statement] -- If Condition Then Otherwise
-  | Assign Name Expr
-  | Action Name [Name] [Statement]               -- Action NameOfAction Params Body(block of statements)
-  | Norm   Deontic
-  | Breach
-  deriving stock (Show, Eq, Ord)
 
-
-{-===========================================================
-   Deontic
-=============================================================-}
-
-{- | WIP. Trying to synthesize
+  ----------
+    Norms
+  ----------
+  Trying to synthesize
   * "Modelling and Analysis of Normative Documents"
   * "COIR: Verifying Normative Specifications of Complex Systems"
   * The work on SLEEC
 
-  Note:
-  * Using 'norm' to mean something potentially broader than a 'deontic'
--}
-
-{-| Think of this, in the simplest case, as:
+  Think of this, in the simplest case, as:
       @
       <agent>
       MUST/MAY
       <action>
       @
 
-    Or with a condition / trigger (using IfStmt):
+    Or with a condition / trigger (using IfStatement):
       @
       IF <trigger event>
       THEN <agent>
@@ -164,19 +159,26 @@ data Statement
       @
 
     (For simpler use cases, deadlines/temporal constraints can also be simulated with atomic / more coarse-grained actions.)
--}
-data Deontic =
-  MkDeontic { name         :: Maybe Name
-              -- Users can supply a name for the deontic if it doesn't appear in the scope of another Statement that already has a Name
-            , agent        :: Name -- In the future may want to be able to quantify over agents too
-            , deonticModal :: DeonticModal
-            , action       :: Statement
-            -- , deadline     :: WIP_NotSureYet -- only in v2 / v3
-            }
-  deriving stock (Eq, Show, Ord)
 
-data WIP_NotSureYet
-  deriving stock (Eq, Show, Ord)
+  Note:
+  * Using 'norm' to mean something potentially broader than a 'deontic'
+-}
+data Statement
+  = IfStatement Expr (NonEmpty Statement) [Statement] -- If Condition Then Otherwise
+  | Assign Name Expr
+  | Action Name [Name] [Statement]                    -- Action NameOfAction Params Body(block of statements)
+  | Norm   Name DeonticModal Statement                -- Norm   Agent DeonticModal Action. Can add deadlines in v2 / v3
+                                                      -- Note: Users can supply a name for the Norm
+                                                      -- if it doesn't appear in the scope of another Statement that already has a Name
+
+  | Breach                                            -- Like CSL's @failure@. Not sure we need this though; WIP.
+
+  deriving stock (Show, Eq, Ord)
+
+
+{-===========================================================
+   Deontic
+=============================================================-}
 
 -- | Can add prohibitions as sugar in the future
 data DeonticModal = Obligation | Permission
