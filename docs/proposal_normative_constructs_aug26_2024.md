@@ -196,19 +196,25 @@ And the normative DSL SLEEC, which has constructs of the `when <trigger> then <r
 
 For example, suppose jursidication A and jurisdication B agree that there's an obligation to do something, but disagree in what the penalties would be. There is a natural, modular way to encode that on the alternative syntax. You would declare the obligation, and then, e.g., encode that each of the jurisdictions had different reparations for that obligation in separate `IF ... THEN ...` statements.
 
+Common:
+
 ```lam4
 // File 1
 §3: GumSpittingProhibition
 ... CANNOT spit_gum // haven't added CANNOT in yet but you get the idea
 ```
 
-```jursidiction_A
+jursidiction_A:
+
+```lam4
 // import File 1 obligations
 IF GumSpittingProhibition IS_INFRINGED
 THEN Spitter MUST pay_1000_fine // This syntax takes some simplifying liberties re the agent
 ```
 
-```jursidiction_A
+jursidiction_B:
+
+```lam4
 // import File 1 obligations
 IF GumSpittingProhibition IS_INFRINGED
 THEN Spitter MUST pay_50_fine
@@ -216,13 +222,17 @@ THEN Spitter MUST pay_50_fine
 
 By contrast, the current L4 syntax does not give you natural way to represent this; in particular, that both jursidictions in some sense forbid *the same thing*, but differ in their penalties for it. You would have to encode this with *distinct* obligations and reparations, e.g.
 
-```jurisdiction_A
+jursidiction_A:
+
+```L4
 ... MUSTN'T spit_gum
 LEST pay_1000_fine
 // I don't know if the current L4 AST even allows you to do a MUSTN'T in this way though
 ```
 
-```jurisdiction_B
+jursidiction_B:
+
+```L4
 ... MUSTN'T spit_gum
 LEST pay_50_fine
 ```

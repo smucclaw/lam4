@@ -1,5 +1,5 @@
-{- | 
-  Aug 26 2024: This parser hasn't yet been updated with all the recent constructs and changes in the Langium grammar. 
+{- |
+  Aug 26 2024: This parser hasn't yet been updated with all the recent constructs and changes in the Langium grammar.
   So don't expect to be able to parse into the backend concrete syntax right now.
 
   Parses the JSON representation of (the concrete syntax of)
@@ -33,9 +33,9 @@ import           Base.Aeson               (FromJSON, _Integer, _Object, _String,
 import qualified Base.Aeson               as A
 import           Base.ByteString          (ByteString)
 import qualified Base.Text                as T
-import qualified Data.Set                 as Set
--- import qualified Data.List.NonEmpty as NE
 import qualified Data.Foldable            as F
+import qualified Data.Set                 as Set
+import           Lam4.Expr.CommonSyntax   (DeclF (..))
 import           Lam4.Expr.ConcreteSyntax
 import           Lam4.Expr.Name           (Name (..))
 import           Lam4.Parser.Monad
@@ -180,8 +180,8 @@ parseRelatum node = do
 parseRelation :: Name -> A.Object -> Parser Expr
 parseRelation parentSigName relationNode = do
     relationName <- getName relationNode
-    relatum     <- parseRelatum =<< relationNode .: "relatum"
-    description <- relationNode .:? "description"
+    relatum      <- parseRelatum =<< relationNode .: "relatum"
+    description  <- relationNode .:? "description"
     pure $ Relation relationName parentSigName relatum description
 
 
@@ -208,8 +208,8 @@ parseSigE sigNode = do
 parseBinExpr :: A.Object -> Parser Expr
 parseBinExpr node = do
   op    <- parseBinOp =<< node .: "op"
-  left  <- parseExpr =<< node .: "left"
-  right <- parseExpr =<< node .: "right"
+  left  <- parseExpr  =<< node .: "left"
+  right <- parseExpr  =<< node .: "right"
   pure $ BinExpr op left right
 
 parseJoin ::  A.Object -> Parser Expr
@@ -258,25 +258,25 @@ parseIfThenElse obj = do
     Let
 -------------------------}
 
-type Binding = (Name, Expr)
-
 parseLet :: A.Object -> Parser Expr
 parseLet obj = do
   rows <- traverse parseVarDecl $ obj `getObjectsAtField` "vars"
   body <- parseExpr $ obj `objAtKey` "body"
   makeNestedLet body rows
     where
-      makeNestedLet :: Expr -> [Binding] -> Parser Expr
+      makeNestedLet :: Expr -> [Decl] -> Parser Expr
       makeNestedLet body rows = F.foldrM nestLet body rows
 
-      nestLet :: Binding -> Expr -> Parser Expr
-      nestLet (name, valE) accE = pure $ Let name valE accE
+      nestLet :: Decl -> Expr -> Parser Expr
+      nestLet binding accE = pure $ Let binding accE
 
-parseVarDecl :: A.Object -> Parser Binding
+parseVarDecl :: A.Object -> Parser Decl
 parseVarDecl varDecl = do
   name <- getName varDecl
-  val <- parseExpr (getValueFieldOfNode varDecl)
-  pure (name, val)
+  let valObj = getValueFieldOfNode varDecl
+  val <- parseExpr valObj
+  valType <- valObj .: "$type"
+  pure $ mkDecl valType name val
 
 
 {------------------------
