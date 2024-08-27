@@ -4,7 +4,7 @@ This proposal advances an alternative grammar for normative constructs in L4. Th
 
 Let me start by reviewing what I take to be the current syntax for expressing normative things in L4.
 
-## The current L4 syntax, for comparison
+## The current L4 syntax for normative constructs, for comparison
 
 The core of it is something like this:
 
@@ -15,6 +15,29 @@ The core of it is something like this:
 ```
 
 where the question marks indicate that the construct is optional.
+
+Indeed, if we look at the Regulative Rule variant of the Rule data type in Rule.hs, it's clear that normative constructs are being modelled as a *product* of the deontic modal / operator and the hence/lests (and other things):
+
+```haskell
+  Regulative
+              { subj     :: BoolStructP               -- man AND woman AND child
+              , rkeyword :: RegKeywords               -- Every | Party | TokAll
+              , who      :: Maybe BoolStructR         -- WHO walks and (eats or drinks)
+              , cond     :: Maybe BoolStructR         -- IF it is a saturday
+              , deontic  :: Deontic            -- must
+              , action   :: BoolStructP               -- fart loudly AND run away
+              , temporal :: Maybe (TemporalConstraint Text.Text) -- Before "midnight"
+              , hence    :: Maybe Rule
+              , lest     :: Maybe Rule
+              ...
+              , upon     :: Maybe ParamText
+              , given    :: Maybe ParamText
+              , having   :: Maybe ParamText  -- HAVING sung...
+              , wwhere   :: [Rule]
+              , defaults :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+              , symtab   :: [RelationalPredicate] -- SomeConstant IS 500 ; MentalCapacity TYPICALLY True
+              }
+```
 
 ## An alternative syntax
 
@@ -31,7 +54,7 @@ data Statement
   | Assign Name Expr
   | Action Name [Name] [Statement]               -- Action NameOfAction Params Body(block of statements)
   | Norm   Deontic
-  | Breach
+  | Breach                                       -- like CSL's @failure@. Maybe this should be an Expr --- not sure.
   -- there could be more sugar; I'm just trying to get at the core idea for now
   deriving stock (Show, Eq, Ord)
 
