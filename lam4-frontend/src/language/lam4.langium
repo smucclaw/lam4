@@ -341,7 +341,9 @@ AnonFunction:
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | InfixActionApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixActionApplication 
+    // InFixActionApplication must be declared before InfixPredicateApplication
+    | InfixPredicateApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
