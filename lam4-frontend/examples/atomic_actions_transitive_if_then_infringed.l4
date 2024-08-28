@@ -6,6 +6,7 @@ ACTION `pay for bike`
 ACTION `transfer bike to Courier within two days`
 ACTION `ferry bike to Buyer within three days`
 ACTION `compensate Seller`
+ACTION `compensate Buyer`
 
 §1: SellerTransferObligation
 IF    Buyer `pay for bike`
@@ -16,9 +17,8 @@ IF   Seller `transfer bike to Courier within two days`
 THEN Courier MUST `ferry bike to Buyer within three days`
 
 // Reparations
-
 IF   SellerTransferObligation IS_INFRINGED
-THEN Breach!
+THEN Seller MUST `compensate Buyer`
 
 IF   BikeTransportRule IS_INFRINGED
 THEN Courier MUST `compensate Seller`

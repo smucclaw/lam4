@@ -368,12 +368,6 @@ Statement:
 
 PrimitiveStatement infers Statement:
     StatementRef 
-    | GotoBreach
-;
-
-// Like CSL's `failure`. Not sure if this should be an Expr.
-GotoBreach: 
-    value="Breach!"
 ;
 
 StatementRef:

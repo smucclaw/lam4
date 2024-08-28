@@ -54,7 +54,6 @@ data Statement
   | Assign Name Expr
   | Action Name [Name] [Statement]               -- Action NameOfAction Params Body(block of statements)
   | Norm   Deontic
-  | Breach                                       -- like CSL's @failure@. Maybe this should be an Expr --- not sure.
   -- there could be more sugar; I'm just trying to get at the core idea for now
   deriving stock (Show, Eq, Ord)
 
@@ -118,7 +117,6 @@ ACTION `transfer bike to Buyer`
 
 IF        Buyer `pay for bike`
 THEN      Seller MUST `transfer bike to Buyer`
-OTHERWISE Breach!
 ```
 
 #### A more complicated example that demonstrates built-in predicates like `IS_INFRINGED`, as well as references to norms
@@ -133,6 +131,7 @@ ACTION `pay for bike`
 ACTION `transfer bike to Courier within two days`
 ACTION `ferry bike to Buyer within three days`
 ACTION `compensate Seller`
+ACTION `compensate Buyer`
 
 §1: SellerTransferObligation
 IF    Buyer `pay for bike`
@@ -144,7 +143,7 @@ THEN Courier MUST `ferry bike to Buyer within three days`
 
 // Reparations
 IF   SellerTransferObligation IS_INFRINGED
-THEN Breach!
+THEN Seller MUST `compensate Buyer`
 
 IF   BikeTransportRule IS_INFRINGED
 THEN Courier MUST `compensate Seller`
@@ -241,4 +240,7 @@ This means, in other words, that it'll be harder to do things like mixing contra
 
 ## References
 
-[TODO]
+* "Modelling and Analysis of Normative Documents"
+* "COIR: Verifying Normative Specifications of Complex Systems"
+* The work on SLEEC
+* Normative Programming Language (NPL) (https://github.com/moise-lang/)

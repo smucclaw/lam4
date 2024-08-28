@@ -6,4 +6,3 @@ ACTION `transfer bike to Buyer`
 
 IF        Buyer `pay for bike`
 THEN      Seller MUST `transfer bike to Buyer`
-OTHERWISE Breach!
