@@ -1,12 +1,27 @@
 {
     "name": "lam4",
-    "description": "Please enter a brief description here",
+    "description": "Frontend for the Lam4 DSL",
     "version": "0.0.1",
+    "license": "MIT",
     "files": [
-        "bin",
-        "out",
-        "src"
+        "!**/.DS_Store",
+        "!**/.vscode/**",
+        "!**/.vscode-test/**",
+        "!**/.gitignore",
+        "!**/langium-quickstart.md"
     ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/smucclaw/lam4.git"
+    },
+    "publishConfig": {
+        "files": [
+            "bin",
+            "out",
+            "src"
+        ]
+    },
+    "publisher": "YongmingHan",
     "type": "module",
     "scripts": {
         "build": "tsc -b tsconfig.src.json && node esbuild.mjs",
@@ -40,7 +55,7 @@
         "tslog": "^4.9.3",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
-},
+    },
     "devDependencies": {
         "@types/node": "^18.0.0",
         "@types/vscode": "~1.67.0",
