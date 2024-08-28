@@ -132,6 +132,7 @@ data Lit
   * "Modelling and Analysis of Normative Documents"
   * "COIR: Verifying Normative Specifications of Complex Systems"
   * The work on SLEEC
+  * Normative Programming Language (NPL) (https://github.com/moise-lang/)
 
   Think of this, in the simplest case, as:
       @
@@ -162,6 +163,7 @@ data Lit
 
   Note:
   * Using 'norm' to mean something potentially broader than a 'deontic'
+  * Don't need a `Breach` / `GotoBreach` because "if the contract states A "must" Q by time T and A does not Q by T, then there is always a breach. A breach triggers second order obligations to make reparations etc, so not doing those does not breach the contract itself, but those second order things" (law expert Jerrold Soh).
 -}
 data Statement
   = IfStatement Expr (NonEmpty Statement) [Statement] -- If Condition Then Otherwise
@@ -171,7 +173,6 @@ data Statement
                                                       -- Note: Users can supply a name for the Norm
                                                       -- if it doesn't appear in the scope of another Statement that already has a Name
 
-  | Breach                                            -- Like CSL's @failure@. Not sure we need this though; WIP.
 
   deriving stock (Show, Eq, Ord)
 
