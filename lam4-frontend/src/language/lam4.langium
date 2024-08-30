@@ -23,9 +23,10 @@ If you do need either of those:
 =======
 TO DOs
 =======
+* think about whether it's clear how to conjoin IfThenOtherwise statements
+* [MAYBE] add sugar along the lines of the GF group's `each of` (sugar for nested`AND`)
 * Look into how to enable language server support for non-VSCode editors
 * Test the type checking / inference and scoping more
-* Check if adding LetExpr to the grammar in way I have is compositional enough
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
 * Check if the handling of number literals is good enough
@@ -230,6 +231,7 @@ OrExpr infers Expr:
     AndExpr ({infer BinExpr.left=current} op=OpOr right=AndExpr)*
 ;
 
+// TODO: Would be good to add sugar along the lines of `each of`
 OpAnd: {infer OpAnd} 'AND';
 AndExpr infers Expr:
     (ComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op=OpAnd right=(ComparisonExpr| IfThenElseExpr))*
