@@ -164,22 +164,63 @@ data Lit
   Note:
   * Using 'norm' to mean something potentially broader than a 'deontic'
   * Don't need a `Breach` / `GotoBreach` because "if the contract states A "must" Q by time T and A does not Q by T, then there is always a breach. A breach triggers second order obligations to make reparations etc, so not doing those does not breach the contract itself, but those second order things" (law expert Jerrold Soh).
+  * The frontend will prevent users from binding a name to a Norm if the Norm appears in the scope of another Statement that already has a Name [TODO]
 -}
-data Statement
-  = IfStatement Expr (NonEmpty Statement) [Statement] -- If Condition Then Otherwise
-  | Assign Name Expr
-  | Action Name [Name] [Statement]                    -- Action NameOfAction Params Body(block of statements)
-  | Norm   Name DeonticModal Statement                -- Norm   Agent DeonticModal Action. Can add deadlines in v2 / v3
-                                                      -- Note: Users can supply a name for the Norm
-                                                      -- if it doesn't appear in the scope of another Statement that already has a Name
+data Statement = IfStatement Expr Statement    [Statement]  -- If   Condition Then         Otherwise
+               | Norm        Name DeonticModal Action       -- Norm Agent     DeonticModal Action
+    deriving stock (Show, Eq, Ord)                          -- will think about how to add deadline(s) only in v2 / v3
+    
+                                                       
+{- | Actions can be given a name with the `Decl` construct
+Think of an ActionBlock as a function with side effects / a function where the statements in the body are PrimActions
+(and where a block of actions corresponds to 'sequencing' them in the usual 'imperative language' way)
 
+ActionBlocks need not contain primitive actions; e.g., this Lam4 surface syntax:
 
+@
+ACTION `pay for bike`
+@
+
+will become a non-recursive Decl with a StatementBlock consisting of an ActionBlock with an empty list of PrimActions.
+
+(Such 'opaque' actions / events are often enough to model a lot of things;
+see the SLEEC work, e.g. "Normative Requirements Operationalization with Large Language Models", for some nice examples of this. 
+This is also a common pattern / idiom in formal modelling in general.)
+
+But for certain modelling purposes, we may want richer structure; e.g.
+
+@
+DO {
+  x increases_by 1
+  y increases_by 1
+}
+@
+
+where @x@ and @y@ are global variables.
+
+Or:
+
+@
+ACTION TransferMoolah = DO {
+  Buyer`s`  money decreases_by 50
+  Seller`s` money increases_by 50
+}
+@
+
+------------------
+
+TODO: 
+  * Think about adding an `unknown` variant, a la https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/master/UnknownDL.hs
+-}
+data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock NameOfThisActionBlock Params Body(of PrimAction)
+                                                               -- Inline action blocks won't have a user-supplied name
+            | PrimitiveAction PrimAction
   deriving stock (Show, Eq, Ord)
 
-
-{-===========================================================
-   Deontic
-=============================================================-}
+-- | TODO: Not sure tt we really want ActionRefs in the concrete syntax
+data PrimAction = Assign      Name   Expr     
+                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action) 
+  deriving stock (Show, Eq, Ord)
 
 -- | Can add prohibitions as sugar in the future
 data DeonticModal = Obligation | Permission

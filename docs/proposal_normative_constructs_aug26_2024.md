@@ -49,23 +49,24 @@ The alternative I want to present is, in its more abstract Haskell data-type for
 
 ```haskell
 
-data Statement
-  = IfStmt Expr (NonEmpty Statement) [Statement] -- If Condition Then Otherwise
-  | Assign Name Expr
-  | Action Name [Name] [Statement]               -- Action NameOfAction Params Body(block of statements)
-  | Norm   Deontic
-  -- there could be more sugar; I'm just trying to get at the core idea for now
+data Statement = IfStatement Expr Statement    [Statement]  -- If   Condition Then         Otherwise
+               | Norm        Name DeonticModal Action       -- Norm Agent     DeonticModal Action
+    deriving stock (Show, Eq, Ord)                          -- will think about how to add deadline(s) only in v2 / v3
+
+data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock NameOfThisActionBlock Params Body(of PrimAction)
+                                                               -- Inline action blocks won't have a user-supplied name
+            | PrimitiveAction PrimAction
   deriving stock (Show, Eq, Ord)
 
-data Deontic =
-  MkDeontic { name         :: Maybe Name
-              -- Users can supply a name for the deontic if it doesn't appear in the scope of another Statement that already has a Name
-            , agent        :: Name -- In the future may want to be able to quantify over agents too
-            , deonticModal :: DeonticModal
-            , action       :: Statement
-            -- , deadline     :: WIP_NotSureYet -- only in v2 / v3
-            }
+-- | TODO: Not sure tt we really want ActionRefs in the concrete syntax
+data PrimAction = Assign      Name   Expr     
+                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action) 
+  deriving stock (Show, Eq, Ord)
+
+-- | Can add prohibitions as sugar in the future
+data DeonticModal = Obligation | Permission
   deriving stock (Eq, Show, Ord)
+
 ```
 
 and where the expression language fragment basically looks like what you'd expect, plus sugar for things like predicates over normative stuff:
@@ -81,16 +82,39 @@ data Expr
 
 #### The basic intuition
 
-I'll get to why I prefer this grammar over the current L4 grammar later, but for now, the basic intuition behind this syntax is this. One way of adding normative stuff to a functional expression language amounts to augmenting the evaluator with a Store / EvalState; and in particular, keeping track of the statuses of the normative stuff (e.g. what obligations are operative at any point; what obligations have been satisfied or violated; what actions have been taken), as well as whatever other state is required.
+I'll get to why I prefer this grammar over the current L4 grammar later, but for now, the basic intuition behind this syntax is this. One way of adding normative stuff to a functional expression language amounts to augmenting the evaluator with a Store / EvalState; and in particular, keeping track of the statuses of the normative stuff (e.g. what obligations are operative at any point; what obligations have been satisfied or violated; what actions have been taken), as well as whatever other state is required. For this reason, it's natural to model normative stuff as *statements* instead of *expressions*.
 
-For this reason, it's natural to model normative stuff as *statements* instead of *expressions*.
-Thinking of them as statements also agrees, not just with work in AI and AI x Law, but also with a longstanding tradition in philosophy and linguistics that models them as being fundamentally *non*-truth-conditional, stateful things (e.g., as 'proposals to update the conversational scoreboard').
+This grammar, to be clear, isn't something I'm plucking from thin air. It is similar to the grammars presented in:
+
+* "Modelling and Analysis of Normative Documents"
+* "COIR: Verifying Normative Specifications of Complex Systems"
+* The work on SLEEC
+* Normative Programming Language (NPL) (https://github.com/moise-lang/)
+
+Thinking of normative stuff as statements also agrees, not just with work in AI and AI x Law, but also with a longstanding tradition in philosophy and linguistics that models them as being fundamentally *non*-truth-conditional, stateful things (e.g., as 'proposals to update the conversational scoreboard').
 
 ##### Actions
 
 Actions are WIP, but the idea is that actions are basically impure functions. When an action is taken, the Store/EvalState is mutated in the necessary ways.
 
-You can think of actions also as 'events'. This is perhaps clearest in the case of an 'atomic' action where there are no statements in its body. Such atomic actions would be very similar to events in the SLEEC language.
+You can think of actions also as 'events'. This is perhaps clearest in the case of an 'opaque' action where there are no statements in its body, e.g.:
+
+```lam4
+ACTION `pay for bike`
+```
+
+which will become a non-recursive `Decl` with a `StatementBlock` consisting of an `ActionBlock` with an empty list of `PrimActions`.
+
+Such opaque actions would be very similar to events in the SLEEC language.
+
+For certain modelling purposes, of course, we may want richer structure, e.g.
+
+```lam4
+ACTION TransferMoolah = DO {
+  Buyer`s`  money decreases_by 50
+  Seller`s` money increases_by 50
+}
+```
 
 If you prefer to think in terms of transitions, this quote from John Camilleri may be helpful:
 
