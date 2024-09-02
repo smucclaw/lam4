@@ -1,10 +1,10 @@
 import type {LangiumCoreServices} from "langium";
 import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, DefaultScopeProvider, EMPTY_SCOPE, ReferenceInfo, Scope } from "langium";
 import { Logger } from "tslog";
-import { SigDecl, Join } from "./generated/ast.js";
-import {isJoinExpr} from "./lam4-lang-utils.js";
+import { SigDecl, RecordDecl, Project } from "./generated/ast.js";
+import {isProjectExpr} from "./lam4-lang-utils.js";
 import { getSigAncestors, inferType, TypeEnv } from "./type-system/infer.js";
-import { isSigTTag } from "./type-system/type-tags.js";
+import { isRecordTTag, isSigTTag } from "./type-system/type-tags.js";
 
 const scopeLogger = new Logger({ 
   name: "scoper",
@@ -54,25 +54,25 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
     const self = context.container;
     const parent = self.$container;
 
-    const isRightChildOfJoin = parent && isJoinExpr(parent) && self === parent.right;
-    if (isRightChildOfJoin) {
-      const parentJoin = parent as Join;
+    const isRightChildOfProject = parent && isProjectExpr(parent) && self === parent.right;
+    if (isRightChildOfProject) {
+      const parentProject = parent as Project;
       // getScope will have been called on parent.left before this
       // so if the left child is a Ref that can be resolved by the default linker, the Ref's reference will have been resolved
       scopeLogger.trace(`(Scope-if) ${context.reference.$refText}`);
-      scopeLogger.trace(`left sib: ${parentJoin.left.$type}`)      
+      scopeLogger.trace(`left sib: ${parentProject.left.$type}`)      
 
-      // Return the members in scope in `left` iff `left` is a sig
-      // (If the target of the join / field deref is not a sig, 
+      // Return the members in scope in `left` iff `left` is a record
+      // (If the target of the project is not a record, 
       // it's a primitive type or type resolution error)
-      const typeOfLeft = inferType(new TypeEnv(), parentJoin.left);
+      const typeOfLeft = inferType(new TypeEnv(), parentProject.left);
       scopeLogger.trace(`           left sib ::`, typeOfLeft.toString());
-      const returnScope = isSigTTag(typeOfLeft) ? 
-                          this.scopeSigMembers(typeOfLeft.getSig()) : EMPTY_SCOPE
+      const returnScope = isRecordTTag(typeOfLeft) ? 
+                          this.scopeRecordMembers(typeOfLeft.getRecord()) : EMPTY_SCOPE
       return returnScope;
     }
 
-    scopeLogger.trace("Not rt child of join");
+    scopeLogger.trace("Not rt child of Project");
     return super.getScope(context);
   }
 
@@ -81,5 +81,11 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
     scopeLogger.debug(`relations: ${allRelations.map(r => r.name)}`);
     return this.createScopeForNodes(allRelations);
   } 
+
+  private scopeRecordMembers(record: RecordDecl): Scope {
+    const allFields = getRecordAncestors(record).flatMap((record: RecordDecl) => record.rowTypes);
+
+    return this.createScopeForNodes(record.rowTypes);
+  }
 }
 

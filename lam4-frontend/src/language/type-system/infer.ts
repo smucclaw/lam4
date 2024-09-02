@@ -63,7 +63,7 @@ import {
     ParamTypePair} from "../generated/ast.js";
 import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
-import { isJoinExpr } from "../lam4-lang-utils.js";
+import { isProjectExpr } from "../lam4-lang-utils.js";
 
 import { zip } from "../../utils.js"
 import { match, P } from 'ts-pattern';
@@ -289,7 +289,7 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
     // (probably has to do with how the ref resolution hasn't fully completed at this stage)
     if (term.$type === "Ref") {
         typeTag = synthRef(env, term as Ref);
-    } else if (isJoinExpr(term)) {
+    } else if (isProjectExpr(term)) {
         typeTag = synthJoin(env, term as Join);
 
     // Constructs whose types can be easily read off the term
