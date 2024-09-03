@@ -2,6 +2,14 @@
 
 This is a kind of rational reconstruction of the 'MathLang' dialect of L4. That is, it is, at its core, a functional expression language; but it aims to extend the MathLang work by incorporating solver / automated reasoning capabilities. It also differs from Natural L4 in offering a textual format with a more constrained surface syntax (with a 'no-code,' intuitive GUI for non-programmers on the roadmap).
 
+## How to build
+
+This will be simpler soon enough, once I've set up a Nix environment etc. But in the meantime:
+
+You basically have to set up two things:
+1. The Langium frontend: see the detailed instructions in the `lam4-frontend` readme
+2. The Langium backend:  see the detailed instructions in the `lam4-backend` readme
+
 ## Goals in the short term
 
 * things will be rough around the edges, and technical debt will be unavoidable --- but we'll be explicit about said debt

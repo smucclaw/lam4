@@ -54,16 +54,22 @@ import {
     isPredicateDecl,
     Ref,
     Join,
+    Project,
     FunctionApplication,
     InfixPredicateApplication,
     isInfixPredicateApplication,
     UnaryExpr,
     PrimitiveTypeAnnot,
     VarBinding,
-    ParamTypePair} from "../generated/ast.js";
-import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag} from "./type-tags.js";
+    VarDeclStmt,
+    ParamTypePair,
+    RecordDecl,
+    isRecordDecl,
+    IDOrBackTickedID,
+    isRowType} from "../generated/ast.js";
+import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag, isRecordTTag, RecordTTag, RowTypeTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
-import { isJoinExpr } from "../lam4-lang-utils.js";
+import { isProjectExpr } from "../lam4-lang-utils.js";
 
 import { zip } from "../../utils.js"
 import { match, P } from 'ts-pattern';
@@ -124,6 +130,11 @@ export function inferType(env: TypeEnv, term: AstNode): TypeTag {
     }
 }
 
+function synthRecord(env: TypeEnv, record: RecordDecl): TypeTag {
+    const rowTypeTags = record.rowTypes.map(rtNode => ({name: rtNode.name, 
+        rowType: inferType(env, rtNode.value)}));
+    return  new RecordTTag(record, rowTypeTags);
+}
 
 function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): TypeTag {
     typecheckLogger.trace(`[synthTypeAnnot]`);
@@ -148,7 +159,12 @@ function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | Bu
         if (!customType) {
             return new ErrorTypeTag(typeAnnot, `Type annotation ${typeAnnot.annot} not found because of an issue with linking`);
         }
-        return new SigTTag(customType as SigDecl);
+
+        return customType.$type === "RecordDecl"
+                ? 
+                synthRecord(env, customType as RecordDecl)
+                : 
+                new SigTTag(customType as SigDecl);
     }
 
     function isBasecaseTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
@@ -184,7 +200,6 @@ function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | Bu
         return new ErrorTypeTag(annot, `Type annotation ${annot} not recognized`);
     }
 }
-
 
 function synthBinExpr(env: TypeEnv, expr: BinExpr): TypeTag {
     typecheckLogger.trace(`[synthBinExpr]`);
@@ -245,18 +260,39 @@ function synthRef(env: TypeEnv, ref: Ref): TypeTag {
 }
 
 /**
- * Key Precondition: If the join is well-typed, then the reference of the leftmost child of the join is already resolved. 
- * This is guaranteed by the structure of the Join construct in the grammar: 
+ * Key Precondition: If the Project is well-typed, then the reference of the leftmost child of the Project is already resolved. 
+ * This is guaranteed by the structure of the Project construct in the grammar: 
  * because the depth of the leftmost child will not exceed that of the right, the scoper/linker will visit the leftmost child first
  * (and so, if the leftmost child is a Ref that can be resolved by the default linker, the Ref's reference will have been resolved) 
  */
-function synthJoin(env: TypeEnv, term: Join): TypeTag {
-    typecheckLogger.debug(`Trying to synth left of join: ${term.left.$type}`);
+function synthProject(env: TypeEnv, term: Project): TypeTag {
+    typecheckLogger.debug(`Trying to synth left of Project: ${term.left.$type}`);
     const typeOfLeft = inferType(env, term.left);
-    typecheckLogger.debug(`left of join :: ${typeOfLeft.toString()}`);
+    typecheckLogger.debug(`left of Project :: ${typeOfLeft.toString()}`);
 
     const rightRefName = term.right.value.$refText;
     
+    // With the type of the left sibling, we can infer what the type of `left `s` right` is
+    if (isRecordTTag(typeOfLeft)) {
+        const recordTag = typeOfLeft;
+
+        const memberType = recordTag.contains(rightRefName as IDOrBackTickedID);
+        if (memberType) {
+            typecheckLogger.debug(`(matchingMember) ${rightRefName} :: ${memberType.toString()}`);
+
+            return memberType ?? new ErrorTypeTag(term, "a project should have worked");
+            // TODO: Add checking of the synth'd type if necessary
+        } else {
+            return new ErrorTypeTag(term, `${rightRefName} not found in ${recordTag.getRecordName()}`)
+        }
+    } else {
+        return new ErrorTypeTag(term.left, `The type of something to the left of a a project / field access operator should be a Record, and not a ${typeOfLeft.toString()}`)
+    }
+}
+
+/*
+Sep 3: The old Sig/Relations version (now currently just using Project without Join)
+--------------------------------------------------------------------------------------
     // With the type of the left sibling, we can infer what the type of `left `s` right` is
     if (isSigTTag(typeOfLeft)) {
         const sig = typeOfLeft.getSig();
@@ -269,15 +305,15 @@ function synthJoin(env: TypeEnv, term: Join): TypeTag {
 
             const joinedType = relationType.joinOnLeft(typeOfLeft);
             typecheckLogger.debug(`joinedType: ${joinedType}`);
-            return joinedType ?? new ErrorTypeTag(term, "join should have worked");
+            return joinedType ?? new ErrorTypeTag(term, "a project should have worked");
             // TODO: Add checking of the synth'd type if necessary
         } else {
             return new ErrorTypeTag(term, `Relatum ${rightRefName} not found in ${sig.name}`)
         }
     } else {
-        return new ErrorTypeTag(term.left, `The type of something to the left of a join / field access operator should be a Concept, and not a ${typeOfLeft.toString()}`)
+        return new ErrorTypeTag(term.left, `The type of something to the left of a a project / field access operator should be a Record, and not a ${typeOfLeft.toString()}`)
     }
-}
+*/
 
 export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
     typecheckLogger.trace(`--- [synthNewNode] -- term: ${term.$type}`);
@@ -289,8 +325,8 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
     // (probably has to do with how the ref resolution hasn't fully completed at this stage)
     if (term.$type === "Ref") {
         typeTag = synthRef(env, term as Ref);
-    } else if (isJoinExpr(term)) {
-        typeTag = synthJoin(env, term as Join);
+    } else if (isProjectExpr(term)) {
+        typeTag = synthProject(env, term as Project);
 
     // Constructs whose types can be easily read off the term
     } else if (term.$type == "StringLiteral") {
@@ -299,6 +335,10 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = new BooleanTTag(term as BooleanLiteral);
     } else if (term.$type == "IntegerLiteral") {
         typeTag = new IntegerTTag(term as IntegerLiteral);
+
+    } else if (term.$type == "VarDeclStmt") {
+        const varTerm = term as VarDeclStmt;
+        typeTag = varTerm.varType ? inferType(env, varTerm.varType) : inferType(env, varTerm.value);
     } else if (term.$type == "VarBinding") {
         const varTerm = term as VarBinding;
         typeTag = varTerm.varType ? inferType(env, varTerm.varType) : inferType(env, varTerm.value);
@@ -326,7 +366,11 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         typeTag = synthTypeAnnot(env, term as CustomTypeDef);
     } else if (term.$type === "BuiltinType") {
         typeTag = synthTypeAnnot(env, term as BuiltinType);
-        
+    } else if (isRecordDecl(term)) {
+        typeTag = synthRecord(env, term as RecordDecl);
+    } else if (isRowType(term)) {
+        const fieldType = inferType(env, term.value);
+        typeTag = new RowTypeTTag(term, fieldType);
     } else if (isSigDecl(term)) {
         typeTag = new SigTTag(term);
     } else if (isRelation(term)) {
@@ -460,19 +504,19 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
 
 const isBoolExpr = (op: AstNode) => isComparisonOp(op) || (BOOL_OPERATORS.includes(op.$type));
 
+type SigOrRecordDecl = SigDecl | RecordDecl;
 
-/** Get Sig ancestors via DFS */
-export function getSigAncestors(sig: SigDecl): SigDecl[] {
-    const seen = new Set<SigDecl>();
-    const toVisit: SigDecl[] = [sig];
+function getAncestors(sigOrRecord: SigOrRecordDecl): SigOrRecordDecl[] {
+    const seen = new Set<SigOrRecordDecl>();
+    const toVisit: SigOrRecordDecl[] = [sigOrRecord];
 
     while (toVisit.length > 0) {
-        let next: SigDecl | undefined = toVisit.pop();
+        let next: SigOrRecordDecl | undefined = toVisit.pop();
         if (!next) break; // TODO: temp hack cos TS can't narrow based on length out of box
 
         if (!seen.has(next)) {
             seen.add(next);
-            next.parents.forEach((parent: Reference<SigDecl>) => { 
+            next.parents.forEach((parent: Reference<SigOrRecordDecl>) => { 
                 if (parent.ref) toVisit.push(parent.ref) 
             });
         }
@@ -480,10 +524,38 @@ export function getSigAncestors(sig: SigDecl): SigDecl[] {
 
     // Sets preserve insertion order
     const seenArr = Array.from(seen);
-    typecheckLogger.silly('seenArr:', seenArr.map(sig => sig.name));
+    typecheckLogger.silly('seenArr:', seenArr.map(sigOrRecord => sigOrRecord.name));
 
     return seenArr;
+
 }
+
+export const getSigAncestors = (sig: SigDecl) => getAncestors(sig) as SigDecl[];
+export const getRecordAncestors = (record: RecordDecl) => getAncestors(record) as RecordDecl[];
+
+// /** Get Sig ancestors via DFS */
+// export function getSigAncestors(sig: SigDecl): SigDecl[] {
+//     const seen = new Set<SigDecl>();
+//     const toVisit: SigDecl[] = [sig];
+
+//     while (toVisit.length > 0) {
+//         let next: SigDecl | undefined = toVisit.pop();
+//         if (!next) break; // TODO: temp hack cos TS can't narrow based on length out of box
+
+//         if (!seen.has(next)) {
+//             seen.add(next);
+//             next.parents.forEach((parent: Reference<SigDecl>) => { 
+//                 if (parent.ref) toVisit.push(parent.ref) 
+//             });
+//         }
+//     }
+
+//     // Sets preserve insertion order
+//     const seenArr = Array.from(seen);
+//     typecheckLogger.silly('seenArr:', seenArr.map(sig => sig.name));
+
+//     return seenArr;
+// }
 
 
 /*============= Error ================================ */
