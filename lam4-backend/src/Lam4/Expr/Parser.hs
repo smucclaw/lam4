@@ -149,7 +149,7 @@ parseExpr node = do
     "IfThenElseExpr" -> parseIfThenElse     node
 
     -- Note: Join is in the process of being disabled / deprecated
-    "Join"           -> parseJoin           node
+    "Project"        -> parseProject        node
 
     typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
 
@@ -201,9 +201,9 @@ parseSigE sigNode = do
   pure $ Sig parents relations
 
 
-{-----------------------------------
-    BinExpr, UnaryExpr, IfThenElse
-------------------------------------}
+{-------------------------------------------
+    BinExpr, Project, UnaryExpr, IfThenElse
+---------------------------------------------}
 
 parseBinExpr :: A.Object -> Parser Expr
 parseBinExpr node = do
@@ -212,11 +212,11 @@ parseBinExpr node = do
   right <- parseExpr  =<< node .: "right"
   pure $ BinExpr op left right
 
-parseJoin ::  A.Object -> Parser Expr
-parseJoin node = do
+parseProject ::  A.Object -> Parser Expr
+parseProject node = do
   left <- parseExpr =<< node .: "left"
-  right <- parseExpr =<< node .: "right"
-  pure $ Join left right
+  fieldname <- relabelBareRef $ coerce $ node `objAtKey` "right" 
+  pure $ Project left fieldname
 
 parseBinOp :: A.Object -> Parser BinOp
 parseBinOp opObj = do
