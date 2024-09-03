@@ -53,6 +53,13 @@ After building:
 
 ### Backlog
 
+#### Typechecker, evaluator, backend related
+
+The type checker is currently implemented in Typescript, but in the medium term I want to just move that to the Haskell backend. 
+
+I also want to have some kind of JSON RPC going with the Haskell backend, so that we'll be able to, e.g., parse the program, run the evaluator, and see nice feedback in a webview, all within the IDE.
+
+
 #### Parser
 
 1. Try cutting down on symbols like braces if this is something that would confuse non-technical users
