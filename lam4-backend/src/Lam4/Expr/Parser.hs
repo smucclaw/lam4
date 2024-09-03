@@ -156,6 +156,7 @@ parseExpr node = do
     "IfThenElseExpr" -> parseIfThenElse     node
 
     -- Note: Join is in the process of being disabled / deprecated
+    "RecordExpr"     -> parseRecordExpr     node
     "Project"        -> parseProject        node
 
     typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
@@ -219,10 +220,35 @@ parseBinExpr node = do
   right <- parseExpr  =<< node .: "right"
   pure $ BinExpr op left right
 
+{- | Key invariant for the parsing: 
+  Record expressions have to be constructed / parsed in such a way that:
+  * the labels / names of the rows are __the same ones__ that a valid __projection__ of the record would use.
+
+  So if I'm parsing @Project@ in such a way that the names used by the projection correspond to those in the original record declaration,
+  my record expressions must similarly use names that refer
+  to the labels / names in the original record declarations
+-}
+parseRecordExpr :: A.Object -> Parser Expr
+parseRecordExpr node = do
+  rows <- traverse mkBinding (node `getObjectsAtField` "rows")
+  pure $ Record rows
+  where
+    mkBinding :: A.Object -> Parser (Name, Expr)
+    mkBinding row = do
+      name <- getCanonicalRecordLabelName =<< row .: "label"
+      expr <- parseExpr =<< row .: "value"
+      pure (name, expr)
+
+{- | Suppose you have a label that's used when introducing record expr. This lets you get the 'canonical' @Name@ corresponding to that label.
+-} 
+getCanonicalRecordLabelName :: Text -> Parser Name
+getCanonicalRecordLabelName = undefined
+
+
 parseProject ::  A.Object -> Parser Expr
 parseProject node = do
   left <- parseExpr =<< node .: "left"
-  fieldname <- relabelBareRef $ coerce $ node `objAtKey` "right" 
+  fieldname <- relabelBareRef $ coerce $ node `objAtKey` "right"
   pure $ Project left fieldname
 
 parseBinOp :: A.Object -> Parser BinOp
@@ -279,11 +305,12 @@ parseLet obj = do
 
 parseVarDecl :: A.Object -> Parser Decl
 parseVarDecl varDecl = do
+  -- TODO: Check -- is this really how we want to handle name of varDecl?
   name <- getName varDecl
   let valObj = getValueFieldOfNode varDecl
   val <- parseExpr valObj
-  valType <- valObj .: "$type"
-  pure $ mkDecl valType name val
+  valLangiumParserNodeType <- valObj .: "$type"
+  pure $ mkDecl valLangiumParserNodeType name val
 
 
 {------------------------
