@@ -3,7 +3,13 @@ TODO:
 * Add Builtin list operations
 -}
 module Lam4.Expr.ConcreteSyntax
-  ( Decl(..)
+  (
+  -- * Decl and convenience constructors
+    Decl
+  , mkStatementBlockDecl
+  , mkSingletonStatementDecl
+
+  -- * Expr
   , Expr(..)
   , Lit(..)
   , OriginalRuleRef(..)
@@ -11,23 +17,26 @@ module Lam4.Expr.ConcreteSyntax
   , BinOp(..)
   , Relatum(..)
   , BuiltinTypeForRelation(..)
+
+  -- * Statements
   , Statement(..)
-  , Deontic(..)
-  , ToplevelElement(..))
+  , DeonticModal(..)
+)
   where
 
-import           Base
+import           Base                   hiding (singleton)
+import           Base.NonEmpty          (singleton)
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.Name         (Name (..))
 -- a Name can refer to an Expr or a Statement (but note that not all kinds of Statements can have names)
 
-data ToplevelElement = DeclElt Decl | StatementElt Statement
-  deriving stock (Show, Eq, Ord)
+type Decl = DeclF Expr
 
-data Decl =
-    NonRec Name Expr
-  | Rec    Name Expr
-  deriving stock (Show, Eq, Ord)
+mkStatementBlockDecl :: Name -> NonEmpty Statement -> Decl
+mkStatementBlockDecl name statements = NonRec name $ StatementBlock statements
+
+mkSingletonStatementDecl :: Name -> Statement -> Decl
+mkSingletonStatementDecl name statement = mkStatementBlockDecl name $ singleton statement
 
 {-
 TODO:
@@ -50,8 +59,8 @@ data Expr
   | Record     (Row Expr)                          -- record construction
   | Project    Expr Name                           -- record projection
   | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
-  | Let        Name Expr Expr
-  | Letrec     Name Expr Expr
+  | Let        Decl Expr
+  | StatementBlock  (NonEmpty Statement)
 
   {-===========================
     What follows is
@@ -115,37 +124,24 @@ data Lit
   Misc:
   * Currently distinguishing between Actions and Functions in the surface syntax,
     because I think that having different syntax for pure vs impure functions will be helpful for end users. But not sure.
--}
-data Statement
-  = IfStmt Expr (NonEmpty Statement) [Statement] -- If Condition Then Otherwise
-  | Assign Name Expr
-  | Action Name [Name] [Statement]               -- Action NameOfAction Params Body(block of statements)
-  | Norm   Deontic
-  | Breach
-  deriving stock (Show, Eq, Ord)
 
-
-{-===========================================================
-   Deontic
-=============================================================-}
-
-{- | WIP. Trying to synthesize
+  ----------
+    Norms
+  ----------
+  Trying to synthesize
   * "Modelling and Analysis of Normative Documents"
   * "COIR: Verifying Normative Specifications of Complex Systems"
   * The work on SLEEC
+  * Normative Programming Language (NPL) (https://github.com/moise-lang/)
 
-  Note:
-  * Using 'norm' to mean something potentially broader than a 'deontic'
--}
-
-{-| Think of this, in the simplest case, as:
+  Think of this, in the simplest case, as:
       @
       <agent>
       MUST/MAY
       <action>
       @
 
-    Or with a condition / trigger (using IfStmt):
+    Or with a condition / trigger (using IfStatement):
       @
       IF <trigger event>
       THEN <agent>
@@ -164,19 +160,67 @@ data Statement
       @
 
     (For simpler use cases, deadlines/temporal constraints can also be simulated with atomic / more coarse-grained actions.)
--}
-data Deontic =
-  MkDeontic { name         :: Maybe Name
-              -- Users can supply a name for the deontic if it doesn't appear in the scope of another Statement that already has a Name
-            , agent        :: Name -- In the future may want to be able to quantify over agents too
-            , deonticModal :: DeonticModal
-            , action       :: Statement
-            -- , deadline     :: WIP_NotSureYet -- only in v2 / v3
-            }
-  deriving stock (Eq, Show, Ord)
 
-data WIP_NotSureYet
-  deriving stock (Eq, Show, Ord)
+  Note:
+  * Using 'norm' to mean something potentially broader than a 'deontic'
+  * Don't need a `Breach` / `GotoBreach` because "if the contract states A "must" Q by time T and A does not Q by T, then there is always a breach. A breach triggers second order obligations to make reparations etc, so not doing those does not breach the contract itself, but those second order things" (law expert Jerrold Soh).
+  * The frontend will prevent users from binding a name to a Norm if the Norm appears in the scope of another Statement that already has a Name [TODO]
+-}
+data Statement = IfStatement Expr Statement    [Statement]  -- If   Condition Then         Otherwise
+               | Norm        Name DeonticModal Action       -- Norm Agent     DeonticModal Action
+    deriving stock (Show, Eq, Ord)                          -- will think about how to add deadline(s) only in v2 / v3
+    
+                                                       
+{- | Actions can be given a name with the `Decl` construct
+Think of an ActionBlock as a function with side effects / a function where the statements in the body are PrimActions
+(and where a block of actions corresponds to 'sequencing' them in the usual 'imperative language' way)
+
+ActionBlocks need not contain primitive actions; e.g., this Lam4 surface syntax:
+
+@
+ACTION `pay for bike`
+@
+
+will become a non-recursive Decl with a StatementBlock consisting of an ActionBlock with an empty list of PrimActions.
+
+(Such 'opaque' actions / events are often enough to model a lot of things;
+see the SLEEC work, e.g. "Normative Requirements Operationalization with Large Language Models", for some nice examples of this. 
+This is also a common pattern / idiom in formal modelling in general.)
+
+But for certain modelling purposes, we may want richer structure; e.g.
+
+@
+DO {
+  x increases_by 1
+  y increases_by 1
+}
+@
+
+where @x@ and @y@ are global variables.
+
+Or:
+
+@
+ACTION TransferMoolah = DO {
+  Buyer`s`  money decreases_by 50
+  Seller`s` money increases_by 50
+}
+@
+
+------------------
+
+TODO: 
+  * Think about adding an `unknown` variant, a la https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/master/UnknownDL.hs
+-}
+data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock NameOfThisActionBlock Params Body(of PrimAction)
+                                                               -- Inline action blocks won't have a user-supplied name
+            | PrimitiveAction PrimAction
+  deriving stock (Show, Eq, Ord)
+
+-- | TODO: Not sure tt we really want ActionRefs in the concrete syntax
+data PrimAction = Assign      Name   Expr     
+                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action) 
+  deriving stock (Show, Eq, Ord)
 
 -- | Can add prohibitions as sugar in the future
 data DeonticModal = Obligation | Permission

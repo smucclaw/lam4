@@ -37,6 +37,7 @@ library
         Base
         Base.IntMap
         Base.Map
+        Base.NonEmpty
         Base.Plated
         Base.Text
         Base.Aeson

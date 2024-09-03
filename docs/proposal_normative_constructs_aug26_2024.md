@@ -49,24 +49,24 @@ The alternative I want to present is, in its more abstract Haskell data-type for
 
 ```haskell
 
-data Statement
-  = IfStmt Expr (NonEmpty Statement) [Statement] -- If Condition Then Otherwise
-  | Assign Name Expr
-  | Action Name [Name] [Statement]               -- Action NameOfAction Params Body(block of statements)
-  | Norm   Deontic
-  | Breach                                       -- like CSL's @failure@. Maybe this should be an Expr --- not sure.
-  -- there could be more sugar; I'm just trying to get at the core idea for now
+data Statement = IfStatement Expr Statement    [Statement]  -- If   Condition Then         Otherwise
+               | Norm        Name DeonticModal Action       -- Norm Agent     DeonticModal Action
+    deriving stock (Show, Eq, Ord)                          -- will think about how to add deadline(s) only in v2 / v3
+
+data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock NameOfThisActionBlock Params Body(of PrimAction)
+                                                               -- Inline action blocks won't have a user-supplied name
+            | PrimitiveAction PrimAction
   deriving stock (Show, Eq, Ord)
 
-data Deontic =
-  MkDeontic { name         :: Maybe Name
-              -- Users can supply a name for the deontic if it doesn't appear in the scope of another Statement that already has a Name
-            , agent        :: Name -- In the future may want to be able to quantify over agents too
-            , deonticModal :: DeonticModal
-            , action       :: Statement
-            -- , deadline     :: WIP_NotSureYet -- only in v2 / v3
-            }
+-- | TODO: Not sure tt we really want ActionRefs in the concrete syntax
+data PrimAction = Assign      Name   Expr     
+                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action) 
+  deriving stock (Show, Eq, Ord)
+
+-- | Can add prohibitions as sugar in the future
+data DeonticModal = Obligation | Permission
   deriving stock (Eq, Show, Ord)
+
 ```
 
 and where the expression language fragment basically looks like what you'd expect, plus sugar for things like predicates over normative stuff:
@@ -82,16 +82,39 @@ data Expr
 
 #### The basic intuition
 
-I'll get to why I prefer this grammar over the current L4 grammar later, but for now, the basic intuition behind this syntax is this. One way of adding normative stuff to a functional expression language amounts to augmenting the evaluator with a Store / EvalState; and in particular, keeping track of the statuses of the normative stuff (e.g. what obligations are operative at any point; what obligations have been satisfied or violated; what actions have been taken), as well as whatever other state is required.
+I'll get to why I prefer this grammar over the current L4 grammar later, but for now, the basic intuition behind this syntax is this. One way of adding normative stuff to a functional expression language amounts to augmenting the evaluator with a Store / EvalState; and in particular, keeping track of the statuses of the normative stuff (e.g. what obligations are operative at any point; what obligations have been satisfied or violated; what actions have been taken), as well as whatever other state is required. For this reason, it's natural to model normative stuff as *statements* instead of *expressions*.
 
-For this reason, it's natural to model normative stuff as *statements* instead of *expressions*.
-Thinking of them as statements also agrees, not just with work in AI and AI x Law, but also with a longstanding tradition in philosophy and linguistics that models them as being fundamentally *non*-truth-conditional, stateful things (e.g., as 'proposals to update the conversational scoreboard').
+This grammar, to be clear, isn't something I'm plucking from thin air. It is similar to the grammars presented in:
+
+* "Modelling and Analysis of Normative Documents"
+* "COIR: Verifying Normative Specifications of Complex Systems"
+* The work on SLEEC
+* Normative Programming Language (NPL) (https://github.com/moise-lang/)
+
+Thinking of normative stuff as statements also agrees, not just with work in AI and AI x Law, but also with a longstanding tradition in philosophy and linguistics that models them as being fundamentally *non*-truth-conditional, stateful things (e.g., as 'proposals to update the conversational scoreboard').
 
 ##### Actions
 
 Actions are WIP, but the idea is that actions are basically impure functions. When an action is taken, the Store/EvalState is mutated in the necessary ways.
 
-You can think of actions also as 'events'. This is perhaps clearest in the case of an 'atomic' action where there are no statements in its body. Such atomic actions would be very similar to events in the SLEEC language.
+You can think of actions also as 'events'. This is perhaps clearest in the case of an 'opaque' action where there are no statements in its body, e.g.:
+
+```lam4
+ACTION `pay for bike`
+```
+
+which will become a non-recursive `Decl` with a `StatementBlock` consisting of an `ActionBlock` with an empty list of `PrimActions`.
+
+Such opaque actions would be very similar to events in the SLEEC language.
+
+For certain modelling purposes, of course, we may want richer structure, e.g.
+
+```lam4
+ACTION TransferMoolah = DO {
+  Buyer`s`  money decreases_by 50
+  Seller`s` money increases_by 50
+}
+```
 
 If you prefer to think in terms of transitions, this quote from John Camilleri may be helpful:
 
@@ -118,7 +141,6 @@ ACTION `transfer bike to Buyer`
 
 IF        Buyer `pay for bike`
 THEN      Seller MUST `transfer bike to Buyer`
-OTHERWISE Breach!
 ```
 
 #### A more complicated example that demonstrates built-in predicates like `IS_INFRINGED`, as well as references to norms
@@ -133,6 +155,7 @@ ACTION `pay for bike`
 ACTION `transfer bike to Courier within two days`
 ACTION `ferry bike to Buyer within three days`
 ACTION `compensate Seller`
+ACTION `compensate Buyer`
 
 §1: SellerTransferObligation
 IF    Buyer `pay for bike`
@@ -144,13 +167,13 @@ THEN Courier MUST `ferry bike to Buyer within three days`
 
 // Reparations
 IF   SellerTransferObligation IS_INFRINGED
-THEN Breach!
+THEN Seller MUST `compensate Buyer`
 
 IF   BikeTransportRule IS_INFRINGED
 THEN Courier MUST `compensate Seller`
 
 // -- or, if we want to just talk in terms of events / actions:
-// IF NOT (Courier `ferry bike to Buyer`)
+// IF NOT (Courier `ferry bike to Buyer within three days`)
 // THEN Courier MUST `compensate Seller`
 ```
 
@@ -196,19 +219,25 @@ And the normative DSL SLEEC, which has constructs of the `when <trigger> then <r
 
 For example, suppose jursidication A and jurisdication B agree that there's an obligation to do something, but disagree in what the penalties would be. There is a natural, modular way to encode that on the alternative syntax. You would declare the obligation, and then, e.g., encode that each of the jurisdictions had different reparations for that obligation in separate `IF ... THEN ...` statements.
 
+Common:
+
 ```lam4
 // File 1
 §3: GumSpittingProhibition
 ... CANNOT spit_gum // haven't added CANNOT in yet but you get the idea
 ```
 
-```jursidiction_A
+jursidiction_A:
+
+```lam4
 // import File 1 obligations
 IF GumSpittingProhibition IS_INFRINGED
 THEN Spitter MUST pay_1000_fine // This syntax takes some simplifying liberties re the agent
 ```
 
-```jursidiction_A
+jursidiction_B:
+
+```lam4
 // import File 1 obligations
 IF GumSpittingProhibition IS_INFRINGED
 THEN Spitter MUST pay_50_fine
@@ -216,13 +245,17 @@ THEN Spitter MUST pay_50_fine
 
 By contrast, the current L4 syntax does not give you natural way to represent this; in particular, that both jursidictions in some sense forbid *the same thing*, but differ in their penalties for it. You would have to encode this with *distinct* obligations and reparations, e.g.
 
-```jurisdiction_A
+jursidiction_A:
+
+```L4
 ... MUSTN'T spit_gum
 LEST pay_1000_fine
 // I don't know if the current L4 AST even allows you to do a MUSTN'T in this way though
 ```
 
-```jurisdiction_B
+jursidiction_B:
+
+```L4
 ... MUSTN'T spit_gum
 LEST pay_50_fine
 ```
@@ -231,4 +264,7 @@ This means, in other words, that it'll be harder to do things like mixing contra
 
 ## References
 
-[TODO]
+* "Modelling and Analysis of Normative Documents"
+* "COIR: Verifying Normative Specifications of Complex Systems"
+* The work on SLEEC
+* Normative Programming Language (NPL) (https://github.com/moise-lang/)

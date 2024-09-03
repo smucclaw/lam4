@@ -8,5 +8,5 @@ ACTION `Borrower makes one loan installment` = DO {
 
 ACTION `pay off debt` = DO {
     `Borrower makes one loan installment`
-    `Borrower makes one loan installment`
+    then `Borrower makes one loan installment`
 }

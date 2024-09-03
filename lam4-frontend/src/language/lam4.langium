@@ -23,9 +23,10 @@ If you do need either of those:
 =======
 TO DOs
 =======
+* think about whether it's clear how to conjoin IfThenOtherwise statements
+* [MAYBE] add sugar along the lines of the GF group's `each of` (sugar for nested`AND`)
 * Look into how to enable language server support for non-VSCode editors
 * Test the type checking / inference and scoping more
-* Check if adding LetExpr to the grammar in way I have is compositional enough
 * Think about whether to refactor this into 2 sub-grammars
 https://langium.org/docs/recipes/multiple-languages/
 * Check if the handling of number literals is good enough
@@ -182,7 +183,7 @@ FunDecl:
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
-    ( '=' | 'EQUALS') 
+    ( '=' | 'equals') 
     body=Expr
 ;
 
@@ -230,6 +231,7 @@ OrExpr infers Expr:
     AndExpr ({infer BinExpr.left=current} op=OpOr right=AndExpr)*
 ;
 
+// TODO: Would be good to add sugar along the lines of `each of`
 OpAnd: {infer OpAnd} 'AND';
 AndExpr infers Expr:
     (ComparisonExpr| IfThenElseExpr) ({infer BinExpr.left=current} op=OpAnd right=(ComparisonExpr| IfThenElseExpr))*
@@ -278,13 +280,24 @@ Mult infers Expr:
     Project ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Project)*
 ;
 
-/* Projects or Selects the value of a from a record */
+// TODO: 's and `s don't work out of the box
+// Can prob allow for "'s" by customizing the TokenBuilder
+/* Projects or Selects the value of a from a record 
+
+(To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
+*/
 Project infers Expr:
     FunctionApplication ({infer Project.left=current} '`s`' right=Ref)*
+    // Right can't be [NamedElement:ID]
+    // because we want the scoper to visit `left` first,
+    // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
+    // This allows us to then use that resolved reference
+    // as a base case in figuring out the reference for `right`
 ;
 
 /* ---------------------------------------------------
-Aug 24 2024: Join is currently disabled
+Aug 24 2024: Join is currently disabled; 
+am porting what I currently have for Join to Project
 -------------------------------------------------------
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 
@@ -341,7 +354,9 @@ AnonFunction:
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixPredicateApplication | InfixActionApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction | InfixActionApplication 
+    // InFixActionApplication must be declared before InfixPredicateApplication
+    | InfixPredicateApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -358,19 +373,8 @@ UnaryExpr:
 
 Statement:
     VarDeclStmt 
-    | IfStmt | Deontic 
-    | ActionDecl 
-    | Assign | Increment | Decrement
-    | PrimitiveStatement
-;
-
-PrimitiveStatement infers Statement:
-    StatementRef 
-    | GotoBreach
-;
-
-GotoBreach: 
-    value="Breach!"
+    | IfStmt | Norm 
+    | StatementRef
 ;
 
 StatementRef:
@@ -381,6 +385,18 @@ StatementRef:
 VarDeclStmt:
     description=SINGLELINE_METADATA_ANNOTATION?
     'DEFINE' Var
+;
+
+Action: 
+    PrimAction | PrimActionBlock
+;
+
+PrimAction:
+    Assign | Increment | Decrement | ActionRef
+;
+
+ActionRef:
+    value=[ActionDecl:IDOrBackTickedID]
 ;
 
 Assign:
@@ -395,12 +411,12 @@ Decrement:
     left=[NamedElement:IDOrBackTickedID] ('-=' | 'decreases_by') right=Expr
 ;
 
-fragment RuleRefWithOptionalName:
+fragment OrigRuleRefWithOptionalName:
     originalRuleRef=OriginalRuleRef (':' name=IDOrBackTickedID)?
 ;
 
 IfStmt:
-    RuleRefWithOptionalName?
+    OrigRuleRefWithOptionalName?
 
     // TODO: add a validator that allows a name to be supplied
     // if and only if there's a deontic in either the Then or Else.
@@ -414,14 +430,18 @@ IfStmt:
 ActionDecl:
     GivenParamBlock?
     'ACTION' name=IDOrBackTickedID 
-    ('=' StatementBlock)?
+    ('=' PrimActionBlock)?
 ;
+
+fragment PrimActionBlock: 'DO' '{'
+    actions+=PrimAction ('then' actions+=PrimAction)*
+'}';
 
 fragment StatementBlock: 'DO' '{'
     statements+=Statement+
 '}';
 
-Deontic:
+Norm:
     originalRuleRef=OriginalRuleRef? 
     (':' name=IDOrBackTickedID)?
     // TODO: Add validator to prevent users from adding a rule ref or name here 
@@ -429,15 +449,15 @@ Deontic:
 
     agent=[NamedElement:ID] 
     deonticModal=DeonticModal 
-    action=Statement
+    action=Action
 ;
 
 // Will add sugar like prohibitions later
-DeonticModal: MustModal | MayModal;
+DeonticModal: Must | May;
 
-MustModal: {infer MustModal} 'MUST';
+Must: {infer Must} 'MUST';
 
-MayModal: {infer MayModal} 'MAY';
+May: {infer May} 'MAY';
 
 /* ============================
    A normal record 
@@ -550,9 +570,9 @@ CustomTypeDef:
     annot = [CustomType:ID]
 ;
 
-type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | ActionDecl | Relation | SigDecl | RowType; 
+type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm; 
 
-fragment ToplevelStatement: VarDeclStmt | ActionDecl | IfStmt | Deontic;
+fragment ToplevelStatement: VarDeclStmt | ActionDecl | IfStmt | Norm;
 
 /* ========================================
          BUILT IN and PRIMITIVE types

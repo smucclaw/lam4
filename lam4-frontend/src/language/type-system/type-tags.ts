@@ -1,4 +1,3 @@
-
 import { AstNode } from "langium";
 import {
     SigDecl,
@@ -6,7 +5,12 @@ import {
     StringLiteral,
     IntegerLiteral,
     Param,
-    Relation
+    Relation,
+    RecordDecl,
+    isRecordDecl,
+    IDOrBackTickedID,
+    TypeAnnot,
+    RowType
 } from "../generated/ast.js"; 
 import { zip } from "../../utils.js"
 import {NodeTypePair} from "./infer.js";
@@ -366,6 +370,94 @@ export function isPredicateTTag(tag: TypeTag): tag is PredicateTTag {
     return tag.tag === "Predicate";
 }
 
+
+/*============= Record ================================ */
+
+export class RecordTTag implements TypeTag {
+    readonly tag = "Record";
+    private readonly record: RecordDecl;
+    private readonly rowTypes: Map<IDOrBackTickedID, TypeTag>;
+    private readonly parents: Set<RecordDecl>;
+    
+    constructor(record: RecordDecl, rowTypes: RowTypePair[]) {
+        this.record = record;
+        
+        const parents = record.parents.map(parentRef => parentRef.ref)
+                                      .filter(isRecordDecl);
+        this.parents = new Set(parents);
+
+        this.rowTypes = new Map(rowTypes.map(row => [row.name, row.rowType]));;
+    }
+    toString(): string {
+        return `Record ${this.record.name}`;
+    }
+
+    getRecord(): RecordDecl {
+        return this.record;
+    }
+
+    getRecordName(): string {
+        return this.record.name;
+    }
+
+    contains(fieldname: IDOrBackTickedID): TypeTag | undefined {
+        return this.rowTypes.get(fieldname);
+    }
+
+    // Referential equality
+    sameRecordAs(other: TypeTag) {
+        return isRecordTTag(other) && other.getRecord() === this.getRecord(); 
+    }
+
+    // TODO: Placeholder implementation; more thought required here -- depends on desired semantics!
+    sameTypeAs(other: TypeTag): boolean {
+        return this.sameRecordAs(other);
+    }
+
+    isSubtypeOf(other: TypeTag): boolean {
+        return isRecordTTag(other) && this.parents.has(other.getRecord());
+    }
+}
+
+
+export function isRecordTTag(tag: TypeTag | undefined): tag is RecordTTag {
+    return tag?.tag === "Record";
+}
+
+type RowTypePair = {
+    name: string;
+    rowType: TypeTag;
+};
+
+export class RowTypeTTag implements TypeTag {
+    readonly tag = "RowType";
+    private readonly node: RowType;
+    private readonly rowTypePair: RowTypePair;
+
+    constructor(node: RowType, fieldType: TypeTag) {
+        this.rowTypePair = {name: node.name,
+                        rowType: fieldType
+        }
+        this.node = node;
+    }
+    toString() {
+        return this.rowTypePair.rowType.toString();
+        // `${this.rowTypePair.name}: ${this.rowTypePair.rowType.toString()}`;
+    }
+    getNode(): RowType {
+        return this.node;
+    }
+    
+    getRowType() {
+        return this.rowTypePair;
+    }
+
+    sameTypeAs(other: TypeTag): boolean {
+        return this === other;
+    }
+
+}
+
 /*============= Sig ================================ */
 
 export class SigTTag implements TypeTag {
@@ -382,13 +474,14 @@ export class SigTTag implements TypeTag {
         return this.sig;
     }
 
+    // Referential equality
     sameSigAs(other: TypeTag) {
         return isSigTTag(other) && other.getSig() === this.getSig(); 
     }
 
-    // TODO: More thought required here -- depends on desired semantics!
+    // TODO: Placeholder implementation; more thought required here -- depends on desired semantics!
     sameTypeAs(other: TypeTag): boolean {
-        return isSigTTag(other);
+        return this.sameSigAs(other);
     }
     // TODO: the subtyping judgment will be interesting
 }
@@ -411,7 +504,7 @@ export class RelationTTag implements TypeTag {
         this.relationType = [parentSigType, relatumType];
     }
     toString() {
-        return `${this.tag}: ${this.relationType}`;
+        return `${this.tag}: ${this.relationType.toString()}`;
     }
     getRelationNode(): Relation {
         return this.relationNode;
