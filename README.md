@@ -110,7 +110,6 @@ To factor a grammar into multiple sub-grammars: <https://github.com/eclipse-lang
 ### Concrete syntax
 
 * [Tonto](https://matheuslenke.github.io/tonto-docs/)'s syntax choices are helpful -- they seemed to have put quite a bit of effort into finding intuitive names, and their language was "designed to allow transformation to a number of languages including UML (more specifically OntoUML), OWL (for gUFO-based ontologies), Alloy" etc
-  * Think about whether to use `SPECIALIZES` instead of `SUBSET_OF`, and whether to use `KIND` or `TYPE` instead of `SIG`
 
 ### Visualizations and Explainability
 
