@@ -57,21 +57,22 @@ parseRefToVar :: Ref -> Parser Expr
 parseRefToVar ref = Var <$> relabelRef ref
 
 relabelBareRef :: Ref -> Parser Name
-relabelBareRef = relabelRefHelper getRef getRefText
+relabelBareRef = relabelRefHelper getRefPath getRefText
   where
-    getRef node = node ^? ix "$ref" % _String
+    getRefPath node = node ^? ix "$ref" % _String
     getRefText node = node ^? ix "$refText" % _String
 
 {- | Relabel an object that is a ('wrapped') `Ref` to a `Name` -}
 relabelRef :: Ref -> Parser Name
-relabelRef = relabelRefHelper getRef getRefText
+relabelRef = relabelRefHelper getRefPath getRefText
   where
-    getRef node = node ^? ix "value" % ix "$ref" % _String
+    getRefPath node = node ^? ix "value" % ix "$ref" % _String
     getRefText node = node ^? ix "value" % ix "$refText" % _String
 
 relabelRefHelper :: (A.Object -> Maybe RefPath) -> (A.Object -> Maybe Text) -> Ref -> Parser Name
-relabelRefHelper getRef getRefText (MkRef node) = do
-  let refPath = getRef node
+relabelRefHelper getRefPath getRefText (MkRef node) = do
+  -- @getRefPath@ here means: get the value of the @$ref@ field; this will be a json path
+  let refPath = getRefPath node
       refText = getRefText node
   case (refPath, refText) of
     (Just refPath', Just refText') -> do
@@ -99,10 +100,13 @@ parseProgram program = do
 
   {- Make Env of nodePaths => Uniques
     All that's needed, for now, is *some* canonical order on the Uniques
+
+    TODO: Also make a Map of record label names => Name.
   -}
   setEnv (zip nodePaths [1 .. ])
   parseDecls elementObjects
 
+{- | Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
 mkDecl :: Text -> Name -> Expr -> Decl
 mkDecl typeOfNode name expr =
   if has (contains typeOfNode) recursiveTypes
