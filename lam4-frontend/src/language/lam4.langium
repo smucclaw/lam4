@@ -434,7 +434,7 @@ ActionDecl:
 ;
 
 fragment PrimActionBlock: 'DO' '{'
-    actions+=PrimAction+
+    actions+=PrimAction ('then' actions+=PrimAction)*
 '}';
 
 fragment StatementBlock: 'DO' '{'
