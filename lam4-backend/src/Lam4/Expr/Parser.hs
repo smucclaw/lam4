@@ -114,10 +114,13 @@ parseDecls = traverse parseDecl
 
 parseDecl :: A.Object -> Parser Decl
 parseDecl obj = do
-  expr <- parseExpr obj
   exprType <- obj .: "$type"
-  name <- getName obj
-  pure $ mkDecl exprType name expr
+  case exprType of
+    "VarDeclStmt" -> parseVarDecl obj
+    _ ->  do
+      expr <- parseExpr obj
+      name <- getName obj
+      pure $ mkDecl exprType name expr
 
 {----------------------
     parseExpr
