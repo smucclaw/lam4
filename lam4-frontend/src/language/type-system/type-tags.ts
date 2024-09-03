@@ -396,6 +396,10 @@ export class RecordTTag implements TypeTag {
         return this.record;
     }
 
+    getRecordName(): string {
+        return this.record.name;
+    }
+
     contains(fieldname: IDOrBackTickedID): TypeTag | undefined {
         return this.rowTypes.get(fieldname);
     }
@@ -428,23 +432,24 @@ type RowTypePair = {
 export class RowTypeTTag implements TypeTag {
     readonly tag = "RowType";
     private readonly node: RowType;
-    private readonly rowType: RowTypePair;
+    private readonly rowTypePair: RowTypePair;
 
-    constructor(node: RowType, relatumType: TypeTag) {
-        this.rowType = {name: node.name,
-                        rowType: relatumType
+    constructor(node: RowType, fieldType: TypeTag) {
+        this.rowTypePair = {name: node.name,
+                        rowType: fieldType
         }
         this.node = node;
     }
     toString() {
-        return `${this.rowType.name}: ${this.rowType}`;
+        return this.rowTypePair.rowType.toString();
+        // `${this.rowTypePair.name}: ${this.rowTypePair.rowType.toString()}`;
     }
     getNode(): RowType {
         return this.node;
     }
     
     getRowType() {
-        return this.rowType;
+        return this.rowTypePair;
     }
 
     sameTypeAs(other: TypeTag): boolean {
@@ -476,7 +481,7 @@ export class SigTTag implements TypeTag {
 
     // TODO: Placeholder implementation; more thought required here -- depends on desired semantics!
     sameTypeAs(other: TypeTag): boolean {
-        return isSigTTag(other);
+        return this.sameSigAs(other);
     }
     // TODO: the subtyping judgment will be interesting
 }
@@ -499,7 +504,7 @@ export class RelationTTag implements TypeTag {
         this.relationType = [parentSigType, relatumType];
     }
     toString() {
-        return `${this.tag}: ${this.relationType}`;
+        return `${this.tag}: ${this.relationType.toString()}`;
     }
     getRelationNode(): Relation {
         return this.relationNode;

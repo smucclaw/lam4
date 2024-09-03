@@ -280,13 +280,24 @@ Mult infers Expr:
     Project ({infer BinExpr.left=current} op=(OpMult | OpDiv) right=Project)*
 ;
 
-/* Projects or Selects the value of a from a record */
+// TODO: 's and `s don't work out of the box
+// Can prob allow for "'s" by customizing the TokenBuilder
+/* Projects or Selects the value of a from a record 
+
+(To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
+*/
 Project infers Expr:
     FunctionApplication ({infer Project.left=current} '`s`' right=Ref)*
+    // Right can't be [NamedElement:ID]
+    // because we want the scoper to visit `left` first,
+    // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
+    // This allows us to then use that resolved reference
+    // as a base case in figuring out the reference for `right`
 ;
 
 /* ---------------------------------------------------
-Aug 24 2024: Join is currently disabled
+Aug 24 2024: Join is currently disabled; 
+am porting what I currently have for Join to Project
 -------------------------------------------------------
 TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
 

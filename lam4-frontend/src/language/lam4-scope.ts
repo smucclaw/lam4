@@ -3,7 +3,7 @@ import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, D
 import { Logger } from "tslog";
 import { SigDecl, RecordDecl, Project } from "./generated/ast.js";
 import {isProjectExpr} from "./lam4-lang-utils.js";
-import { getSigAncestors, inferType, TypeEnv } from "./type-system/infer.js";
+import { getRecordAncestors, inferType, TypeEnv } from "./type-system/infer.js";
 import { isRecordTTag, isSigTTag } from "./type-system/type-tags.js";
 
 const scopeLogger = new Logger({ 
@@ -76,16 +76,17 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
     return super.getScope(context);
   }
 
-  private scopeSigMembers(sig: SigDecl): Scope {
-    const allRelations = getSigAncestors(sig).flatMap((s: SigDecl) => s.relations);
-    scopeLogger.debug(`relations: ${allRelations.map(r => r.name)}`);
-    return this.createScopeForNodes(allRelations);
-  } 
+  // Sep 2024: Deprecating this for now, till I get clearer on what should be done with Sigs
+  // private scopeSigMembers(sig: SigDecl): Scope {
+  //   const allRelations = getSigAncestors(sig).flatMap((s: SigDecl) => s.relations);
+  //   scopeLogger.debug(`relations: ${allRelations.map(r => r.name)}`);
+  //   return this.createScopeForNodes(allRelations);
+  // } 
 
   private scopeRecordMembers(record: RecordDecl): Scope {
-    const allFields = getRecordAncestors(record).flatMap((record: RecordDecl) => record.rowTypes);
-
-    return this.createScopeForNodes(record.rowTypes);
+    const allRowTypes = getRecordAncestors(record).flatMap((record: RecordDecl) => record.rowTypes);
+    scopeLogger.debug(`rowtypes: ${allRowTypes.map(r => r.name)}`);
+    return this.createScopeForNodes(allRowTypes);
   }
 }
 
