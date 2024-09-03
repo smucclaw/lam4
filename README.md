@@ -7,7 +7,7 @@ This is a kind of rational reconstruction of the 'MathLang' dialect of L4. That 
 This will be simpler soon enough, once I've set up a Nix environment etc. But in the meantime:
 
 You basically have to set up two things:
-1. The Langium frontend: see the detailed instructions in the `lam4-frontend` readme
+1. The Langium frontend: see the detailed instructions below
 2. The Langium backend:  see the detailed instructions in the `lam4-backend` readme
 
 ## Goals in the short term
@@ -47,24 +47,9 @@ After building:
 * To print to std out and save to disk a **human-readable version of the concrete syntax** (i.e., a version without the metadata): `node ./bin/cli toMinimalAst <lam4program filename>.l4`
 * To do that for a version of the concrete syntax that includes source text metadata: `node ./bin/cli toAstWithSrcMetadata <lam4program filename>.l4`
   * Note that this is still more like concrete than abstract syntax --- I hope to be able to do that desugaring / simplfiying within the next 1-1.5 weeks. I'll aim to target Andres' AST for concrete evaluation, but I'll probably also experiment with another version on the side that has a few more constructs for symbolic execution.
-* To **generate a VSCode extension**: `vsce package --allow-missing-repository`
+* To **generate a VSCode extension**: `vsce package`
 
 ## Noteworthy TODOs
-
-### The target AST to aim for in the short term, for concrete evaluation of the expression language
-
-```haskell
-data Expr =
-    Builtin    Builtin [Expr] -- a built-in operator or function
-  | Var        Name
-  | IfThenElse Expr Expr Expr -- could potentially also be a built-in if we allow built-ins to be lazy
-  | Lit        Lit
-  | List       [Expr]         -- construct a list
-  | Fold       Expr Name Name Expr Expr -- general list eliminator
-  | App        Expr [Expr]    -- function application
-  | Fun        [Name] Expr    -- anonymous function
-  | Let        Name Expr Expr -- local declaration
-```
 
 ### Backlog
 
@@ -125,7 +110,6 @@ To factor a grammar into multiple sub-grammars: <https://github.com/eclipse-lang
 ### Concrete syntax
 
 * [Tonto](https://matheuslenke.github.io/tonto-docs/)'s syntax choices are helpful -- they seemed to have put quite a bit of effort into finding intuitive names, and their language was "designed to allow transformation to a number of languages including UML (more specifically OntoUML), OWL (for gUFO-based ontologies), Alloy" etc
-  * Think about whether to use `SPECIALIZES` instead of `SUBSET_OF`, and whether to use `KIND` or `TYPE` instead of `SIG`
 
 ### Visualizations and Explainability
 
