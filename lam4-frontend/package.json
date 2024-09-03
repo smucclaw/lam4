@@ -1,6 +1,6 @@
 {
     "name": "lam4",
-    "description": "Frontend for the Lam4 DSL",
+    "description": "Frontend for the Lam4 variant of the L4 DSL",
     "version": "0.0.1",
     "license": "MIT",
     "files": [
