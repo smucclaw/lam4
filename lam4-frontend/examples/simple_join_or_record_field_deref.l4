@@ -2,6 +2,8 @@ STRUCTURE Applicant {
     publications: Integer
 }
 
+DEFINE someApplicant: Applicant = {| publications = 1000 |}
+
 Applicant => Integer
 numberOfPublications(applicant) = applicant`s` publications
 
