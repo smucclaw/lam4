@@ -24,6 +24,8 @@ The parsing/translation in Parser.hs preserves well-scopedness etc
   ----------
     TODOs
   ----------
+  * Find a way to automatedly keep the Langium grammar in sync with this backend parser. 
+      * At the very least, write property based tests
 
   Style / code clarity:
   * Right now I'm using a mix of different idioms for interacting with JSON objects. I should standardize this when time permits
@@ -80,6 +82,9 @@ newtype WrappedRef = MkWrappedRef A.Object
 
 parseRefToVar :: WrappedRef -> Parser Expr
 parseRefToVar ref = Var <$> relabelRef ref
+
+parseBareRefToVar :: Ref -> Parser Expr
+parseBareRefToVar ref = Var <$> relabelBareRef ref
 
 relabelBareRef :: Ref -> Parser Name
 relabelBareRef = relabelRefHelper getRefPath getRefText
@@ -145,11 +150,11 @@ initializeEnvs nodePaths programElementValues = do
       {- | Assumes you've __already__ made an Env of nodePaths => Uniques -}
       makeAndSetRecordLabelMap :: [A.Value] -> Parser ()
       makeAndSetRecordLabelMap progElementValues = do
-        let allRowTypesFromRecDecls = progElementValues ^.. folded 
-                                  % filteredBy (ix "$type" % only "RecordDecl")
-                                  % ix "rowTypes"
-                                  % values 
-                                  % _Object
+        let allRowTypesFromRecDecls = progElementValues ^.. folded
+                                    % filteredBy (ix "$type" % only "RecordDecl")
+                                    % ix "rowTypes"
+                                    % values
+                                    % _Object
 
         labelNames <- traverse getName allRowTypesFromRecDecls
         let recordLabelAssocList = map (\name -> (name.name :: RecordLabel, name)) labelNames
@@ -169,13 +174,17 @@ parseDecls = traverse parseDecl
 
 parseDecl :: A.Object -> Parser Decl
 parseDecl obj = do
-  exprType <- obj .: "$type"
-  case exprType of
+  eltType <- obj .: "$type"
+  case eltType of
+    -- non-expr, non-statement decls
     "VarDeclStmt" -> parseVarDecl obj
+    "RecordDecl"  -> parseRecordDecl obj
+
+    -- exprs
     _ ->  do
       expr <- parseExpr obj
       name <- getName obj
-      pure $ mkDecl exprType name expr
+      pure $ mkDecl eltType name expr
 
 {----------------------
     parseExpr
@@ -188,7 +197,7 @@ parseExpr node = do
 
 
     -- literals
-    "IntLit" -> parseIntegerLiteral node
+    "IntegerLiteral" -> parseIntegerLiteral node
     -- "StringLiteral"  -> parseLiteral StringLit node
     "BooleanLiteral" -> parseLiteral BoolLit node
 
@@ -215,33 +224,32 @@ parseExpr node = do
     typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
 
 
-{----------------------
-    Relation related
------------------------}
--- TODO: Adapt these to records
+{----------------------------------
+    TypeExpr and Relation related
+-----------------------------------}
 
-parseBuiltinTypeForRelation :: Text -> Parser BuiltinTypeForRelation
-parseBuiltinTypeForRelation = \case
+parseBuiltinType :: Text -> Parser BuiltinType
+parseBuiltinType = \case
     "Integer" -> pure BuiltinTypeInteger
     "String"  -> pure BuiltinTypeString
     "Boolean" -> pure BuiltinTypeBoolean
     other     -> throwError ("Unexpected type " <> T.unpack other)
 
-parseRelatum :: A.Object -> Parser Relatum
-parseRelatum node = do
+parseTypeExpr :: A.Object -> Parser TypeExpr
+parseTypeExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "CustomTypeDef" -> do
       name <- relabelBareRef $ coerce $ node `objAtKey` "annot"
       pure $ CustomType name
     "BuiltinType"   -> do
-      builtinType <- parseBuiltinTypeForRelation =<< (node .: "annot" :: Parser Text)
+      builtinType <- parseBuiltinType =<< (node .: "annot" :: Parser Text)
       pure $ BuiltinType builtinType
-    _               -> throwError "unrecognized relatum"
+    other           -> throwError $ "unrecognized type"  <> T.unpack other
 
 parseRelation :: Name -> A.Object -> Parser Expr
 parseRelation parentSigName relationNode = do
     relationName <- getName relationNode
-    relatum      <- parseRelatum =<< relationNode .: "relatum"
+    relatum      <- parseTypeExpr =<< relationNode .: "relatum"
     description  <- relationNode .:? "description"
     pure $ Relation relationName parentSigName relatum description
 
@@ -256,7 +264,7 @@ parseSigE sigNode = do
   let
     parentRefNodes = getObjectsAtField sigNode "parents"
     relationNodes = getObjectsAtField sigNode "relations"
-  parents   <- traverse (relabelRef . MkWrappedRef) parentRefNodes
+  parents   <- traverse (relabelRef . coerce) parentRefNodes
   sigName   <- getName sigNode
   relations <- traverse (parseRelation sigName) relationNodes
   pure $ Sig parents relations
@@ -346,7 +354,7 @@ parseRecordExpr node = do
 parseProject ::  A.Object -> Parser Expr
 parseProject node = do
   left <- parseExpr =<< node .: "left"
-  recordLabelName <- relabelBareRef $ coerce $ node `objAtKey` "right"
+  recordLabelName <- relabelRef $ coerce $ node `objAtKey` "right"
   pure $ Project left recordLabelName
 
 parseBinOp :: A.Object -> Parser BinOp
@@ -410,6 +418,22 @@ parseVarDecl varDecl = do
   valLangiumParserNodeType <- valObj .: "$type"
   pure $ mkDecl valLangiumParserNodeType name val
 
+parseRecordDecl :: A.Object -> Parser Decl
+parseRecordDecl recordDecl = do
+  recordName   <- getName recordDecl
+  let description  = recordDecl ^? ix "description" % _String
+  parents      <- traverse (relabelRef . coerce) (recordDecl `getObjectsAtField` "parents")
+  rowTypeDecls <- traverse parseRowTypeDecl (recordDecl `getObjectsAtField` "rowTypes")
+  pure $ mkRecordDecl recordName rowTypeDecls parents description
+
+parseRowTypeDecl :: A.Object -> Parser RowTypeDecl
+parseRowTypeDecl rowTypeDecl =
+  (rowTypeDecl .: "$type" :: Parser Text) >>= \case
+    "RowType" -> do
+      rowName <- getName rowTypeDecl
+      typeExpr <- parseTypeExpr =<< rowTypeDecl .: "value"
+      pure (rowName, typeExpr)
+    other -> throwError $ "getting " <> T.unpack other <> " but shld be RowType"
 
 {------------------------
     Function, Predicate
@@ -456,10 +480,17 @@ parsePredicateE predicate = do
     where
       getPredicateParams predicateNode = predicateNode ^.. ix "params" % values % ix "param" % _Object
 
+-- | the arg to a InfixPredicateApplication can be either a NamedElement:ID or Expr
+parsePredicateAppArg :: A.Object -> Parser Expr
+parsePredicateAppArg arg =
+  if has (ix "$type") arg
+  then parseExpr arg
+  else parseBareRefToVar (coerce arg)
+
 parsePredicateApp ::  A.Object -> Parser Expr
 parsePredicateApp predApp = do
     predicate <- parseExpr =<< predApp .: "predicate"
-    args <- traverse parseExpr (predApp `getObjectsAtField` "args")
+    args <- traverse parsePredicateAppArg (predApp `getObjectsAtField` "args")
     pure $ PredApp predicate args
 
 parseFunApp :: A.Object -> Parser Expr

@@ -2,14 +2,23 @@ module Lam4.Expr.CommonSyntax where
 
 import           Base
 import           Base.Grisette
-import           Lam4.Expr.Name (Name (..))
+import           Lam4.Expr.Name   (Name (..))
 
+type RecordLabel = Text
 
 -- | Basically a 'Binding'
-data DeclF a =
-    NonRec      Name a
-  | Rec         Name a
+data DeclF expr typedecl =
+    NonRec      Name expr
+  | Rec         Name expr
+  | TypeDecl    Name typedecl
   deriving stock (Show, Eq, Ord, Generic)
+
+-- TODO: Think about stuffing other metadata here too?
+data TypeDecl = RecordDecl [RowTypeDecl] [Name] (Maybe Text) -- ^ Labels Parents Description
+  deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeDecl)
+
+type RowTypeDecl = (Name, TypeExpr)
 
 
 type Row a = [(Name, a)]
@@ -48,12 +57,12 @@ data BinOp
    deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default BinOp)
 
-data Relatum
+data TypeExpr
   = CustomType  Name
-  | BuiltinType BuiltinTypeForRelation
+  | BuiltinType BuiltinType
   deriving stock (Eq, Show, Ord, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default Relatum)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeExpr)
 
-data BuiltinTypeForRelation = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
+data BuiltinType = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
   deriving stock (Eq, Show, Ord, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default BuiltinTypeForRelation)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default BuiltinType)

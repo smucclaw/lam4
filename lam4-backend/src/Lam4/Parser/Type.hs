@@ -19,6 +19,7 @@ module Lam4.Parser.Type (
 import           Base
 import qualified Base.Aeson             as A
 import           Lam4.Expr.Name         (Unique, Name(..))
+import           Lam4.Expr.CommonSyntax (RecordLabel)
 
 import           Control.Monad.Base
 import           Control.Monad.Except   ()
@@ -39,8 +40,6 @@ __Examples:__
 @
 -}
 type RefPath = Text
-
-type RecordLabel = Text
 
 -- | Environment for Parser: map from RefPaths to Uniques/Ints
 type Env = Map RefPath Unique
