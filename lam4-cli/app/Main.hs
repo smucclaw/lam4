@@ -19,6 +19,7 @@ import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
 import           Lam4.Parser.Monad             (evalParserFromScratch)
+import           Lam4.Expr.Printer             (printTree)
 import           Options.Applicative           as Options
 import           System.FilePath               ((</>))
 import           System.Directory
@@ -75,6 +76,8 @@ main = do
       frontendCSTJsons <- getCSTJsonFromFrontend frontendConfig options.files
       let cstDecls = concatMap parseCSTByteString frontendCSTJsons
           smDecls = ToSimala.compile . cstProgramToConEvalProgram $ cstDecls
+      putStrLn "------- Prettyprinted -------------"
+      mapM_ (putStrLn . printTree) cstDecls
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"

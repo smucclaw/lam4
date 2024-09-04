@@ -47,6 +47,7 @@ library
         Lam4.Expr.ConcreteSyntax
         Lam4.Expr.CommonSyntax
         Lam4.Expr.Parser
+        Lam4.Expr.Printer
         Lam4.Parser.Type
         Lam4.Parser.Monad
         Lam4.Expr.ConEvalAST
