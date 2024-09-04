@@ -1,18 +1,17 @@
 {- |
-  Aug 26 2024: This parser hasn't yet been updated with all the recent constructs and changes in the Langium grammar.
-  So don't expect to be able to parse into the backend concrete syntax right now.
+  Sep 4 2024: The Langium-grammar constructs that aren't yet supported by the parser are mostly list exprs and the experimental normative ones.
 
-  Parses the JSON representation of (the concrete syntax of)
-      an input Lam4 expression from Langium frontend
+  This module parses the JSON representation of (the concrete syntax of)
+  an input Lam4 expression from Langium frontend
 
-      ---------------------------
-      Assumptions / preconditions
-      ---------------------------
-      This *input Lam4 expression*
-      1. is valid, according to Langium parser
-      2. is valid, according to scoper
-      3. is valid, according to type checker
-      4. is valid, according to the other static semantic checks / validators
+    ---------------------------
+    Assumptions / preconditions
+    ---------------------------
+    This *input Lam4 expression*
+    1. is valid, according to Langium parser
+    2. is valid, according to scoper
+    3. is valid, according to type checker
+    4. is valid, according to the other static semantic checks / validators
 
 In short: the expression conforms, not just to the Lam4 grammar, but also to its semantics.
 
@@ -20,6 +19,7 @@ The parsing/translation in Parser.hs preserves well-scopedness etc
   because the translation maps constructs in the Langium grammar to concrete syntax in a 1-to-1 way.
   The NamedElements are basically just relabelled with unique integers.
 
+  Probably the most delicate part of the parsing is the handling of RecordLabels; see the @initializeEnvs@ function for discussion of that.
 
   ----------
     TODOs
