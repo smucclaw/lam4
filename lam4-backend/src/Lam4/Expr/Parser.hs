@@ -264,6 +264,7 @@ parseSigE sigNode = do
   let
     parentRefNodes = getObjectsAtField sigNode "parents"
     relationNodes = getObjectsAtField sigNode "relations"
+  unless (has (ix "multiplicity") sigNode) $ throwError "non-one-multiplicity Concepts / Sigs not currently supported by the evaluator"
   parents   <- traverse (relabelRef . coerce) parentRefNodes
   sigName   <- getName sigNode
   relations <- traverse (parseRelation sigName) relationNodes
