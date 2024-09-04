@@ -76,7 +76,7 @@ data Expr
     EXPERIMENTAL or VERY WIP
   ============================-}
   | NormIsInfringed Name                           -- NormIsInfringed NameOfNorm.
-                                                   -- Sugar for a predicate checking if @nameOfNorm@ is violated (users can supply unique identifiers for Deontics and IfThenOtherwise statements that contain a Deontic)
+                                                   -- This is a predicate that checks if @nameOfNorm@ is violated (users can supply unique identifiers for Deontics and IfThenOtherwise statements that contain a Deontic)
 
   | Predicate  [Name] Expr (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
   | PredApp    Expr [Expr]
@@ -89,6 +89,7 @@ data Expr
   because they're useful for certain sorts of analyses;
   but not sure that we really want them
   -}
+  -- The currently supported Sigs are 'ONE' Sigs
   | Sig        [Name] [Expr]                       -- Sig parents relations
   -- Sep 2024: Join is currently disabled; de-emphasizing these things for now
   -- | Join       Expr Expr                           -- Relational join
