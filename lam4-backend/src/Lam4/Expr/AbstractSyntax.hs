@@ -6,10 +6,10 @@ import           Base.Grisette
 import           Lam4.Expr.Name (Name (..))
 import           Lam4.Expr.CommonSyntax
 
-newtype Decl = MyDecl (DeclF Expr)
+newtype Decl = MyDecl (DeclF Expr TypeDecl)
   deriving newtype (Eq, Show)
   deriving Generic
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default (DeclF Expr))
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default (DeclF Expr TypeDecl))
 
 data Expr
   = Var        Name
