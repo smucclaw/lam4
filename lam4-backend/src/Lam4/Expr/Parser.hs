@@ -123,13 +123,38 @@ parseProgram program = do
       -- list of JSON paths for every NamedElement in the program
       nodePaths = elementValues ^.. folded % cosmos % ix "nodePath" % _String
 
-  {- Make Env of nodePaths => Uniques
-    All that's needed, for now, is *some* canonical order on the Uniques
+  initializeEnvs nodePaths elementValues
+  parseDecls elementObjects
 
-    TODO: Also make a Map of record label names => Name.
+initializeEnvs :: [RefPath] -> [A.Value] -> Parser ()
+initializeEnvs nodePaths programElementValues = do
+  {- Make Env of nodePaths (aka RefPaths) => Uniques
+    All that's needed, for now, is *some* canonical order on the Uniques
   -}
   setEnv (zip nodePaths [1 .. ])
-  parseDecls elementObjects
+
+  {- Then make a map of record labels => Names,
+     to be used when introducing record exprs or destructuring them with record projections.
+     This is what guarantees that the names used in projection will be in sync with those used when introducing the record exprs.
+
+     TODO: This currently requires that the record label names be unique within a program, like Haskell,
+     but it's not hard to lift this restriction --- e.g., by forwarding info from type checker / inference. Just not doing that right now because of time constraints.
+  -}
+  makeAndSetRecordLabelMap programElementValues
+    where
+      {- | Assumes you've __already__ made an Env of nodePaths => Uniques -}
+      makeAndSetRecordLabelMap :: [A.Value] -> Parser ()
+      makeAndSetRecordLabelMap progElementValues = do
+        let allRowTypesFromRecDecls = progElementValues ^.. folded 
+                                  % filteredBy (ix "$type" % only "RecordDecl")
+                                  % ix "rowTypes"
+                                  % values 
+                                  % _Object
+
+        labelNames <- traverse getName allRowTypesFromRecDecls
+        let recordLabelAssocList = map (\name -> (name.name :: RecordLabel, name)) labelNames
+        setRecordLabelEnv recordLabelAssocList
+
 
 {-| Constructor for @Decl@s. 
 Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
@@ -254,7 +279,9 @@ parseBinExpr node = do
 
   So if I'm parsing @Project@ in such a way that the names used by the projection correspond to those in the original record declaration,
   my record expressions must similarly use names that refer
-  to the labels / names in the original record declarations
+  to the labels / names in the original record declarations.
+  This invariant is established by making a record label env with the record labels,
+  and using those canonical names when creating record exprs and when projecting them.
 -}
 parseRecordExpr :: A.Object -> Parser Expr
 parseRecordExpr node = do
@@ -263,21 +290,64 @@ parseRecordExpr node = do
   where
     mkBinding :: A.Object -> Parser (Name, Expr)
     mkBinding row = do
-      name <- getCanonicalRecordLabelName =<< row .: "label"
+      name <- lookupRecordLabel =<< row .: "label"
       expr <- parseExpr =<< row .: "value"
       pure (name, expr)
 
-{- | Suppose you have a label that's used when introducing record expr. This lets you get the 'canonical' @Name@ corresponding to that label.
--} 
-getCanonicalRecordLabelName :: Text -> Parser Name
-getCanonicalRecordLabelName = undefined
+{-| The Name used in the projection will correspond to that used when constructing the relevant record expr,
+    because the Ref from the Langium parser will refer to
+      the RowType in the relevant record declaration. 
+    
+    __Examples__
+    
+    A RecordDecl would look like this:
 
+    @
+    {
+      "$type": "RecordDecl",
+      "name": "Applicant",
+      "rowTypes": [
+        {
+          "$type": "RowType",
+          "name": "publications",
+          "value": {
+            "$type": "BuiltinType",
+            "annot": "Integer"
+          },
+          "nodePath": "#/elements@0/rowTypes@0"
+        }
+      ],
+      "parents": [],
+      "nodePath": "#/elements@0"
+    },
+    @
 
+    And then a projection would look like this
+
+    @
+    {
+        "$type": "Project",
+        "left": {
+          "$type": "Ref",
+          "value": {
+            "$ref": "#/elements@2/params@0",
+            "$refText": "applicant"
+          }
+        },
+        "right": {
+          "$type": "Ref",
+          "value": {
+            "$ref": "#/elements@0/rowTypes@0",
+            "$refText": "publications"
+          }
+        }
+    @
+-}
 parseProject ::  A.Object -> Parser Expr
 parseProject node = do
   left <- parseExpr =<< node .: "left"
-  fieldname <- relabelBareRef $ coerce $ node `objAtKey` "right"
-  pure $ Project left fieldname
+  recordLabelName <- relabelBareRef $ coerce $ node `objAtKey` "right"
+  pure $ Project left recordLabelName
 
 parseBinOp :: A.Object -> Parser BinOp
 parseBinOp opObj = do
