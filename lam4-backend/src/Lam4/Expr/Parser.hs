@@ -50,10 +50,27 @@ recursiveTypes = Set.fromList ["LetExpr", "FunDecl", "PredicateDecl"]
     Ref
 -----------------------}
 
+{-| A Ref differs from a WrappedRef in that it isn't wrapped in the "value" field. 
+TODO: May not need this if not using Relatums -}
 newtype Ref = MkRef A.Object
   deriving newtype (Eq, Show, Ord, FromJSON)
 
-parseRefToVar :: Ref -> Parser Expr
+{- | Example of a JSON object that corresponds to a 'WrappedRef':
+
+      @
+        {
+          "$type": "Ref",
+          "value": {
+            "$ref": "#/elements@2/params@0",
+            "$refText": "applicant"
+          }
+      @
+
+-}
+newtype WrappedRef = MkWrappedRef A.Object
+  deriving newtype (Eq, Show, Ord, FromJSON)
+
+parseRefToVar :: WrappedRef -> Parser Expr
 parseRefToVar ref = Var <$> relabelRef ref
 
 relabelBareRef :: Ref -> Parser Name
@@ -63,10 +80,10 @@ relabelBareRef = relabelRefHelper getRefPath getRefText
     getRefText node = node ^? ix "$refText" % _String
 
 {- | Relabel an object that is a ('wrapped') `Ref` to a `Name` -}
-relabelRef :: Ref -> Parser Name
-relabelRef = relabelRefHelper getRefPath getRefText
+relabelRef :: WrappedRef -> Parser Name
+relabelRef wrappedRef = relabelRefHelper getRef getRefText (coerce wrappedRef)
   where
-    getRefPath node = node ^? ix "value" % ix "$ref" % _String
+    getRef node = node ^? ix "value" % ix "$ref" % _String
     getRefText node = node ^? ix "value" % ix "$refText" % _String
 
 relabelRefHelper :: (A.Object -> Maybe RefPath) -> (A.Object -> Maybe Text) -> Ref -> Parser Name
@@ -203,7 +220,7 @@ parseSigE sigNode = do
   let
     parentRefNodes = getObjectsAtField sigNode "parents"
     relationNodes = getObjectsAtField sigNode "relations"
-  parents   <- traverse (relabelRef . MkRef) parentRefNodes
+  parents   <- traverse (relabelRef . MkWrappedRef) parentRefNodes
   sigName   <- getName sigNode
   relations <- traverse (parseRelation sigName) relationNodes
   pure $ Sig parents relations
