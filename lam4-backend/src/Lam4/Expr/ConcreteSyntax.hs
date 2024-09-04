@@ -4,10 +4,15 @@ TODO:
 -}
 module Lam4.Expr.ConcreteSyntax
   (
+  -- re-exports from common syntax
+    TypeExpr(..) 
+  , BuiltinType(..)
+  , RowTypeDecl
   -- * Decl and convenience constructors
-    Decl
+  , Decl
   , mkStatementBlockDecl
   , mkSingletonStatementDecl
+  , mkRecordDecl
 
   -- * Expr
   , Expr(..)
@@ -15,8 +20,6 @@ module Lam4.Expr.ConcreteSyntax
   , OriginalRuleRef(..)
   , UnaryOp(..)
   , BinOp(..)
-  , Relatum(..)
-  , BuiltinTypeForRelation(..)
 
   -- * Statements
   , Statement(..)
@@ -28,9 +31,12 @@ import           Base                   hiding (singleton)
 import           Base.NonEmpty          (singleton)
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.Name         (Name (..))
+
 -- a Name can refer to an Expr or a Statement (but note that not all kinds of Statements can have names)
 
-type Decl = DeclF Expr
+type Decl = DeclF Expr TypeDecl
+
+-- TODO: Think about whether to use pattern synonyms instead, re the following constructor functions
 
 mkStatementBlockDecl :: Name -> NonEmpty Statement -> Decl
 mkStatementBlockDecl name statements = NonRec name $ StatementBlock statements
@@ -38,10 +44,13 @@ mkStatementBlockDecl name statements = NonRec name $ StatementBlock statements
 mkSingletonStatementDecl :: Name -> Statement -> Decl
 mkSingletonStatementDecl name statement = mkStatementBlockDecl name $ singleton statement
 
+mkRecordDecl :: Name -> [RowTypeDecl] -> [Name] -> Maybe Text -> Decl
+mkRecordDecl recordName rowTypeDecls parents description = TypeDecl recordName (RecordDecl rowTypeDecls parents description)
+
+
 {-
 TODO:
   High priority
-    * Work out grammar for normative clauses
     * Update Langium grammar and typechecker to match new constructs
   Lower priority
     * Add support for Transparency-related knobs
@@ -81,8 +90,9 @@ data Expr
   but not sure that we really want them
   -}
   | Sig        [Name] [Expr]                       -- Sig parents relations
-  | Join       Expr Expr                           -- Relational join
-  | Relation   Name Name Relatum (Maybe Text)      -- Relation relName relParentSigName relatum description
+  -- Sep 2024: Join is currently disabled; de-emphasizing these things for now
+  -- | Join       Expr Expr                           -- Relational join
+  | Relation   Name Name TypeExpr (Maybe Text)      -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Ord)
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers

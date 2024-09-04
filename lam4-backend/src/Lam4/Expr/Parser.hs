@@ -19,6 +19,16 @@ In short: the expression conforms, not just to the Lam4 grammar, but also to its
 The parsing/translation in Parser.hs preserves well-scopedness etc
   because the translation maps constructs in the Langium grammar to concrete syntax in a 1-to-1 way.
   The NamedElements are basically just relabelled with unique integers.
+
+
+  ----------
+    TODOs
+  ----------
+  * Find a way to automatedly keep the Langium grammar in sync with this backend parser. 
+      * At the very least, write property based tests
+
+  Style / code clarity:
+  * Right now I'm using a mix of different idioms for interacting with JSON objects. I should standardize this when time permits
 -}
 
 module Lam4.Expr.Parser (
@@ -50,28 +60,49 @@ recursiveTypes = Set.fromList ["LetExpr", "FunDecl", "PredicateDecl"]
     Ref
 -----------------------}
 
+{-| A Ref differs from a WrappedRef in that it isn't wrapped in the "value" field. 
+TODO: May not need this if not using Relatums -}
 newtype Ref = MkRef A.Object
   deriving newtype (Eq, Show, Ord, FromJSON)
 
-parseRefToVar :: Ref -> Parser Expr
+{- | Example of a JSON object that corresponds to a 'WrappedRef':
+
+      @
+        {
+          "$type": "Ref",
+          "value": {
+            "$ref": "#/elements@2/params@0",
+            "$refText": "applicant"
+          }
+      @
+
+-}
+newtype WrappedRef = MkWrappedRef A.Object
+  deriving newtype (Eq, Show, Ord, FromJSON)
+
+parseRefToVar :: WrappedRef -> Parser Expr
 parseRefToVar ref = Var <$> relabelRef ref
 
+parseBareRefToVar :: Ref -> Parser Expr
+parseBareRefToVar ref = Var <$> relabelBareRef ref
+
 relabelBareRef :: Ref -> Parser Name
-relabelBareRef = relabelRefHelper getRef getRefText
+relabelBareRef = relabelRefHelper getRefPath getRefText
   where
-    getRef node = node ^? ix "$ref" % _String
+    getRefPath node = node ^? ix "$ref" % _String
     getRefText node = node ^? ix "$refText" % _String
 
 {- | Relabel an object that is a ('wrapped') `Ref` to a `Name` -}
-relabelRef :: Ref -> Parser Name
-relabelRef = relabelRefHelper getRef getRefText
+relabelRef :: WrappedRef -> Parser Name
+relabelRef wrappedRef = relabelRefHelper getRef getRefText (coerce wrappedRef)
   where
     getRef node = node ^? ix "value" % ix "$ref" % _String
     getRefText node = node ^? ix "value" % ix "$refText" % _String
 
 relabelRefHelper :: (A.Object -> Maybe RefPath) -> (A.Object -> Maybe Text) -> Ref -> Parser Name
-relabelRefHelper getRef getRefText (MkRef node) = do
-  let refPath = getRef node
+relabelRefHelper getRefPath getRefText (MkRef node) = do
+  -- @getRefPath@ here means: get the value of the @$ref@ field; this will be a json path
+  let refPath = getRefPath node
       refText = getRefText node
   case (refPath, refText) of
     (Just refPath', Just refText') -> do
@@ -97,12 +128,41 @@ parseProgram program = do
       -- list of JSON paths for every NamedElement in the program
       nodePaths = elementValues ^.. folded % cosmos % ix "nodePath" % _String
 
-  {- Make Env of nodePaths => Uniques
+  initializeEnvs nodePaths elementValues
+  parseDecls elementObjects
+
+initializeEnvs :: [RefPath] -> [A.Value] -> Parser ()
+initializeEnvs nodePaths programElementValues = do
+  {- Make Env of nodePaths (aka RefPaths) => Uniques
     All that's needed, for now, is *some* canonical order on the Uniques
   -}
   setEnv (zip nodePaths [1 .. ])
-  parseDecls elementObjects
 
+  {- Then make a map of record labels => Names,
+     to be used when introducing record exprs or destructuring them with record projections.
+     This is what guarantees that the names used in projection will be in sync with those used when introducing the record exprs.
+
+     TODO: This currently requires that the record label names be unique within a program, like Haskell,
+     but it's not hard to lift this restriction --- e.g., by forwarding info from type checker / inference. Just not doing that right now because of time constraints.
+  -}
+  makeAndSetRecordLabelMap programElementValues
+    where
+      {- | Assumes you've __already__ made an Env of nodePaths => Uniques -}
+      makeAndSetRecordLabelMap :: [A.Value] -> Parser ()
+      makeAndSetRecordLabelMap progElementValues = do
+        let allRowTypesFromRecDecls = progElementValues ^.. folded
+                                    % filteredBy (ix "$type" % only "RecordDecl")
+                                    % ix "rowTypes"
+                                    % values
+                                    % _Object
+
+        labelNames <- traverse getName allRowTypesFromRecDecls
+        let recordLabelAssocList = map (\name -> (name.name :: RecordLabel, name)) labelNames
+        setRecordLabelEnv recordLabelAssocList
+
+
+{-| Constructor for @Decl@s. 
+Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
 mkDecl :: Text -> Name -> Expr -> Decl
 mkDecl typeOfNode name expr =
   if has (contains typeOfNode) recursiveTypes
@@ -114,10 +174,17 @@ parseDecls = traverse parseDecl
 
 parseDecl :: A.Object -> Parser Decl
 parseDecl obj = do
-  expr <- parseExpr obj
-  exprType <- obj .: "$type"
-  name <- getName obj
-  pure $ mkDecl exprType name expr
+  eltType <- obj .: "$type"
+  case eltType of
+    -- non-expr, non-statement decls
+    "VarDeclStmt" -> parseVarDecl obj
+    "RecordDecl"  -> parseRecordDecl obj
+
+    -- exprs
+    _ ->  do
+      expr <- parseExpr obj
+      name <- getName obj
+      pure $ mkDecl eltType name expr
 
 {----------------------
     parseExpr
@@ -128,10 +195,9 @@ parseExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "Ref"            -> parseRefToVar            (coerce node)
 
-    "SigDecl"        -> parseSigE           node
 
     -- literals
-    "IntLit" -> parseIntegerLiteral node
+    "IntegerLiteral" -> parseIntegerLiteral node
     -- "StringLiteral"  -> parseLiteral StringLit node
     "BooleanLiteral" -> parseLiteral BoolLit node
 
@@ -148,39 +214,42 @@ parseExpr node = do
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
 
-    -- Note: Join is in the process of being disabled / deprecated
-    "Join"           -> parseJoin           node
+    {-  Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
+      May want to remove Sigs as well. Not sure right now, and keeping it around for the time being makes the syntax for certain things a bit nicer
+    -}
+    "SigDecl"        -> parseSigE           node
+    "RecordExpr"     -> parseRecordExpr     node
+    "Project"        -> parseProject        node
 
     typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
 
 
-{----------------------
-    Relation related
------------------------}
--- TODO: Adapt these to records
+{----------------------------------
+    TypeExpr and Relation related
+-----------------------------------}
 
-parseBuiltinTypeForRelation :: Text -> Parser BuiltinTypeForRelation
-parseBuiltinTypeForRelation = \case
+parseBuiltinType :: Text -> Parser BuiltinType
+parseBuiltinType = \case
     "Integer" -> pure BuiltinTypeInteger
     "String"  -> pure BuiltinTypeString
     "Boolean" -> pure BuiltinTypeBoolean
     other     -> throwError ("Unexpected type " <> T.unpack other)
 
-parseRelatum :: A.Object -> Parser Relatum
-parseRelatum node = do
+parseTypeExpr :: A.Object -> Parser TypeExpr
+parseTypeExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "CustomTypeDef" -> do
       name <- relabelBareRef $ coerce $ node `objAtKey` "annot"
       pure $ CustomType name
     "BuiltinType"   -> do
-      builtinType <- parseBuiltinTypeForRelation =<< (node .: "annot" :: Parser Text)
+      builtinType <- parseBuiltinType =<< (node .: "annot" :: Parser Text)
       pure $ BuiltinType builtinType
-    _               -> throwError "unrecognized relatum"
+    other           -> throwError $ "unrecognized type"  <> T.unpack other
 
 parseRelation :: Name -> A.Object -> Parser Expr
 parseRelation parentSigName relationNode = do
     relationName <- getName relationNode
-    relatum      <- parseRelatum =<< relationNode .: "relatum"
+    relatum      <- parseTypeExpr =<< relationNode .: "relatum"
     description  <- relationNode .:? "description"
     pure $ Relation relationName parentSigName relatum description
 
@@ -195,15 +264,15 @@ parseSigE sigNode = do
   let
     parentRefNodes = getObjectsAtField sigNode "parents"
     relationNodes = getObjectsAtField sigNode "relations"
-  parents   <- traverse (relabelRef . MkRef) parentRefNodes
+  parents   <- traverse (relabelRef . coerce) parentRefNodes
   sigName   <- getName sigNode
   relations <- traverse (parseRelation sigName) relationNodes
   pure $ Sig parents relations
 
 
-{-----------------------------------
-    BinExpr, UnaryExpr, IfThenElse
-------------------------------------}
+{-------------------------------------------
+    BinExpr, Project, UnaryExpr, IfThenElse
+---------------------------------------------}
 
 parseBinExpr :: A.Object -> Parser Expr
 parseBinExpr node = do
@@ -212,11 +281,81 @@ parseBinExpr node = do
   right <- parseExpr  =<< node .: "right"
   pure $ BinExpr op left right
 
-parseJoin ::  A.Object -> Parser Expr
-parseJoin node = do
+{- | Key invariant for the parsing: 
+  Record expressions have to be constructed / parsed in such a way that:
+  * the labels / names of the rows are __the same ones__ that a valid __projection__ of the record would use.
+
+  So if I'm parsing @Project@ in such a way that the names used by the projection correspond to those in the original record declaration,
+  my record expressions must similarly use names that refer
+  to the labels / names in the original record declarations.
+  This invariant is established by making a record label env with the record labels,
+  and using those canonical names when creating record exprs and when projecting them.
+-}
+parseRecordExpr :: A.Object -> Parser Expr
+parseRecordExpr node = do
+  rows <- traverse mkBinding (node `getObjectsAtField` "rows")
+  pure $ Record rows
+  where
+    mkBinding :: A.Object -> Parser (Name, Expr)
+    mkBinding row = do
+      name <- lookupRecordLabel =<< row .: "label"
+      expr <- parseExpr =<< row .: "value"
+      pure (name, expr)
+
+{-| The Name used in the projection will correspond to that used when constructing the relevant record expr,
+    because the Ref from the Langium parser will refer to
+      the RowType in the relevant record declaration. 
+    
+    __Examples__
+    
+    A RecordDecl would look like this:
+
+    @
+    {
+      "$type": "RecordDecl",
+      "name": "Applicant",
+      "rowTypes": [
+        {
+          "$type": "RowType",
+          "name": "publications",
+          "value": {
+            "$type": "BuiltinType",
+            "annot": "Integer"
+          },
+          "nodePath": "#/elements@0/rowTypes@0"
+        }
+      ],
+      "parents": [],
+      "nodePath": "#/elements@0"
+    },
+    @
+
+    And then a projection would look like this
+
+    @
+    {
+        "$type": "Project",
+        "left": {
+          "$type": "Ref",
+          "value": {
+            "$ref": "#/elements@2/params@0",
+            "$refText": "applicant"
+          }
+        },
+        "right": {
+          "$type": "Ref",
+          "value": {
+            "$ref": "#/elements@0/rowTypes@0",
+            "$refText": "publications"
+          }
+        }
+    @
+-}
+parseProject ::  A.Object -> Parser Expr
+parseProject node = do
   left <- parseExpr =<< node .: "left"
-  right <- parseExpr =<< node .: "right"
-  pure $ Join left right
+  recordLabelName <- relabelRef $ coerce $ node `objAtKey` "right"
+  pure $ Project left recordLabelName
 
 parseBinOp :: A.Object -> Parser BinOp
 parseBinOp opObj = do
@@ -272,12 +411,29 @@ parseLet obj = do
 
 parseVarDecl :: A.Object -> Parser Decl
 parseVarDecl varDecl = do
+  -- TODO: Check -- is this really how we want to handle name of varDecl?
   name <- getName varDecl
   let valObj = getValueFieldOfNode varDecl
   val <- parseExpr valObj
-  valType <- valObj .: "$type"
-  pure $ mkDecl valType name val
+  valLangiumParserNodeType <- valObj .: "$type"
+  pure $ mkDecl valLangiumParserNodeType name val
 
+parseRecordDecl :: A.Object -> Parser Decl
+parseRecordDecl recordDecl = do
+  recordName   <- getName recordDecl
+  let description  = recordDecl ^? ix "description" % _String
+  parents      <- traverse (relabelRef . coerce) (recordDecl `getObjectsAtField` "parents")
+  rowTypeDecls <- traverse parseRowTypeDecl (recordDecl `getObjectsAtField` "rowTypes")
+  pure $ mkRecordDecl recordName rowTypeDecls parents description
+
+parseRowTypeDecl :: A.Object -> Parser RowTypeDecl
+parseRowTypeDecl rowTypeDecl =
+  (rowTypeDecl .: "$type" :: Parser Text) >>= \case
+    "RowType" -> do
+      rowName <- getName rowTypeDecl
+      typeExpr <- parseTypeExpr =<< rowTypeDecl .: "value"
+      pure (rowName, typeExpr)
+    other -> throwError $ "getting " <> T.unpack other <> " but shld be RowType"
 
 {------------------------
     Function, Predicate
@@ -324,10 +480,17 @@ parsePredicateE predicate = do
     where
       getPredicateParams predicateNode = predicateNode ^.. ix "params" % values % ix "param" % _Object
 
+-- | the arg to a InfixPredicateApplication can be either a NamedElement:ID or Expr
+parsePredicateAppArg :: A.Object -> Parser Expr
+parsePredicateAppArg arg =
+  if has (ix "$type") arg
+  then parseExpr arg
+  else parseBareRefToVar (coerce arg)
+
 parsePredicateApp ::  A.Object -> Parser Expr
 parsePredicateApp predApp = do
     predicate <- parseExpr =<< predApp .: "predicate"
-    args <- traverse parseExpr (predApp `getObjectsAtField` "args")
+    args <- traverse parsePredicateAppArg (predApp `getObjectsAtField` "args")
     pure $ PredApp predicate args
 
 parseFunApp :: A.Object -> Parser Expr

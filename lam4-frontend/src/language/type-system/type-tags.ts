@@ -388,8 +388,9 @@ export class RecordTTag implements TypeTag {
 
         this.rowTypes = new Map(rowTypes.map(row => [row.name, row.rowType]));;
     }
+    
     toString(): string {
-        return `Record ${this.record.name}`;
+        return `Structure '${this.record.name}'`;
     }
 
     getRecord(): RecordDecl {

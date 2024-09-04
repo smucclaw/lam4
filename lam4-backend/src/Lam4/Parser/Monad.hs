@@ -26,6 +26,10 @@ module Lam4.Parser.Monad
   , setEnv
   , emptyEnv
   , lookupInEnv
+  -- * RecordLabelEnv related
+  , emptyRecordLabelEnv
+  , setRecordLabelEnv
+  , lookupRecordLabel
   )
 where
 
@@ -34,7 +38,7 @@ import           Base.Aeson         (_Array, _Object)
 import qualified Base.Aeson         as A
 import           Base.Map           as M
 import           Control.Monad.Base
-import           Lam4.Expr.Name     (Unique)
+import           Lam4.Expr.Name     (Unique, Name(..))
 import           Lam4.Parser.Type
 
 -- | Entrypoint
@@ -52,7 +56,7 @@ evalParserFromScratch parser = evalParser parser defaultInitialParserState
 
 
 defaultInitialParserState :: ParserState
-defaultInitialParserState = MkParserState emptyEnv 0
+defaultInitialParserState = MkParserState emptyEnv 0 emptyRecordLabelEnv
 
 {-| This is the unsafe @error@. 
 But that's OK, because any errors here are programmer errors,
@@ -96,7 +100,7 @@ refPathToUnique :: RefPath -> Parser Unique
 refPathToUnique refpath = do
   env <- getEnv
   case lookupInEnv refpath env of
-    Nothing -> error "the input program is assumed to be well-scoped"
+    Nothing -> throwError "the input program is assumed to be well-scoped"
     Just v  -> pure v
 
 refPathToMaybeUnique :: RefPath -> Parser (Maybe Unique)
@@ -124,6 +128,26 @@ lookupInEnv = M.lookup
 emptyEnv :: Env
 emptyEnv = M.empty
 
+{-------------------------------
+    RecordLabelEnv Operations
+--------------------------------}
+
+getRecordLabelEnv :: Parser RecordLabelEnv
+getRecordLabelEnv = use #recordLabelEnv
+
+emptyRecordLabelEnv :: RecordLabelEnv
+emptyRecordLabelEnv = M.empty
+
+setRecordLabelEnv :: [(RecordLabel, Name)] -> Parser ()
+setRecordLabelEnv assocList = do
+  assign' #recordLabelEnv (M.fromList assocList)
+
+lookupRecordLabel :: RecordLabel -> Parser Name
+lookupRecordLabel label = do
+  reclabelEnv <- getRecordLabelEnv
+  case M.lookup label reclabelEnv of
+    Nothing -> throwError "[lookupRecordLabel error] the input program is assumed to be well-scoped and well-typed"
+    Just v  -> pure v
 
 
 {-----------------------------------------------------------
