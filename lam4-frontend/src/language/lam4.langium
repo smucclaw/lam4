@@ -326,6 +326,7 @@ FunctionApplication:
 ;
 
 // sugar for func app, when doing *concrete* evaluation
+// TODO: I'm not sure that it's worth having two different styles of syntax for InfixPredicateApplication, sigh
 InfixPredicateApplication: 
    ( args+=[NamedElement:ID] 'IS'? predicate=Expr ) // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
    | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=Expr )
