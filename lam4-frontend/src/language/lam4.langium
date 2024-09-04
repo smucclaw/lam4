@@ -483,10 +483,7 @@ RecordDecl:
   Aug 24 2024: Join is currently disabled
 --------------------------------------------
 
-For the most part, especially when just evaluating,
-can think of Concepts as records.
-
-There's also a good chance I'll just give up on the Alloy stuff.
+There's a good chance I'll just give up on the Alloy stuff.
 
 ------------
 
@@ -523,12 +520,15 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 SigDecl:
     WithSpecificMetadataBlock?
 
-    'ONE'? 'CONCEPT' 
+    multiplicity=SigMultOne? 'CONCEPT' 
     name=ID 
     ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
         relations+=Relation*
     '}'
 ;
+
+SigMultOne: {infer SigMultOne} 'ONE';
+
 
 type CustomType = SigDecl | RecordDecl;
 // CustomType:

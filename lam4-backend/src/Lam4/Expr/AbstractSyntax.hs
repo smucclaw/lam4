@@ -30,13 +30,12 @@ data Expr
     What follows is
     EXPERIMENTAL or VERY WIP
   ============================-}
-
-  -- WIP deontics-related things
-  -- | NormExpr   [Norm]
+  -- | NormIsInfringed Name        -- NormIsInfringed NameOfNorm.
+  --                               -- This is a predicate that checks if @nameOfNorm@ is violated (users can supply unique identifiers for Deontics and IfThenOtherwise statements that contain a Deontic)
 
   | Predicate  [Name] (Union Expr) (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
-  -- | PredApp    (Union Expr) [Union Expr]
-  -- no sig related constructs for now
+  | PredApp    (Union Expr) [Union Expr]
+  | Sig        [Name] [Expr]                       -- Sig parents relations
   deriving stock (Eq, Show, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default Expr)
 
