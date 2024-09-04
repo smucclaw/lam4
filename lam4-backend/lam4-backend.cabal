@@ -49,6 +49,7 @@ library
         Lam4.Expr.Parser
         Lam4.Parser.Type
         Lam4.Parser.Monad
+        Lam4.Expr.ToSimala
     other-modules:
         Lam4.Expr.AbstractSyntax
         Lam4.Expr.ToAST
@@ -69,7 +70,8 @@ library
         bytestring,
         either,
         pretty-show,
-        grisette >= 0.8
+        grisette >= 0.8,
+        simala
 
 
 

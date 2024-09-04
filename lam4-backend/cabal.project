@@ -2,3 +2,11 @@ with-compiler: ghc-9.8.2
 
 packages:
     ./
+
+source-repository-package
+  type: git
+  location: https://github.com/smucclaw/simala
+  tag: 746a6e0c98923374e55d7590fe30d93b1c9a3bef
+
+package *
+    ghc-options: -haddock -fwrite-ide-info
