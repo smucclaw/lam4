@@ -5,40 +5,56 @@ import           Base.Grisette
 
 import           Lam4.Expr.Name (Name (..))
 import           Lam4.Expr.CommonSyntax
+import           Lam4.Expr.ConcreteSyntax qualified as CST (Lit (..), Decl)
 
-newtype Decl = MyDecl (DeclF Expr TypeDecl)
+
+mkCEvalExpr :: ExprF CEvalExpr CST.Lit TypeExpr CST.Decl -> CEvalExpr
+mkCEvalExpr = coerce
+
+-- | For wiring up to a non-symbolic evaluator like Simala
+newtype CEvalExpr = CEvalExpr (ExprF CEvalExpr CST.Lit TypeExpr CST.Decl)
+  deriving newtype (Eq, Show)
+  deriving stock (Generic)
+  
+-- | For symbolic evaluation
+newtype SymExpr = MkSymExpr (ExprF (Union SymExpr) SymLit TypeExpr Decl)
+  deriving newtype (Eq, Show)
+  deriving stock (Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default (ExprF (Union SymExpr) SymLit TypeExpr Decl))
+
+
+newtype Decl = MyDecl (DeclF SymExpr TypeDecl)
   deriving newtype (Eq, Show)
   deriving Generic
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default (DeclF Expr TypeDecl))
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default (DeclF SymExpr TypeDecl))
 
-data Expr
+{- | Sep 2024: Normative constructs won't be added to AST till have wired to a basic evaluator -}
+data ExprF a lit typeE decl
   = Var        Name
-  | Lit        SymLit
-  | Unary      UnaryOp (Union Expr)
-  | BinExpr    BinOp (Union Expr) (Union Expr)
-  | IfThenElse (Union Expr) (Union Expr) (Union Expr)
+  | Lit        lit
+  | Cons       a a
+  | Unary      UnaryOp a
+  | BinExpr    BinOp a a
+  | IfThenElse a a a
   -- TODO: Not Yet Implemented / need to think more about what collection types to support
   -- | ListExpr   ListOp [Union Expr]
-  | FunApp     (Union Expr) [Union Expr]
-  | Record     (Row (Union Expr))                          -- record construction
-  | Project    (Union Expr) Name                           -- record projection
-  | Fun        [Name] (Union Expr) (Maybe OriginalRuleRef) -- Function
-  | Let        Decl Expr
+  | FunApp     a [a]
+  | Record     (Row a)                          -- record construction
+  | Project    a Name                           -- record projection
+  | Fun        [Name] a (Maybe OriginalRuleRef) -- Function
+  | Let        decl a
   -- | StatementBlock  (NonEmpty Statement)
 
   {-===========================
     What follows is
     EXPERIMENTAL or VERY WIP
   ============================-}
-  -- | NormIsInfringed Name        -- NormIsInfringed NameOfNorm.
-  --                               -- This is a predicate that checks if @nameOfNorm@ is violated (users can supply unique identifiers for Deontics and IfThenOtherwise statements that contain a Deontic)
 
-  | Predicate  [Name] (Union Expr) (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
-  | PredApp    (Union Expr) [Union Expr]
-  | Sig        [Name] [Expr]                       -- Sig parents relations
+  | Predicate  [Name] a (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
+  | PredApp    a [a]
+  | Sig        [Name] [a]                       -- Sig parents relations
+  | Relation   Name Name typeE (Maybe Text)     -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default Expr)
-
 
 data SymLit
   = IntLit SymInteger

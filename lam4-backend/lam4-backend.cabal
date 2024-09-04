@@ -49,6 +49,9 @@ library
         Lam4.Expr.Parser
         Lam4.Parser.Type
         Lam4.Parser.Monad
+    other-modules:
+        Lam4.Expr.AbstractSyntax
+        Lam4.Expr.ToAST
 
 
     build-depends:

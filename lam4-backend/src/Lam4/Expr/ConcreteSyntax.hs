@@ -63,6 +63,7 @@ data Expr
   | BinExpr    BinOp Expr Expr
   | IfThenElse Expr Expr Expr
   -- TODO: Not Yet Implemented / need to think more about what collection types to support
+  -- TODO: Add Cons after have wired up to an evaluator
   -- | ListExpr   ListOp [Expr]
   | FunApp     Expr [Expr]
   | Record     (Row Expr)                          -- record construction
