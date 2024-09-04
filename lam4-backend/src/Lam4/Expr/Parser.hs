@@ -19,6 +19,14 @@ In short: the expression conforms, not just to the Lam4 grammar, but also to its
 The parsing/translation in Parser.hs preserves well-scopedness etc
   because the translation maps constructs in the Langium grammar to concrete syntax in a 1-to-1 way.
   The NamedElements are basically just relabelled with unique integers.
+
+
+  ----------
+    TODOs
+  ----------
+
+  Style / code clarity:
+  * Right now I'm using a mix of different idioms for interacting with JSON objects. I should standardize this when time permits
 -}
 
 module Lam4.Expr.Parser (
@@ -123,7 +131,8 @@ parseProgram program = do
   setEnv (zip nodePaths [1 .. ])
   parseDecls elementObjects
 
-{- | Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
+{-| Constructor for @Decl@s. 
+Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
 mkDecl :: Text -> Name -> Expr -> Decl
 mkDecl typeOfNode name expr =
   if has (contains typeOfNode) recursiveTypes
@@ -152,7 +161,6 @@ parseExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "Ref"            -> parseRefToVar            (coerce node)
 
-    "SigDecl"        -> parseSigE           node
 
     -- literals
     "IntLit" -> parseIntegerLiteral node
@@ -172,7 +180,10 @@ parseExpr node = do
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
 
-    -- Note: Join is in the process of being disabled / deprecated
+    {-  Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
+      May want to remove Sigs as well. Not sure right now, and keeping it around for the time being makes the syntax for certain things a bit nicer
+    -}
+    "SigDecl"        -> parseSigE           node
     "RecordExpr"     -> parseRecordExpr     node
     "Project"        -> parseProject        node
 
