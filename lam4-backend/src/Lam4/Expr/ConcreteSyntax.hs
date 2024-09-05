@@ -250,7 +250,6 @@ data PrimAction = Assign      Name   Expr
 data DeonticModal = Obligation | Permission
   deriving stock (Eq, Show, Ord)
 
-
 makePrisms ''Expr
 
 {- | https://www.michaelpj.com/blog/2020/08/02/lenses-for-tree-traversals.html
@@ -259,24 +258,24 @@ and it will give you one that does that to all the subterms of a particular term
 exprSubexprsVL :: TraversalVL' Expr Expr
 exprSubexprsVL f = \case
   -- Exprs with sub-exprs
-  Cons first rest -> Cons <$> f first <*> f rest
-  List xs         -> List <$> traverse f xs
-  Unary op expr   -> Unary op <$> f expr
-  BinExpr op left right   -> BinExpr op <$> f left <*> f right
-  IfThenElse cond thn els -> IfThenElse <$> f cond <*> f thn <*> f els
-  FunApp fun args         -> FunApp <$> f fun <*> traverse f args
-  Record rows             -> Record <$> traverse (\(name, expr) -> (name,) <$> f expr) rows
-  Project record label    -> Project <$> f record <*> pure label
-  Fun ruleMetadata args body -> Fun ruleMetadata args <$> f body
-  Let decl body              -> Let decl <$> f body
+  Cons first rest                    -> Cons <$> f first <*> f rest
+  List xs                            -> List <$> traverse f xs
+  Unary op expr                      -> Unary op <$> f expr
+  BinExpr op left right              -> BinExpr op <$> f left <*> f right
+  IfThenElse cond thn els            -> IfThenElse <$> f cond <*> f thn <*> f els
+  FunApp fun args                    -> FunApp <$> f fun <*> traverse f args
+  Record rows                        -> Record <$> traverse (\(name, expr) -> (name,) <$> f expr) rows
+  Project record label               -> Project <$> f record <*> pure label
+  Fun ruleMetadata args body         -> Fun ruleMetadata args <$> f body
+  Let decl body                      -> Let decl <$> f body
   Predicate ruleMetadata params body -> Predicate ruleMetadata params <$> f body
-  PredApp predicate args -> PredApp <$> f predicate <*> traverse f args
-  Sig parents relations -> Sig parents <$> traverse f relations
+  PredApp predicate args             -> PredApp <$> f predicate <*> traverse f args
+  Sig parents relations              -> Sig parents <$> traverse f relations
 
-  StatementBlock statements -> undefined --TODO
+  StatementBlock statements          -> undefined -- TODO
 
   -- Exprs w/o sub-exprs: Var, Lit, NormIsInfringed, Relation
-  x -> pure x
+  x                                  -> pure x
 
 exprSubexprs :: Traversal' Expr Expr
 exprSubexprs = traversalVL exprSubexprsVL
