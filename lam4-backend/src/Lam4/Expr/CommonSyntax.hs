@@ -1,11 +1,14 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE TemplateHaskell, TypeFamilies, UndecidableInstances, DataKinds #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Lam4.Expr.CommonSyntax where
 
 import           Base
 import           Base.Grisette
-import           Lam4.Expr.Name   (Name (..))
+import           Lam4.Expr.Name (Name (..))
 
 
 data Transparency =
@@ -39,8 +42,8 @@ newtype OriginalRuleRef
 -- | Metadata for something that's a FunDecl or PredicateDecl
 data RuleMetadata = RuleMetadata
   { originalRuleRef :: Maybe OriginalRuleRef
-  , transparency :: Transparency
-  , description :: Maybe Text
+  , transparency    :: Transparency
+  , description     :: Maybe Text
   }
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default RuleMetadata)
@@ -94,3 +97,7 @@ data DeclF expr typedecl =
   | Rec         Name expr
   | TypeDecl    Name typedecl
   deriving stock (Show, Eq, Ord, Generic)
+
+makePrisms ''TypeExpr
+makePrisms ''TypeDecl
+makePrisms ''DeclF
