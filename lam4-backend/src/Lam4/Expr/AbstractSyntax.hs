@@ -33,6 +33,7 @@ data ExprF a lit decl
   = Var        Name
   | Lit        lit
   | Cons       a a
+  | List       [a] 
   | Unary      UnaryOp a
   | BinExpr    BinOp a a
   | IfThenElse a a a
