@@ -41,7 +41,7 @@ data ExprF a lit decl
   | FunApp     a [a]
   | Record     (Row a)                          -- record construction
   | Project    a Name                           -- record projection
-  | Fun        [Name] a (Maybe OriginalRuleRef) -- Function
+  | Fun        RuleMetadata [Name] a            -- Function
   | Let        decl a
   -- | StatementBlock  (NonEmpty Statement)
 
@@ -50,10 +50,10 @@ data ExprF a lit decl
     EXPERIMENTAL or VERY WIP
   ============================-}
 
-  | Predicate  [Name] a (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
+  | Predicate  RuleMetadata [Name] a            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
   | PredApp    a [a]
   | Sig        [Name] [a]                       -- Sig parents relations
-  | Relation   Name Name TypeExpr (Maybe Text)     -- Relation relName relParentSigName relatum description
+  | Relation   Name Name TypeExpr (Maybe Text)  -- Relation relName relParentSigName relatum description
   deriving stock (Eq, Show, Generic)
 
 data SymLit

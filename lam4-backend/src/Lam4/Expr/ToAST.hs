@@ -15,9 +15,9 @@ toCEvalAst = \case
   CST.FunApp fun args -> mkCEvalExpr $ AST.FunApp (toCEvalAst fun) (map toCEvalAst args)
   CST.Record rows       -> mkCEvalExpr $ AST.Record (map (fmap toCEvalAst) rows)
   CST.Project record label      -> mkCEvalExpr $ AST.Project (toCEvalAst record) label
-  CST.Fun args body mOrigRuleRef   ->  mkCEvalExpr $  AST.Fun args (toCEvalAst body) mOrigRuleRef
+  CST.Fun ruleMetadata args body    ->  mkCEvalExpr $  AST.Fun ruleMetadata args (toCEvalAst body)
   CST.Let decl body     -> mkCEvalExpr $ AST.Let decl (toCEvalAst body)
-  CST.Predicate params body mOrigRuleRef -> mkCEvalExpr $ AST.Predicate params (toCEvalAst body) mOrigRuleRef
+  CST.Predicate ruleMetadata params body -> mkCEvalExpr $ AST.Predicate ruleMetadata params (toCEvalAst body)
   CST.PredApp predicate args -> mkCEvalExpr $ AST.PredApp (toCEvalAst predicate) (map toCEvalAst args)
   CST.Sig parents relations -> mkCEvalExpr $ AST.Sig parents (map toCEvalAst relations)
   CST.Relation relName relParentSigName relatum description -> mkCEvalExpr $ AST.Relation relName relParentSigName relatum description

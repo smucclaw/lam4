@@ -5,7 +5,7 @@ TODO:
 module Lam4.Expr.ConcreteSyntax
   (
   -- re-exports from common syntax
-    TypeExpr(..) 
+    TypeExpr(..)
   , BuiltinType(..)
   , RowTypeDecl
   -- * Decl and convenience constructors
@@ -44,8 +44,8 @@ mkStatementBlockDecl name statements = NonRec name $ StatementBlock statements
 mkSingletonStatementDecl :: Name -> Statement -> Decl
 mkSingletonStatementDecl name statement = mkStatementBlockDecl name $ singleton statement
 
-mkRecordDecl :: Name -> [RowTypeDecl] -> [Name] -> Maybe Text -> Decl
-mkRecordDecl recordName rowTypeDecls parents description = TypeDecl recordName (RecordDecl rowTypeDecls parents description)
+mkRecordDecl :: Name -> [RowTypeDecl] -> [Name] -> RecordDeclMetadata -> Decl
+mkRecordDecl recordName rowTypeDecls parents recordDeclMetadata = TypeDecl recordName (RecordDecl rowTypeDecls parents recordDeclMetadata)
 
 
 {-
@@ -58,6 +58,7 @@ TODO:
 data Expr
   = Var        Name
   | Lit        Lit
+  | Cons       Expr Expr                           -- list cons
   | List       [Expr]                              -- construct a list
   | Unary      UnaryOp Expr
   | BinExpr    BinOp Expr Expr
@@ -68,7 +69,7 @@ data Expr
   | FunApp     Expr [Expr]
   | Record     (Row Expr)                          -- record construction
   | Project    Expr Name                           -- record projection
-  | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
+  | Fun        RuleMetadata [Name] Expr            -- Function
   | Let        Decl Expr
   | StatementBlock  (NonEmpty Statement)
 
@@ -79,7 +80,8 @@ data Expr
   | NormIsInfringed Name                           -- NormIsInfringed NameOfNorm.
                                                    -- This is a predicate that checks if @nameOfNorm@ is violated (users can supply unique identifiers for Deontics and IfThenOtherwise statements that contain a Deontic)
 
-  | Predicate  [Name] Expr (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
+-- TODO: Add type sigs into ConcreteSyntax
+  | Predicate  RuleMetadata [Name] Expr            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
   | PredApp    Expr [Expr]
 
   {--------------------------
@@ -181,8 +183,8 @@ data Lit
 data Statement = IfStatement Expr Statement    [Statement]  -- If   Condition Then         Otherwise
                | Norm        Name DeonticModal Action       -- Norm Agent     DeonticModal Action
     deriving stock (Show, Eq, Ord)                          -- will think about how to add deadline(s) only in v2 / v3
-    
-                                                       
+
+
 {- | Actions can be given a name with the `Decl` construct
 Think of an ActionBlock as a function with side effects / a function where the statements in the body are PrimActions
 (and where a block of actions corresponds to 'sequencing' them in the usual 'imperative language' way)
@@ -196,7 +198,7 @@ ACTION `pay for bike`
 will become a non-recursive Decl with a StatementBlock consisting of an ActionBlock with an empty list of PrimActions.
 
 (Such 'opaque' actions / events are often enough to model a lot of things;
-see the SLEEC work, e.g. "Normative Requirements Operationalization with Large Language Models", for some nice examples of this. 
+see the SLEEC work, e.g. "Normative Requirements Operationalization with Large Language Models", for some nice examples of this.
 This is also a common pattern / idiom in formal modelling in general.)
 
 But for certain modelling purposes, we may want richer structure; e.g.
@@ -221,7 +223,7 @@ ACTION TransferMoolah = DO {
 
 ------------------
 
-TODO: 
+TODO:
   * Think about adding an `unknown` variant, a la https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/master/UnknownDL.hs
 -}
 data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock NameOfThisActionBlock Params Body(of PrimAction)
@@ -230,8 +232,8 @@ data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock Na
   deriving stock (Show, Eq, Ord)
 
 -- | TODO: Not sure tt we really want ActionRefs in the concrete syntax
-data PrimAction = Assign      Name   Expr     
-                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action) 
+data PrimAction = Assign      Name   Expr
+                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action)
   deriving stock (Show, Eq, Ord)
 
 -- | Can add prohibitions as sugar in the future
