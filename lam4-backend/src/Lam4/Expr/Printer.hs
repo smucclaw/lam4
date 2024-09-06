@@ -1,7 +1,4 @@
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE CPP, FlexibleInstances, LambdaCase, OverlappingInstances, OverloadedRecordDot #-}
 
 module Lam4.Expr.Printer (printTree)
   where
@@ -38,6 +35,8 @@ render d = rend 0 False (map ($ "") $ d []) ""
       "{"      :ts -> onNewLine i     p . showChar   '{'  . new (i+1) ts
       "}" : ";":ts -> onNewLine (i-1) p . showString "};" . new (i-1) ts
       "}"      :ts -> onNewLine (i-1) p . showChar   '}'  . new (i-1) ts
+      "/-"     :ts -> onNewLine i     p . showString "/-" . new (i+1) ts
+      "-/"     :ts -> onNewLine (i-1) p . showString "-/" . new (i-1) ts
       [";"]        -> char ';'
       ";"      :ts -> char ';' . new i ts
       t  : ts@(s:_) | closingOrPunctuation s
@@ -155,7 +154,7 @@ instance Print [Decl] where
 instance Print [RowTypeDecl] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
-  prt _ (x:xs) = concatD [prt 0 x, doc (showString "\n"), prt 0 xs]
+  prt _ (x:xs) = concatD [prt 0 x, doc (showString "\n  "), prt 0 xs]
 
 -- type Row a = [(Name, a)] where
 instance Print (Row Expr) where
