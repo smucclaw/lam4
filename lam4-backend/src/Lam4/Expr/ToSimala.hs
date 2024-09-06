@@ -7,18 +7,21 @@ module Lam4.Expr.ToSimala (
     -- * Helpers
   , compileDecl
   , compileExpr
+
+    -- * Utilities to work with simala terms
+  , render
 ) where
 
 import           Base
-import           Base.Text                as T (pack)
+import qualified Base.Text                as T
 import           Lam4.Expr.CEvalAST       as AST
 import           Lam4.Expr.CommonSyntax   (BinOp (..), RuleMetadata (..),
                                            Transparency (..), UnaryOp (..))
 import           Lam4.Expr.ConcreteSyntax as CST (Lit (..))
 import           Lam4.Expr.Name           (Name (..))
 -- import qualified Simala.Expr.Parser       as SM
--- import qualified Simala.Expr.Render       as SM
 import           Data.Bifunctor           (bimap)
+import qualified Simala.Expr.Render       as SM
 import qualified Simala.Expr.Type         as SM
 
 
@@ -90,3 +93,9 @@ compileExpr = \case
   Let decl body                -> SM.Let (compileDecl decl) (compileExpr body)
   Sig{}                        -> error "Should already have translated ONE CONCEPT / SIG to a Simala Atom when compiling decls"
   Relation{}                   -> error "Relations not supported in Simala"
+
+-------------------------
+
+-- | Copied from https://github.com/smucclaw/dsl/blob/e77def08949cac1af094dfdb828c35833c36b8b7/lib/haskell/natural4/src/LS/XPile/Simala/Transpile.hs
+render :: [SM.Decl] -> Text
+render = T.unlines . fmap SM.render

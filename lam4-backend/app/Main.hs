@@ -1,10 +1,15 @@
 module Main where
 
 import           Base
-import qualified Base.ByteString     as BL hiding (null)
-import           Lam4.Expr.Parser    (parseProgramByteStr)
-import           Lam4.Parser.Monad   (evalParserFromScratch)
-import           Options.Applicative as Options
+import qualified Base.Text as T
+import qualified Base.ByteString             as BL hiding (null)
+import qualified Lam4.Expr.ConcreteSyntax    as CST (Decl)
+-- import Lam4.Expr.CEvalAST (CEvalDecl, CEvalExpr(..), DeclF(..))
+import           Lam4.Expr.Parser            (parseProgramByteStr)
+import           Lam4.Expr.ToConcreteEvalAST (toCEvalDecl)
+import qualified Lam4.Expr.ToSimala          as ToSimala (compile, render)
+import           Lam4.Parser.Monad           (evalParserFromScratch)
+import           Options.Applicative         as Options
 
 data Options =
   MkOptions
@@ -30,18 +35,23 @@ main = do
   if null options.files
     then do
       hPutStrLn stderr "Lam4 Backend: no input files given; use --help for help"
-    else do parseProgramFiles options.files
+    else do
+      cstDecls <- parseProgramFiles options.files
+      -- TODO: Use string interpolation...
+      pPrint "------- CST -------------" 
+      pPrint cstDecls
+      pPrint "-------- Simala ---------"
+      let smDecls = ToSimala.compile $ map toCEvalDecl cstDecls
+      pPrint $ ToSimala.render smDecls
 
-parseProgramFile :: FilePath -> IO ()
+
+parseProgramFile :: FilePath -> IO [CST.Decl]
 parseProgramFile file = do
   bsFile <- BL.readFile file
   case evalParserFromScratch . parseProgramByteStr $ bsFile of
-    Left err  -> pPrint err
-    Right cst -> pPrint cst
+    Left err       -> error ("Parse error:\n" <> ppShow err)
+    Right cstDecls -> pure cstDecls
 
-parseProgramFiles :: [FilePath] -> IO ()
-parseProgramFiles inputFiles = do
-  forM_ inputFiles (\f -> do
-    pPrint f
-    parseProgramFile f)
-    
+parseProgramFiles :: [FilePath] -> IO [CST.Decl]
+parseProgramFiles = traverse (\f -> do pPrint f; parseProgramFile f)
+                    >=> pure . concat

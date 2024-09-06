@@ -434,7 +434,7 @@ parseRecordDecl recordDecl = do
 
 parseRecordMetadata :: A.Object -> Parser RecordDeclMetadata
 parseRecordMetadata recordDecl = do
-  transparency <- parseTransparency =<< recordDecl .: "transparency"
+  transparency <- tryParseTransparency recordDecl
   let description  = recordDecl ^? ix "description" % _String
   pure $ RecordDeclMetadata transparency description
 
@@ -532,19 +532,19 @@ parseLiteral literalExprCtor literalNode = do
     Utils
 -----------------------}
 
-getTransparency :: A.Object -> Maybe Text
-getTransparency node = node ^? ix "$type" % _String
+tryParseTransparency :: A.Object -> Parser Transparency
+tryParseTransparency (getTransparency -> Just "Opaque") = pure Opaque
+tryParseTransparency (getTransparency -> Just "Transparent") = pure Transparent
+tryParseTransparency _ = pure Transparent
 
-parseTransparency :: A.Object -> Parser Transparency
-parseTransparency (getTransparency -> Just "Opaque") = pure Opaque
-parseTransparency (getTransparency -> Just "Transparent") = pure Transparent
-parseTransparency _ = pure Transparent
+getTransparency :: A.Object -> Maybe Text
+getTransparency node = node ^? ix "transparency" % ix "$type" % _String
 
 parseRuleMetadata :: A.Object -> Parser RuleMetadata
 parseRuleMetadata node = do
   description  <- node .:? "description"
   originalRuleRef  <- extractOriginalRuleRef node
-  transparency     <- parseTransparency =<< node .: "transparency"
+  transparency     <- tryParseTransparency node
   pure $ RuleMetadata{originalRuleRef, transparency, description}
 
 {- | Gets/Makes the Name of an NamedElement node

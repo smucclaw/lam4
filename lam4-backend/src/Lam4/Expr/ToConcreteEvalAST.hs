@@ -1,4 +1,9 @@
-module Lam4.Expr.ToConcreteEvalAST where
+module Lam4.Expr.ToConcreteEvalAST (
+  -- * entrypoint
+  toCEvalDecl,
+  -- * if you just need to translate exprs 
+  toCEvalExpr) 
+where
 
 import           Base
 import qualified Lam4.Expr.CEvalAST as AST
