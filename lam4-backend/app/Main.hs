@@ -53,5 +53,5 @@ parseProgramFile file = do
     Right cstDecls -> pure cstDecls
 
 parseProgramFiles :: [FilePath] -> IO [CST.Decl]
-parseProgramFiles = traverse (\f -> do pPrint f; parseProgramFile f)
-                    >=> pure . concat
+parseProgramFiles = fmap concat <$> traverse (\f -> do pPrint f; parseProgramFile f)
+             
