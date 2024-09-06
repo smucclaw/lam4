@@ -68,6 +68,7 @@ compileDecl = \case
     let smName = lam4ToSimalaName name
     in SM.NonRec defaultTransparency smName (SM.Atom smName)
   -- TODO: May not want to translate ONE SIG this way
+  -- Also, may be problematic if the name for the Decl is the same as that for the atom
 
   NonRec name fun@(Fun ruleMetadata _ _) -> SM.NonRec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
   Rec name fun@(Fun ruleMetadata _ _)    -> SM.Rec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
