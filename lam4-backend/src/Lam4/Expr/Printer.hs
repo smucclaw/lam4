@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, FlexibleInstances, LambdaCase, OverlappingInstances, OverloadedRecordDot #-}
+{-# LANGUAGE CPP, FlexibleInstances, LambdaCase, OverlappingInstances, OverloadedRecordDot, DisambiguateRecordFields #-}
 
 module Lam4.Expr.Printer (printTree)
   where
@@ -189,14 +189,22 @@ dummyRowTypeDecl :: Name -> RowTypeDecl
 dummyRowTypeDecl name = MkRowTypeDecl name (TyBuiltin BuiltinTypeBoolean) (MkRowMetadata Nothing)
 
 instance Print RuleMetadata where
-  prt i md = case md.description of
-    Just text -> prt i text
-    Nothing -> mempty
+  prt i md =
+    case md.description of
+      Nothing -> id
+      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "description: "), prt 0 descr, doc (showString "-/")])
 
 instance Print RecordDeclMetadata where
-  prt i md = case md.description of
-    Just text -> prt i text
-    Nothing -> mempty
+  prt i md =
+    case md.description of
+      Nothing -> id
+      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "description: "), prt 0 descr, doc (showString "-/")])
+
+instance Print RowMetadata where
+  prt i md =
+    case md.description of
+      Nothing -> id
+      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "description: "), prt 0 descr, doc (showString "-/")])
 
 instance Print DataDecl where
   {- TODO: description is something like
@@ -208,7 +216,7 @@ instance Print DataDecl where
     RecordDecl (recname:rowtypedecls) []      metadata ->
       prPrec i 0 (concatD [
         doc (showString "STRUCTURE")
-      , prt 0 recname
+      , prt 0 recname.name
       , doc (showString "{")
       , prt 0 rowtypedecls
       , doc (showString "}")
@@ -216,7 +224,7 @@ instance Print DataDecl where
     RecordDecl (recname:rowtypedecls) parents metadata ->
       prPrec i 0 (concatD [
         doc (showString "STRUCTURE")
-      , prt 0 recname
+      , prt 0 recname.name
       , doc (showString "SPECIALIZES")
       , prt 0 parents
       , doc (showString "{")
@@ -336,4 +344,4 @@ instance Print TyBuiltin where
     BuiltinTypeBoolean -> prPrec i 0 (concatD [doc (showString "Boolean")])
 
 instance Print RowTypeDecl where
-  prt i rtd = prPrec i 0 (concatD [prt 0 rtd.name, doc (showString ":"), prt 0 rtd.typeAnnot])
+  prt i rtd = prPrec i 0 (concatD [prt 0 rtd.metadata, prt 0 rtd.name, doc (showString ":"), prt 0 rtd.typeAnnot])
