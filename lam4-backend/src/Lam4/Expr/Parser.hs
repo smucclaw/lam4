@@ -1,5 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE  ViewPatterns #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 {- |
   Sep 4 2024: The Langium-grammar constructs that aren't yet supported by the parser are mostly list exprs and the experimental normative ones.
@@ -48,9 +48,9 @@ import           Base.ByteString          (ByteString)
 import qualified Base.Text                as T
 import qualified Data.Foldable            as F
 import qualified Data.Set                 as Set
-import           Lam4.Expr.CommonSyntax   (DeclF (..), RecordDeclMetadata (..),
-                                           RuleMetadata (..), Transparency (..),
-                                           emptyRuleMetadata)
+import           Lam4.Expr.CommonSyntax   (RecordDeclMetadata (..),
+                                           RowMetadata (..), RuleMetadata (..),
+                                           Transparency (..), emptyRuleMetadata)
 import           Lam4.Expr.ConcreteSyntax
 import           Lam4.Expr.Name           (Name (..))
 import           Lam4.Parser.Monad
@@ -435,7 +435,7 @@ parseRecordDecl recordDecl = do
 parseRecordMetadata :: A.Object -> Parser RecordDeclMetadata
 parseRecordMetadata recordDecl = do
   transparency <- tryParseTransparency recordDecl
-  let description  = recordDecl ^? ix "description" % _String
+  description <- getDescriptionFromNodeWithSpecificMetadataBlock recordDecl
   pure $ RecordDeclMetadata transparency description
 
 parseRowTypeDecl :: A.Object -> Parser RowTypeDecl
@@ -443,8 +443,9 @@ parseRowTypeDecl rowTypeDecl =
   (rowTypeDecl .: "$type" :: Parser Text) >>= \case
     "RowType" -> do
       rowName <- getName rowTypeDecl
-      typeExpr <- parseTypeExpr =<< rowTypeDecl .: "value"
-      pure (rowName, typeExpr)
+      typeAnnot <- parseTypeExpr =<< rowTypeDecl .: "value"
+      description <- rowTypeDecl .:? "description"
+      pure MkRowTypeDecl{name=rowName, typeAnnot=typeAnnot, metadata=MkRowMetadata description}
     other -> throwError $ "getting " <> T.unpack other <> " but shld be RowType"
 
 {------------------------
@@ -532,10 +533,18 @@ parseLiteral literalExprCtor literalNode = do
     Utils
 -----------------------}
 
+-- | This is for nodes with the @WithSpecificMetadataBlock@ fragment in the Langium grammar
+getDescriptionFromNodeWithSpecificMetadataBlock :: A.Object -> Parser (Maybe Text)
+getDescriptionFromNodeWithSpecificMetadataBlock node  = pure Nothing -- TODO after refactoring Langium grammar for SpecificMetadataBlock
+  -- node ^? ix "metadata" 
+  --       % ix "properties"
+  --       % values 
+  --       % filteredBy (ix "name" % _String % only "description") % ix "value" % ix "value" % _String
+
 tryParseTransparency :: A.Object -> Parser Transparency
-tryParseTransparency (getTransparency -> Just "Opaque") = pure Opaque
+tryParseTransparency (getTransparency -> Just "Opaque")      = pure Opaque
 tryParseTransparency (getTransparency -> Just "Transparent") = pure Transparent
-tryParseTransparency _ = pure Transparent
+tryParseTransparency _                                       = pure Transparent
 
 getTransparency :: A.Object -> Maybe Text
 getTransparency node = node ^? ix "transparency" % ix "$type" % _String

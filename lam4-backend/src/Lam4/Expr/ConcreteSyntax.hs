@@ -13,7 +13,7 @@ module Lam4.Expr.ConcreteSyntax
   -- re-exports from common syntax
     TypeExpr(..)
   , BuiltinType(..)
-  , RowTypeDecl
+  , RowTypeDecl(..)
   -- * Decl and convenience constructors
   , Decl
   , DeclF(..)

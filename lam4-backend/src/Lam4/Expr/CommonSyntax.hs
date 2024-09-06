@@ -17,6 +17,8 @@ data Transparency =
   deriving stock (Eq, Ord, Show, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default Transparency)
 
+------ for record decl -----------------------------------------------
+
 type RecordLabel = Text
 
 data RecordDeclMetadata = RecordDeclMetadata
@@ -25,8 +27,15 @@ data RecordDeclMetadata = RecordDeclMetadata
   }
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default RecordDeclMetadata)
-makeFieldLabelsNoPrefix ''RecordDeclMetadata
 
+newtype RowMetadata = MkRowMetadata { description :: Maybe Text }
+  deriving newtype (Eq, Show, Ord)
+  deriving stock Generic
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default RowMetadata)
+
+-----------------------------------------------
+
+-- | For Records -- and not RecordDecl!
 type Row a = [(Name, a)]
 
 {- | References to where in the original source this corresponds to; e.g., §10.
@@ -80,7 +89,12 @@ data TypeExpr
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeExpr)
 
-type RowTypeDecl = (Name, TypeExpr)
+data RowTypeDecl = MkRowTypeDecl { name      :: Name
+                                 , typeAnnot :: TypeExpr
+                                 , metadata  :: RowMetadata
+                                 }
+  deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default RowTypeDecl)
 
 data BuiltinType = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
   deriving stock (Eq, Show, Ord, Generic)

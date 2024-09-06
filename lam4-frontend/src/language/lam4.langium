@@ -137,6 +137,7 @@ ListOfMetadataValues:
         (',' value+=Literal)* ']'
 ;
 
+// TODO: Sep 2024 -- Want to refactor this to limit the metadata keys, at least in the short term, and to flatten the structure -- too much nesting!
 SpecificMetadataBlock:
     '/-'
         properties+=MetadataKVPair+
@@ -163,6 +164,10 @@ ParamTypePair:
 
 // ------- PredicateDecl, FunDecl -------
 
+// Sep 2024: Now trying to be more selective about where this sort of key-value metadata can be inserted, 
+// because I'm not sure that a key-value syntax is really the best for this,
+// because this simplifies some of the downstream parsing, 
+// and because it feels safer to be more selective till we are sure we need it
 fragment WithSpecificMetadataBlock:
     metadata=SpecificMetadataBlock
 ;
@@ -174,8 +179,9 @@ OriginalRuleRef:
 
 // a terse FunDecl
 FunDecl:
+    description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
@@ -191,9 +197,9 @@ FunDecl:
 // a predicate amounts to a special case of a function; 
 // namely, a function whose return type is Boolean
 PredicateDecl:
+    description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
-    
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
 
     GivenParamBlock?
     'DECIDE' name=IDOrBackTickedID 
@@ -538,22 +544,23 @@ type CustomType = SigDecl | RecordDecl;
 // ;
 
 RowType:
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
+    description=SINGLELINE_METADATA_ANNOTATION?
 
     name=IDOrBackTickedID 
     (':' | 'IS_A') 
     value=TypeAnnot
-    description=SINGLELINE_METADATA_ANNOTATION?
+
 ;
 
 Relation:
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
+    description=SINGLELINE_METADATA_ANNOTATION?
 
     name=ID 
     // optional?='?'? 
     (':' | 'IS_A') 
     relatum=TypeAnnot // TODO: Support plural relata 
-    description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 // Not expecting non-programmers to understand the more complicated type annotations in the textual form
