@@ -24,6 +24,7 @@ import           Data.Bifunctor           (bimap)
 import qualified Simala.Expr.Render       as SM
 import qualified Simala.Expr.Type         as SM
 
+defaultTransparency = SM.Transparent
 
 lam4ToSimalaName :: Name -> SM.Name
 lam4ToSimalaName (MkName name unique) = name <> "_" <> T.pack (show unique)
@@ -63,12 +64,13 @@ compile decls = decls
 
 compileDecl :: AST.CEvalDecl -> SM.Decl
 compileDecl = \case
-  -- TODO: Improve transparency handling
-
   NonRec name Sig {} ->
     let smName = lam4ToSimalaName name
-    in SM.NonRec SM.Transparent smName (SM.Atom smName)
+    in SM.NonRec defaultTransparency smName (SM.Atom smName)
   -- TODO: May not want to translate ONE SIG this way
+
+  NonRec name fun@(Fun ruleMetadata _ _) -> SM.NonRec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
+  Rec name fun@(Fun ruleMetadata _ _)    -> SM.Rec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
 
   NonRec name expr -> SM.NonRec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
   Rec name expr    -> SM.Rec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
