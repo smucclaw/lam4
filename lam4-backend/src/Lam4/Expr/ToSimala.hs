@@ -1,0 +1,92 @@
+{-# LANGUAGE DataKinds #-}
+
+module Lam4.Expr.ToSimala (
+    -- * Entry point
+    compile
+
+    -- * Helpers
+  , compileDecl
+  , compileExpr
+) where
+
+import           Base
+import           Base.Text                as T (pack)
+import           Lam4.Expr.CEvalAST       as AST
+import           Lam4.Expr.CommonSyntax   (BinOp (..), RuleMetadata (..),
+                                           Transparency (..), UnaryOp (..))
+import           Lam4.Expr.ConcreteSyntax as CST (Lit (..))
+import           Lam4.Expr.Name           (Name (..))
+-- import qualified Simala.Expr.Parser       as SM
+-- import qualified Simala.Expr.Render       as SM
+import           Data.Bifunctor           (bimap)
+import qualified Simala.Expr.Type         as SM
+
+
+lam4ToSimalaName :: Name -> SM.Name
+lam4ToSimalaName (MkName name unique) = name <> "_" <> T.pack (show unique)
+
+compileTransparency :: Transparency -> SM.Transparency
+compileTransparency = \case
+  Opaque      -> SM.Opaque
+  Transparent -> SM.Transparent
+
+compileUnaryOp :: UnaryOp -> SM.Builtin
+compileUnaryOp = \case
+  UnaryMinus -> SM.Minus
+  Not        -> SM.Not
+
+-- TODO: May want to change Plus and Mult to Sum and Product
+compileBinOp :: BinOp -> SM.Builtin
+compileBinOp = \case
+  Plus   -> SM.Sum
+  Minus  -> SM.Minus
+  And    -> SM.And
+  Or     -> SM.Or
+  Mult   -> SM.Product
+  Divide -> SM.Divide
+  Lt     -> SM.Lt
+  Gt     -> SM.Gt
+  Le     -> SM.Le
+  Ge     -> SM.Ge
+  Ne     -> SM.Ne
+  Eq     -> SM.Eq
+  Modulo -> SM.Modulo
+
+
+compile  :: [AST.CEvalDecl] -> [SM.Decl]
+compile decls = decls
+  & filter (\case { TypeDecl{} -> False; _ -> True })
+  & map compileDecl
+
+compileDecl :: AST.CEvalDecl -> SM.Decl
+compileDecl = \case
+  -- TODO: Improve transparency handling
+
+  NonRec name Sig {} ->
+    let smName = lam4ToSimalaName name
+    in SM.NonRec SM.Transparent smName (SM.Atom smName)
+  -- TODO: May not want to translate ONE SIG this way
+
+  NonRec name expr -> SM.NonRec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
+  Rec name expr    -> SM.Rec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
+  -- TODO: Improve the error handling later
+  TypeDecl{}       -> error "Type declarations not supported in Simala"
+
+
+compileExpr :: AST.CEvalExpr -> SM.Expr
+compileExpr = \case
+  Var name                     -> SM.Var $ lam4ToSimalaName name
+  Lit (CST.IntLit i)           -> SM.Lit $ SM.IntLit i
+  Lit (CST.BoolLit b)          -> SM.Lit $ SM.BoolLit b
+  Cons first rest              -> SM.Cons (compileExpr first) (compileExpr rest)
+  List xs                      -> SM.List (map compileExpr xs)
+  Unary op expr                -> SM.Builtin (compileUnaryOp op) [compileExpr expr]
+  BinExpr op left right        -> SM.Builtin (compileBinOp op) [compileExpr left, compileExpr right]
+  IfThenElse cond thn els      -> SM.Builtin SM.IfThenElse [compileExpr cond, compileExpr thn, compileExpr els]
+  FunApp fun args              -> SM.App (compileExpr fun) (map compileExpr args)
+  Record rows                  -> SM.Record $ map (bimap lam4ToSimalaName compileExpr) rows
+  Project record label         -> SM.Project (compileExpr record) (lam4ToSimalaName label)
+  Fun ruleMetadata params body -> SM.Fun (compileTransparency ruleMetadata.transparency) (map lam4ToSimalaName params) (compileExpr body)
+  Let decl body                -> SM.Let (compileDecl decl) (compileExpr body)
+  Sig{}                        -> error "Should already have translated ONE CONCEPT / SIG to a Simala Atom when compiling decls"
+  Relation{}                   -> error "Relations not supported in Simala"
