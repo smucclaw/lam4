@@ -16,6 +16,7 @@ module Lam4.Expr.ConcreteSyntax
   , RowTypeDecl
   -- * Decl and convenience constructors
   , Decl
+  , DeclF(..)
   , mkStatementBlockDecl
   , mkSingletonStatementDecl
   , mkRecordDecl
@@ -44,7 +45,7 @@ import           Lam4.Expr.Name         (Name (..))
 
 -- a Name can refer to an Expr or a Statement (but note that not all kinds of Statements can have names)
 
-type Decl = DeclF Expr TypeDecl
+type Decl = DeclF Expr
 
 -- TODO: Think about whether to use pattern synonyms instead, re the following constructor functions
 

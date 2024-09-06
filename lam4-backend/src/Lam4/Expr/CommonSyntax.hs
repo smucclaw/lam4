@@ -92,10 +92,10 @@ data TypeDecl = RecordDecl [RowTypeDecl] [Name] RecordDeclMetadata -- ^ Labels P
   deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeDecl)
 
 -- | Basically a 'Binding'
-data DeclF expr typedecl =
+data DeclF expr =
     NonRec      Name expr
   | Rec         Name expr
-  | TypeDecl    Name typedecl
+  | TypeDecl    Name TypeDecl
   deriving stock (Show, Eq, Ord, Generic)
 
 makePrisms ''TypeExpr

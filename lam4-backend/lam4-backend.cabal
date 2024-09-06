@@ -51,8 +51,9 @@ library
         Lam4.Parser.Monad
         Lam4.Expr.ToSimala
     other-modules:
-        Lam4.Expr.AbstractSyntax
-        Lam4.Expr.ToAST
+        Lam4.Expr.CEvalAST
+        Lam4.Expr.ToConcreteEvalAST
+        Lam4.Expr.SymEvalAST
 
 
     build-depends:
