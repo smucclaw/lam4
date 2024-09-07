@@ -10,11 +10,11 @@ $ gf Lam4Eng.gf
 linking ... OK
 
 Languages: Lam4Eng
-Lam4> l -unlextext MetadataRecordDecl "Lottery" "a type of game" (ConsTypeAnnot (MetadataTypeAnnot "how much can be won from the jackpot" (MkTypeAnnot "‘total jackpot’" "Integer")) (ConsTypeAnnot (MetadataTypeAnnot "whether buying tickets from this lottery is tax deductible" (MkTypeAnnot "‘tax deductible status’"  "Boolean")) BaseTypeAnnot)) | ? tr "°∞" " \n"
+Lam4> l -unlextext MkTypeDecl (MkMetadata "a game where you lose money") "Lottery" (ConsRowTypeDecl (MkRowDecl (MkMetadata "how much can be won from the jackpot") "‘total jackpot’") (ConsRowTypeDecl (MkRowDecl (MkMetadata "whether buying tickets from this lottery is tax deductible") "‘tax deductible status’") BaseRowTypeDecl)) | ? tr "°∞" " \n"
 ```
 should linearize into the following
 ```
-A Lottery is a type of game. Each Lottery has associated with it information like
+A Lottery is a game where you lose money. Each Lottery has associated with it information like
    * its ‘total jackpot’; i.e. how much can be won from the jackpot
    * its ‘tax deductible status’; i.e. whether buying tickets from this lottery is tax deductible
 ```
@@ -24,20 +24,21 @@ A Lottery is a type of game. Each Lottery has associated with it information lik
 Here's the same GF tree in a more readable format.
 
 ```haskell
-MetadataRecordDecl "Lottery" "a type of game"
-    ( ConsTypeAnnot
-        ( MetadataTypeAnnot "how much can be won from the jackpot"
-            ( MkTypeAnnot "‘total jackpot’" "Integer" )
+MkTypeDecl
+    ( MkMetadata "a game where you lose money" ) "Lottery"
+    ( ConsRowTypeDecl
+        ( MkRowDecl
+            ( MkMetadata "how much can be won from the jackpot" ) "‘total jackpot’"
         )
-        ( ConsTypeAnnot
-            ( MetadataTypeAnnot "whether buying tickets from this lottery is tax deductible"
-                ( MkTypeAnnot "‘tax deductible status’" "Boolean" )
-            ) BaseTypeAnnot
+        ( ConsRowTypeDecl
+            ( MkRowDecl
+                ( MkMetadata "whether buying tickets from this lottery is tax deductible" ) "‘tax deductible status’"
+            ) BaseRowTypeDecl
         )
     )
 ```
 
-RecordDecl isn't supported yet as of 28 Aug, but suppose that it is, then the process is as follows:
+How to connect this into the Haskell abstract syntax of Lam4:
 
 1. A Haskell datatype is automatically generated from the GF grammar (standard feature of GF)
 2. Transform a tree of either source (Langium JSON or Haskell AST) into the Haskell version of the GF grammar. (We write a general transformation function—obviously not doing this manually for every single tree.)

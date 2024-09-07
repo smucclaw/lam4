@@ -1,18 +1,18 @@
 abstract Lam4 = {
-  flags startcat = RecordDecl ;
+  flags startcat = TypeDecl ;
   cat
-    RecordDecl ;
-    TypeAnnot ;
-    [TypeAnnot]{0} ;
+    TypeDecl ;
+    RowTypeDecl ;
+    [RowTypeDecl]{0} ;
+    Metadata ;
   fun
-    MkTypeAnnot : (fld : String) -> (typ : String) -> TypeAnnot ;
+    MkMetadata : String -> Metadata ;
+    NoMetadata : Metadata ; -- empty
 
-    MetadataTypeAnnot : (md : String) -> TypeAnnot -> TypeAnnot ;
+    MkRowTypeDecl : Metadata -> (fld : String) -> (typ : String) -> RowTypeDecl ;
+    MkRowDecl : Metadata -> (fld : String) -> RowTypeDecl ; -- no type
 
-    MkRecordDecl : (name : String) -> [TypeAnnot] -> RecordDecl ;
-
-    MetadataRecordDecl : (name : String) -> (md : String) -> [TypeAnnot] -> RecordDecl ;
-
+    MkTypeDecl : Metadata -> (name : String) -> [RowTypeDecl] -> TypeDecl ;
 
 }
 
@@ -28,6 +28,7 @@ LOTTERY {
 
 This can be rendered as:
 
+MkTypeDecl (MkMetadata "a game where you lose money") "Lottery" (ConsRowTypeDecl (MkRowDecl (MkMetadata "how much can be won from the jackpot") "‘total jackpot’") (ConsRowTypeDecl (MkRowDecl (MkMetadata "whether buying tickets from this lottery is tax deductible") "‘tax deductible status’") BaseRowTypeDecl))
 
 A/An ‘Lottery’ is <insert description>.
 Each lottery has associated with it information like

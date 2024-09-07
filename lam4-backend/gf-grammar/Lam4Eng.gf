@@ -1,44 +1,51 @@
-concrete Lam4Eng of Lam4 = {
+concrete Lam4Eng of Lam4 = open Prelude in {
   lincat
-    -- RecordDecl
-    -- TypeAnnot
-    [TypeAnnot] = {s : Str ; isEmpty : IsEmpty} ;
+    -- TypeDecl
+    -- RowTypeDecl
+    [RowTypeDecl] = {s : Str ; isEmpty : IsEmpty} ;
+    Metadata = LinMetadata ;
 
   param
     IsEmpty = Empty | NonEmpty ;
 
+  oper
+    LinMetadata : Type = {s : Str ; isEmpty : IsEmpty} ;
+    linRowMd : LinMetadata -> Str = \md ->
+      case md.isEmpty of {
+        Empty => md.s ;
+        NonEmpty => "; i.e." ++ md.s
+      } ;
+    linTypeDeclMd : LinMetadata -> Str = \md ->
+      case md.isEmpty of {
+        Empty => "is a class" ++ md.s ;
+        NonEmpty => "is" ++ md.s
+      } ;
+    linType : SS -> Str = \s -> "of type" ++ s.s ;
+
   lin
-    MkTypeAnnot field _typ = {s = bullet ++ "its" ++ field.s} ;
+    MkMetadata str = str ** {isEmpty = NonEmpty} ;
+    NoMetadata = {s = [] ; isEmpty = Empty} ;
 
-    MetadataTypeAnnot md annot = {s = annot.s ++ "; i.e." ++ md.s} ;
+    MkRowTypeDecl md field typ = {s = bullet ++ "its" ++ field.s ++ linType typ ++ linRowMd md} ;
+    MkRowDecl md field = {s = bullet ++ "its" ++ field.s ++ linRowMd md} ;
 
-    -- These funs are automatically generated from cat [TypeAnnot]{0} ;
-    -- : [TypeAnnot]
-    BaseTypeAnnot = {s = [] ; isEmpty = Empty} ;
-    -- : TypeAnnot -> [TypeAnnot] -> [TypeAnnot]
-    ConsTypeAnnot t ts =
+    -- These funs are automatically generated from cat [RowTypeDecl]{0} ;
+    -- : [RowTypeDecl]
+    BaseRowTypeDecl = {s = [] ; isEmpty = Empty} ;
+    -- : RowTypeDecl -> [RowTypeDecl] -> [RowTypeDecl]
+    ConsRowTypeDecl t ts =
       let sep : Str = case ts.isEmpty of {
                         Empty => [] ;
                         NonEmpty => linebreak } ;
        in {s = tab ++ t.s ++ sep ++ ts.s ; isEmpty = NonEmpty} ;
 
-    MkRecordDecl name typeannots = {
-      s = artIndef ++ name.s ++ "is a class." ++
-          case typeannots.isEmpty of {
+    MkTypeDecl md name rtds = {
+      s = artIndef ++ name.s ++ linTypeDeclMd md ++ "." ++
+          case rtds.isEmpty of {
             Empty => [] ;
             NonEmpty => "Each" ++ name.s ++
                      "has associated with it information like" ++
-                     linebreak ++ typeannots.s
-          } ;
-      } ;
-
-    MetadataRecordDecl name md typeannots = {
-      s = artIndef ++ name.s ++ "is" ++ md.s ++ "." ++
-          case typeannots.isEmpty of {
-            Empty => [] ;
-            NonEmpty => "Each" ++ name.s ++
-                     "has associated with it information like" ++
-                     linebreak ++ typeannots.s
+                     linebreak ++ rtds.s
           } ;
       } ;
 
