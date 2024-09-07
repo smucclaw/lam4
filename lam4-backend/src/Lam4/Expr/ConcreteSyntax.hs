@@ -103,7 +103,7 @@ data Expr
   because they're useful for certain sorts of analyses;
   but not sure that we really want them
   -}
-  -- The currently supported Sigs are 'ONE' Sigs
+  -- The currently supported Sigs are 'ONE' Sigs (and only those)
   | Sig        [Name] [Expr]                       -- Sig parents relations
   -- Sep 2024: Join is currently disabled; de-emphasizing these things for now
   -- | Join       Expr Expr                           -- Relational join

@@ -219,8 +219,13 @@ parseExpr node = do
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
 
-    {-  Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
-      May want to remove Sigs as well. Not sure right now, and keeping it around for the time being makes the syntax for certain things a bit nicer
+    {-  
+    * Join: Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
+    * Sig: May want to remove Sigs as well. 
+            Not sure right now.
+            For now, only allowing One Sig through the parser,
+            and only One Sig with no Relations (which basically would be an Atom) for concrete-eval-only evaluators.
+
     -}
     "SigDecl"        -> parseSigE           node
     "RecordExpr"     -> parseRecordExpr     node

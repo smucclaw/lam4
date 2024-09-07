@@ -24,6 +24,7 @@ import           Data.Bifunctor           (bimap)
 import qualified Simala.Expr.Render       as SM
 import qualified Simala.Expr.Type         as SM
 
+defaultTransparency :: SM.Transparency
 defaultTransparency = SM.Transparent
 
 lam4ToSimalaName :: Name -> SM.Name
@@ -57,29 +58,38 @@ compileBinOp = \case
   Modulo -> SM.Modulo
 
 
-compile  :: [AST.CEvalDecl] -> [SM.Decl]
+compile  :: [AST.ConEvalDecl] -> [SM.Decl]
 compile decls = decls
   & filter (\case { TypeDecl{} -> False; _ -> True })
   & map compileDecl
 
-compileDecl :: AST.CEvalDecl -> SM.Decl
+compileDecl :: AST.ConEvalDecl -> SM.Decl
 compileDecl = \case
-  NonRec name Sig {} ->
-    let smName = lam4ToSimalaName name
-    in SM.NonRec defaultTransparency smName (SM.Atom smName)
-  -- TODO: May not want to translate ONE SIG this way
-  -- Also, may be problematic if the name for the Decl is the same as that for the atom
 
+  ------------------------------------
+  ---- EXPERIMENTAL -----------------
+  ------------------------------------
+  NonRec name Atom {} ->
+    let smName = lam4ToSimalaName name
+    in SM.NonRec defaultTransparency ("decl_" <> smName) (SM.Atom smName)
+  -- TODO: May not want to translate ONE SIG with no relations this way
+  -- TODO: Not sure if naming is ok
+
+  ------------------------------------
+  ---- VANILLA -----------------------
+  ------------------------------------
   NonRec name fun@(Fun ruleMetadata _ _) -> SM.NonRec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
   Rec name fun@(Fun ruleMetadata _ _)    -> SM.Rec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
 
   NonRec name expr -> SM.NonRec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
   Rec name expr    -> SM.Rec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
   -- TODO: Improve the error handling later
-  TypeDecl{}       -> error "Type declarations not supported in Simala"
+  TypeDecl{}       -> error "[ToSimala] Type declarations not supported in Simala and should already have been pre-filtered out, prior to this phase"
 
 
-compileExpr :: AST.CEvalExpr -> SM.Expr
+
+
+compileExpr :: AST.ConEvalExpr -> SM.Expr
 compileExpr = \case
   Var name                     -> SM.Var $ lam4ToSimalaName name
   Lit (CST.IntLit i)           -> SM.Lit $ SM.IntLit i
@@ -94,8 +104,7 @@ compileExpr = \case
   Project record label         -> SM.Project (compileExpr record) (lam4ToSimalaName label)
   Fun ruleMetadata params body -> SM.Fun (compileTransparency ruleMetadata.transparency) (map lam4ToSimalaName params) (compileExpr body)
   Let decl body                -> SM.Let (compileDecl decl) (compileExpr body)
-  Sig{}                        -> error "Should already have translated ONE CONCEPT / SIG to a Simala Atom when compiling decls"
-  Relation{}                   -> error "Relations not supported in Simala"
+  Atom{}                        -> error "Should already have translated a ONE CONCEPT / SIG with no Relations to a Simala Atom when compiling decls"
 
 -------------------------
 

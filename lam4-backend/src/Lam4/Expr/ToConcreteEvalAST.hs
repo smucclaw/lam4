@@ -43,12 +43,19 @@ toConEvalExpr expression =
         CST.Record rows                  -> AST.Record (map (fmap swapConstructors) rows)
         CST.Project record label         -> AST.Project (swapConstructors record) label
         CST.Fun ruleMetadata params body -> AST.Fun ruleMetadata params (swapConstructors body)
-        CST.Let decl body                -> AST.Let (toCEvalDecl decl) (swapConstructors body)
+        CST.Let decl body                -> AST.Let (toConEvalDecl decl) (swapConstructors body)
         
         CST.Predicate{}                  -> error "CST.Predicate should have been desugared"
         CST.PredApp{}                    -> error "CST.PredApp should have been desugared"
-        
-        CST.Sig parents relations        -> AST.Sig parents (map swapConstructors relations)
-        CST.Relation relName relParentSigName relatum description -> AST.Relation relName relParentSigName relatum description
+
+        CST.Relation{}                   -> error "swapConstructors: Relations not supported in ConcreteEvalOnly AST"
         CST.StatementBlock{}             -> error "swapConstructors: StatementBlock not yet implemented"
         CST.NormIsInfringed{}            -> error "swapConstructors: NormIsInfringed not yet implemented"
+
+        ------------------------------------
+        ----- EXPERIMENTAL -----------------
+        ------------------------------------
+        CST.Sig parents []               -> AST.Atom parents
+        CST.Sig _       _                -> error "swapConstructors: A Sig with relations is not supported for concrete-evaluation-only backends"
+
+
