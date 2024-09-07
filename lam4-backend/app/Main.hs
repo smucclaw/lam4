@@ -4,9 +4,8 @@ import           Base
 -- import qualified Base.Text as T
 import qualified Base.ByteString             as BL hiding (null)
 import qualified Lam4.Expr.ConcreteSyntax    as CST (Decl)
--- import Lam4.Expr.CEvalAST (CEvalDecl, CEvalExpr(..), DeclF(..))
 import           Lam4.Expr.Parser            (parseProgramByteStr)
-import           Lam4.Expr.ToConcreteEvalAST (toConEvalDecl)
+import           Lam4.Expr.ToConcreteEvalAST (cstProgramToConEvalProgram)
 import qualified Lam4.Expr.ToSimala          as ToSimala (compile, render)
 import           Lam4.Parser.Monad           (evalParserFromScratch)
 import           Options.Applicative         as Options
@@ -28,7 +27,7 @@ optionsConfig =
     <> header "Lam4 Backend. This is an *internal*, *unstable* cli that can see breaking changes any time --- use at your own risk!"
     )
 
--- | This will be wired up to an evaluator instead of just the parser in the near future
+-- | Sep 6: This now compiles to Simala Decls and renders them
 main :: IO ()
 main = do
   options <- Options.execParser optionsConfig
@@ -38,10 +37,10 @@ main = do
     else do
       cstDecls <- parseProgramFiles options.files
       -- TODO: Use string interpolation...
-      pPrint "------- CST -------------" 
+      print "------- CST -------------" 
       pPrint cstDecls
-      pPrint "-------- Simala ---------"
-      let smDecls = ToSimala.compile $ map toConEvalDecl cstDecls
+      print "-------- Simala ---------"
+      let smDecls = ToSimala.compile . cstProgramToConEvalProgram $ cstDecls
       pPrint $ ToSimala.render smDecls
 
 

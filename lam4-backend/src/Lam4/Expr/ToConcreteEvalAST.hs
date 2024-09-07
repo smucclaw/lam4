@@ -1,7 +1,8 @@
 module Lam4.Expr.ToConcreteEvalAST (
   -- * entrypoint
+  cstProgramToConEvalProgram,
+  -- * helpers
   toConEvalDecl,
-  -- * if you just need to translate exprs 
   toConEvalExpr) 
 where
 
@@ -9,6 +10,10 @@ import           Base
 import qualified Lam4.Expr.ConEvalAST as AST
 import           Lam4.Expr.ConcreteSyntax (exprSubexprs)
 import qualified Lam4.Expr.ConcreteSyntax as CST
+
+-- | Entry point
+cstProgramToConEvalProgram :: [CST.Decl] -> [AST.ConEvalDecl]
+cstProgramToConEvalProgram = map toConEvalDecl
 
 
 desugarForConcreteEval ::  CST.Expr -> CST.Expr
