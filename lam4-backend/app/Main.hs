@@ -1,12 +1,12 @@
 module Main where
 
 import           Base
-import qualified Base.Text as T
+-- import qualified Base.Text as T
 import qualified Base.ByteString             as BL hiding (null)
 import qualified Lam4.Expr.ConcreteSyntax    as CST (Decl)
 -- import Lam4.Expr.CEvalAST (CEvalDecl, CEvalExpr(..), DeclF(..))
 import           Lam4.Expr.Parser            (parseProgramByteStr)
-import           Lam4.Expr.ToConcreteEvalAST (toCEvalDecl)
+import           Lam4.Expr.ToConcreteEvalAST (toConEvalDecl)
 import qualified Lam4.Expr.ToSimala          as ToSimala (compile, render)
 import           Lam4.Parser.Monad           (evalParserFromScratch)
 import           Options.Applicative         as Options
@@ -41,7 +41,7 @@ main = do
       pPrint "------- CST -------------" 
       pPrint cstDecls
       pPrint "-------- Simala ---------"
-      let smDecls = ToSimala.compile $ map toCEvalDecl cstDecls
+      let smDecls = ToSimala.compile $ map toConEvalDecl cstDecls
       pPrint $ ToSimala.render smDecls
 
 

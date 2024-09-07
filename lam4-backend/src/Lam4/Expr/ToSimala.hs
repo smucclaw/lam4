@@ -14,7 +14,7 @@ module Lam4.Expr.ToSimala (
 
 import           Base
 import qualified Base.Text                as T
-import           Lam4.Expr.CEvalAST       as AST
+import           Lam4.Expr.ConEvalAST     as AST
 import           Lam4.Expr.CommonSyntax   (BinOp (..), RuleMetadata (..),
                                            Transparency (..), UnaryOp (..))
 import           Lam4.Expr.ConcreteSyntax as CST (Lit (..))

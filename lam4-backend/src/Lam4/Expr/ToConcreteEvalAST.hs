@@ -1,12 +1,12 @@
 module Lam4.Expr.ToConcreteEvalAST (
   -- * entrypoint
-  toCEvalDecl,
+  toConEvalDecl,
   -- * if you just need to translate exprs 
-  toCEvalExpr) 
+  toConEvalExpr) 
 where
 
 import           Base
-import qualified Lam4.Expr.CEvalAST as AST
+import qualified Lam4.Expr.ConEvalAST as AST
 import           Lam4.Expr.ConcreteSyntax (exprSubexprs)
 import qualified Lam4.Expr.ConcreteSyntax as CST
 
@@ -17,14 +17,14 @@ desugarForConcreteEval = transformOf exprSubexprs $ \case
   CST.PredApp predicate args             -> CST.FunApp (desugarForConcreteEval predicate) (map desugarForConcreteEval args)
   x -> x 
 
-toCEvalDecl :: CST.Decl -> AST.CEvalDecl
-toCEvalDecl = \case
-  CST.NonRec name expr       -> AST.NonRec name (toCEvalExpr expr)
-  CST.Rec name expr          -> AST.Rec name (toCEvalExpr expr)
+toConEvalDecl :: CST.Decl -> AST.ConEvalDecl
+toConEvalDecl = \case
+  CST.NonRec name expr       -> AST.NonRec name (toConEvalExpr expr)
+  CST.Rec name expr          -> AST.Rec name (toConEvalExpr expr)
   CST.TypeDecl name typedecl -> AST.TypeDecl name typedecl
 
-toCEvalExpr :: CST.Expr -> AST.CEvalExpr
-toCEvalExpr expression = 
+toConEvalExpr :: CST.Expr -> AST.ConEvalExpr
+toConEvalExpr expression = 
   expression 
   & desugarForConcreteEval 
   & swapConstructors
