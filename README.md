@@ -1,6 +1,9 @@
 # λ4
 
-This is a kind of rational reconstruction of the 'MathLang' dialect of L4. That is, it is, at its core, a functional expression language; but it aims to extend the MathLang work by incorporating solver / automated reasoning capabilities. It also differs from Natural L4 in offering a textual format with a more constrained surface syntax (with a 'no-code,' intuitive GUI for non-programmers on the roadmap).
+A legal DSL that is, at its core, a functional expression language, but that also aims, in the long run, to
+
+* incorporate solver / automated reasoning capabilities, so that you can ask questions like, what needs to happen for me to be able to make this insurance claim (probably coming soon)
+* offer a 'low-code', intuitive GUI with an AI (+ PL / program synthesis / formal methods methods)-powered Copilot (on the long-term roadmap)
 
 ## How to build
 
@@ -12,8 +15,11 @@ You basically have to set up two things:
 
 There will be wrapper scripts / services to make working with this more ergonomic soon enough. But in the very short term, you have to generate the AST from the lam4 frontend, and then run it through the backend parser.
 
+## Vs. main branch L4
 
-## Goals, in the mid to longer term
+This is a kind of rational reconstruction of the 'MathLang' dialect of L4. That is, it is, at its core, a functional expression language; but it aims to extend the MathLang work by incorporating solver / automated reasoning capabilities. It also differs from Natural L4 in offering a textual format with a more constrained surface syntax (with a 'no-code,' intuitive, AI-augmented GUI for non-programmers on the roadmap).
+
+## Goals and Principles, in the mid to longer term
 
 The goal is to get something that
 
