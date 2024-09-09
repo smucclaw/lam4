@@ -114,33 +114,34 @@ ToplevelElement:
        Metadata
 ======================================== */
 
-GeneralMetadataBlock:
-    '{'
-        properties+=MetadataKVPair+
-    '}'
-;
-MetadataKey returns string:
-    ID | "description" 
-    // | "description_for_semantic_parser"
-;
+// GeneralMetadataBlock:
+//     '{'
+//         properties+=MetadataKVPair+
+//     '}'
+// ;
+// MetadataKey returns string:
+//     ID | "description" 
+//     // | "description_for_semantic_parser"
+// ;
 
-MetadataKVPair:
-    name=MetadataKey ':' value=MetadataValue
-;
+// MetadataKVPair:
+//     name=MetadataKey ':' value=MetadataValue
+// ;
 
-MetadataValue:
-    GeneralMetadataBlock | ListOfMetadataValues | Literal
-;
+// MetadataValue:
+//     GeneralMetadataBlock | ListOfMetadataValues | Literal
+// ;
 
-ListOfMetadataValues:
-    '[' value+=Literal 
-        (',' value+=Literal)* ']'
-;
+// ListOfMetadataValues:
+//     '[' value+=Literal 
+//         (',' value+=Literal)* ']'
+// ;
 
-// TODO: Sep 2024 -- Want to refactor this to limit the metadata keys, at least in the short term, and to flatten the structure -- too much nesting!
+// Sep 2024 -- Limiting the metadata keys / don't allow for arbitrary metadata key-value pairs in the short term.
 SpecificMetadataBlock:
     '/-'
-        properties+=MetadataKVPair+
+        "about:" description=StringLiteral
+        // TODO: would like to not require quotes  
     '-/'
 ;
 

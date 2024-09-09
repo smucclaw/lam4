@@ -1,5 +1,5 @@
 /-
-  description: "Information about the life assured for this policy."
+  about: "Information about the life assured for this policy."
 -/
 STRUCTURE LifeAssured {
   -- whether policy active  

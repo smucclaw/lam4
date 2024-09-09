@@ -440,7 +440,7 @@ parseRecordDecl recordDecl = do
 parseRecordMetadata :: A.Object -> Parser RecordDeclMetadata
 parseRecordMetadata recordDecl = do
   transparency <- tryParseTransparency recordDecl
-  description <- getDescriptionFromNodeWithSpecificMetadataBlock recordDecl
+  let description = getDescriptionFromNodeWithSpecificMetadataBlock recordDecl
   pure $ RecordDeclMetadata transparency description
 
 parseRowTypeDecl :: A.Object -> Parser RowTypeDecl
@@ -538,13 +538,10 @@ parseLiteral literalExprCtor literalNode = do
     Utils
 -----------------------}
 
--- | This is for nodes with the @WithSpecificMetadataBlock@ fragment in the Langium grammar
-getDescriptionFromNodeWithSpecificMetadataBlock :: A.Object -> Parser (Maybe Text)
-getDescriptionFromNodeWithSpecificMetadataBlock node  = pure Nothing -- TODO after refactoring Langium grammar for SpecificMetadataBlock
-  -- node ^? ix "metadata" 
-  --       % ix "properties"
-  --       % values 
-  --       % filteredBy (ix "name" % _String % only "description") % ix "value" % ix "value" % _String
+{- | The input must be a node with the @WithSpecificMetadataBlock@ fragment in the Langium grammar.
+-}
+getDescriptionFromNodeWithSpecificMetadataBlock :: A.Object -> Maybe Text
+getDescriptionFromNodeWithSpecificMetadataBlock node  = node ^? ix "metadata" % ix "description" % ix "value" % _String
 
 tryParseTransparency :: A.Object -> Parser Transparency
 tryParseTransparency (getTransparency -> Just "Opaque")      = pure Opaque
