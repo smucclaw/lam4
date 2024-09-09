@@ -1,0 +1,51 @@
+cabal-version:      3.4
+name:               lam4-cli
+version:            0.1.0.0
+-- synopsis:
+-- description:
+license:            MIT
+license-file:       LICENSE
+author:             ym-han
+maintainer:         hanyongming@gmail.com
+-- copyright:
+category:           Language
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common defaults
+  default-language: GHC2021
+  ghc-options: -Wall
+  default-extensions:
+    DerivingStrategies
+    DerivingVia
+    OverloadedRecordDot
+    OverloadedStrings
+    OverloadedLabels
+    LambdaCase
+
+executable lam4-cli
+    import:           defaults
+    main-is:          Main.hs
+    other-modules:
+          Base 
+        , Builder
+    -- other-extensions:
+    build-depends:    
+          base
+        , containers
+        , text
+        , shake
+        , optparse-applicative
+        , pretty-show
+        , optics
+        , mtl
+        , transformers-base
+        , lam4-backend
+        , simala
+
+
+--         bytestring,
+
+    hs-source-dirs:   app
+    default-language: GHC2021

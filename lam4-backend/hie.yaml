@@ -2,6 +2,3 @@ cradle:
   cabal:
     - path: "src"
       component: "lib:lam4-backend"
-
-    - path: "app/Main.hs"
-      component: "lam4-backend:exe:lam4-backend"
