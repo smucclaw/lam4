@@ -17,6 +17,9 @@ maintainer:         hanyongming@gmail.com
 category:           Language
 build-type:         Simple
 
+data-files:
+    gf-grammars/NL4.pgf
+
 common defaults
   default-language: GHC2021
   ghc-options: -Wall
@@ -55,14 +58,16 @@ library
         Lam4.Expr.SymEvalAST
         Lam4.Expr.ToSimala
         Lam4.Expr.ExtractProgramInfo
+        Lam4.Render.Render
+        Lam4.Render.Lam4Gf
     other-modules:
-
+        Paths_lam4_backend
 
     build-depends:
         base,
         containers,
         foldable1-classes-compat,
-        lens, 
+        lens,
         -- just for Control.Lens.Plated
         optics,
         mtl,
@@ -77,7 +82,12 @@ library
         pretty-show,
         grisette >= 0.8,
         simala,
-        relude
+        relude,
+        gf,
+        cgi == 3001.5.0.0,
+        multipart == 0.2.0,
+        pcre-heavy,
+        string-interpolate
 
 
 
