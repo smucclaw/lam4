@@ -29,13 +29,13 @@ executable lam4-cli
     main-is:          Main.hs
     other-modules:
           Base 
-        , Builder
     -- other-extensions:
     build-depends:    
           base
         , containers
         , text
         , shake
+        , cradle
         , optparse-applicative
         , pretty-show
         , optics
@@ -43,9 +43,6 @@ executable lam4-cli
         , transformers-base
         , lam4-backend
         , simala
-
-
---         bytestring,
 
     hs-source-dirs:   app
     default-language: GHC2021
