@@ -5,9 +5,10 @@ module Lam4.Render.Render where
 import qualified Base.Text                as T
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax
+import           Lam4.Expr.Name (Name(..))
 import           Data.String.Interpolate  (i)
 import qualified Text.Regex.PCRE.Heavy    as PCRE
---import           Paths_lam4 (getDataFileName)
+import           Paths_lam4_backend (getDataFileName)
 
 -- GF-related stuff
 import           Lam4.Render.Lam4Gf
@@ -26,8 +27,7 @@ gfPath x = [i|gf-grammar/#{x}|]
 
 myNLGEnv :: IO NLGEnv
 myNLGEnv = do
-  -- grammarFile <- getDataFileName $ gfPath "Lam4.pgf"
-  let grammarFile = gfPath "Lam4.pgf"
+  grammarFile <- getDataFileName $ gfPath "Lam4.pgf"
   gr <- readPGF grammarFile
   let lang = getLang "Lam4Eng" gr
       -- myParse typ txt = parse gr eng typ (Text.unpack txt)
@@ -65,7 +65,8 @@ parseDecl = \case
     GMkTypeDecl GNoMetadata (getName name) (parseRows typedecl)
   x -> error [i|parseDecl: not yet implemented #{x}|]
 
-getName = const (GString "TODO_NAME")
+getName :: Name -> GString
+getName (MkName name _) = GString $ T.unpack name
 
 parseRows :: TypeDecl -> GListRowTypeDecl
 parseRows = \case
