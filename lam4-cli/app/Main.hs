@@ -2,6 +2,8 @@ module Main where
 
 import           Base
 import qualified Base.ByteString             as BL
+
+import           Cradle
 -- import qualified Builder
 import qualified Lam4.Expr.ConcreteSyntax    as CST (Decl)
 import           Lam4.Expr.Parser            (parseProgramByteStr)
@@ -11,8 +13,8 @@ import qualified Lam4.Expr.ToSimala          as ToSimala (compile, render)
 import           Lam4.Parser.Monad           (evalParserFromScratch)
 import           Options.Applicative
 
-data Command
-  = Compile [FilePath]
+data Command =
+  Compile [FilePath]
   -- | Build
   -- | Evaluate [FilePath]
   deriving (Show, Eq)
@@ -33,7 +35,7 @@ commandParser =
   --          (Evaluate
   --             <$> many (strArgument (metavar "CONCRETE SYNTAX JSONs...")))
   --          (progDesc "Evaluate Lam4 programs"))
-    )
+     )
 
 main :: IO ()
 main = do
@@ -45,6 +47,9 @@ main = do
     -- Build -> undefined
     -- Evaluate files -> undefined
       -- TODO: Add entrypoint eval
+
+-- runLangiumParser files = do
+--   (e :: ExitCode, StdoutTrimmed out, StderrTrimmed err) <- run $ cmd "node"
 
 parseAndCompile :: [FilePath] -> IO SimalaProgram
 parseAndCompile files = do
