@@ -140,8 +140,8 @@ ToplevelElement:
 // Sep 2024 -- Limiting the metadata keys / don't allow for arbitrary metadata key-value pairs in the short term.
 SpecificMetadataBlock:
     '/-'
-        "about:" description=StringLiteral
-        // TODO: would like to not require quotes  
+        "@about" description=StringLiteral
+        // TODO: maybe adjust this not to require quotes?
     '-/'
 ;
 
