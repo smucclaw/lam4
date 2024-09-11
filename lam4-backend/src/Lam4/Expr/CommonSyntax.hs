@@ -1,26 +1,41 @@
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
+
 module Lam4.Expr.CommonSyntax where
 
 import           Base
 import           Base.Grisette
-import           Lam4.Expr.Name   (Name (..))
+import           Lam4.Expr.Name (Name (..))
+
+
+data Transparency =
+    Opaque
+  | Transparent
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default Transparency)
+
+------ for record decl -----------------------------------------------
 
 type RecordLabel = Text
 
--- | Basically a 'Binding'
-data DeclF expr typedecl =
-    NonRec      Name expr
-  | Rec         Name expr
-  | TypeDecl    Name typedecl
-  deriving stock (Show, Eq, Ord, Generic)
-
--- TODO: Think about stuffing other metadata here too?
-data TypeDecl = RecordDecl [RowTypeDecl] [Name] (Maybe Text) -- ^ Labels Parents Description
+data RecordDeclMetadata = RecordDeclMetadata
+  { transparency :: Transparency
+  , description  :: Maybe Text
+  }
   deriving stock (Eq, Show, Ord, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeDecl)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default RecordDeclMetadata)
 
-type RowTypeDecl = (Name, TypeExpr)
+newtype RowMetadata = MkRowMetadata { description :: Maybe Text }
+  deriving newtype (Eq, Show, Ord)
+  deriving stock Generic
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default RowMetadata)
 
+-----------------------------------------------
 
+-- | For Records -- and not RecordDecl!
 type Row a = [(Name, a)]
 
 {- | References to where in the original source this corresponds to; e.g., §10.
@@ -33,6 +48,18 @@ newtype OriginalRuleRef
   deriving stock (Show, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default OriginalRuleRef)
 
+-- | Metadata for something that's a FunDecl or PredicateDecl
+data RuleMetadata = RuleMetadata
+  { originalRuleRef :: Maybe OriginalRuleRef
+  , transparency    :: Transparency
+  , description     :: Maybe Text
+  }
+  deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default RuleMetadata)
+makeFieldLabelsNoPrefix ''RuleMetadata
+
+emptyRuleMetadata :: RuleMetadata
+emptyRuleMetadata = RuleMetadata Nothing Transparent Nothing
 
 data UnaryOp = Not | UnaryMinus
   deriving stock (Eq, Show, Ord, Generic)
@@ -53,7 +80,6 @@ data BinOp
   | Ge      -- ^ greater-than-or-equal
   | Eq      -- ^ equality (of Booleans, numbers or atoms)
   | Ne      -- ^ inequality (of Booleans, numbers or atoms)
-  | Cons    -- ^ List Cons
    deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default BinOp)
 
@@ -63,6 +89,29 @@ data TypeExpr
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeExpr)
 
+data RowTypeDecl = MkRowTypeDecl { name      :: Name
+                                 , typeAnnot :: TypeExpr
+                                 , metadata  :: RowMetadata
+                                 }
+  deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default RowTypeDecl)
+
 data BuiltinType = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default BuiltinType)
+
+-- TODO: Think about stuffing other metadata here too?
+data TypeDecl = RecordDecl [RowTypeDecl] [Name] RecordDeclMetadata -- ^ Labels Parents Description RecordDeclMetadata
+  deriving stock (Eq, Show, Ord, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeDecl)
+
+-- | Basically a 'Binding'
+data DeclF expr =
+    NonRec      Name expr
+  | Rec         Name expr
+  | TypeDecl    Name TypeDecl
+  deriving stock (Show, Eq, Ord, Generic)
+
+makePrisms ''TypeExpr
+makePrisms ''TypeDecl
+makePrisms ''DeclF

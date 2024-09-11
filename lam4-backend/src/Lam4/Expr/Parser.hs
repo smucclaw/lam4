@@ -1,18 +1,20 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE ViewPatterns          #-}
+
 {- |
-  Aug 26 2024: This parser hasn't yet been updated with all the recent constructs and changes in the Langium grammar.
-  So don't expect to be able to parse into the backend concrete syntax right now.
+  Sep 4 2024: The Langium-grammar constructs that aren't yet supported by the parser are mostly list exprs and the experimental normative ones.
 
-  Parses the JSON representation of (the concrete syntax of)
-      an input Lam4 expression from Langium frontend
+  This module parses the JSON representation of (the concrete syntax of)
+  an input Lam4 expression from Langium frontend
 
-      ---------------------------
-      Assumptions / preconditions
-      ---------------------------
-      This *input Lam4 expression*
-      1. is valid, according to Langium parser
-      2. is valid, according to scoper
-      3. is valid, according to type checker
-      4. is valid, according to the other static semantic checks / validators
+    ---------------------------
+    Assumptions / preconditions
+    ---------------------------
+    This *input Lam4 expression*
+    1. is valid, according to Langium parser
+    2. is valid, according to scoper
+    3. is valid, according to type checker
+    4. is valid, according to the other static semantic checks / validators
 
 In short: the expression conforms, not just to the Lam4 grammar, but also to its semantics.
 
@@ -20,11 +22,12 @@ The parsing/translation in Parser.hs preserves well-scopedness etc
   because the translation maps constructs in the Langium grammar to concrete syntax in a 1-to-1 way.
   The NamedElements are basically just relabelled with unique integers.
 
+  Probably the most delicate part of the parsing is the handling of RecordLabels; see the @initializeEnvs@ function for discussion of that.
 
   ----------
     TODOs
   ----------
-  * Find a way to automatedly keep the Langium grammar in sync with this backend parser. 
+  * Find a way to automatedly keep the Langium grammar in sync with this backend parser.
       * At the very least, write property based tests
 
   Style / code clarity:
@@ -45,7 +48,9 @@ import           Base.ByteString          (ByteString)
 import qualified Base.Text                as T
 import qualified Data.Foldable            as F
 import qualified Data.Set                 as Set
-import           Lam4.Expr.CommonSyntax   (DeclF (..))
+import           Lam4.Expr.CommonSyntax   (RecordDeclMetadata (..),
+                                           RowMetadata (..), RuleMetadata (..),
+                                           Transparency (..), emptyRuleMetadata)
 import           Lam4.Expr.ConcreteSyntax
 import           Lam4.Expr.Name           (Name (..))
 import           Lam4.Parser.Monad
@@ -60,7 +65,7 @@ recursiveTypes = Set.fromList ["LetExpr", "FunDecl", "PredicateDecl"]
     Ref
 -----------------------}
 
-{-| A Ref differs from a WrappedRef in that it isn't wrapped in the "value" field. 
+{-| A Ref differs from a WrappedRef in that it isn't wrapped in the "value" field.
 TODO: May not need this if not using Relatums -}
 newtype Ref = MkRef A.Object
   deriving newtype (Eq, Show, Ord, FromJSON)
@@ -161,7 +166,7 @@ initializeEnvs nodePaths programElementValues = do
         setRecordLabelEnv recordLabelAssocList
 
 
-{-| Constructor for @Decl@s. 
+{-| Constructor for @Decl@s.
 Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
 mkDecl :: Text -> Name -> Expr -> Decl
 mkDecl typeOfNode name expr =
@@ -214,8 +219,13 @@ parseExpr node = do
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
 
-    {-  Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
-      May want to remove Sigs as well. Not sure right now, and keeping it around for the time being makes the syntax for certain things a bit nicer
+    {-  
+    * Join: Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
+    * Sig: May want to remove Sigs as well. 
+            Not sure right now.
+            For now, only allowing One Sig through the parser,
+            and only One Sig with no Relations (which basically would be an Atom) for concrete-eval-only evaluators.
+
     -}
     "SigDecl"        -> parseSigE           node
     "RecordExpr"     -> parseRecordExpr     node
@@ -282,7 +292,7 @@ parseBinExpr node = do
   right <- parseExpr  =<< node .: "right"
   pure $ BinExpr op left right
 
-{- | Key invariant for the parsing: 
+{- | Key invariant for the parsing:
   Record expressions have to be constructed / parsed in such a way that:
   * the labels / names of the rows are __the same ones__ that a valid __projection__ of the record would use.
 
@@ -305,10 +315,10 @@ parseRecordExpr node = do
 
 {-| The Name used in the projection will correspond to that used when constructing the relevant record expr,
     because the Ref from the Langium parser will refer to
-      the RowType in the relevant record declaration. 
-    
+      the RowType in the relevant record declaration.
+
     __Examples__
-    
+
     A RecordDecl would look like this:
 
     @
@@ -422,18 +432,25 @@ parseVarDecl varDecl = do
 parseRecordDecl :: A.Object -> Parser Decl
 parseRecordDecl recordDecl = do
   recordName   <- getName recordDecl
-  let description  = recordDecl ^? ix "description" % _String
+  recordMetadata <- parseRecordMetadata recordDecl
   parents      <- traverse (relabelRef . coerce) (recordDecl `getObjectsAtField` "parents")
   rowTypeDecls <- traverse parseRowTypeDecl (recordDecl `getObjectsAtField` "rowTypes")
-  pure $ mkRecordDecl recordName rowTypeDecls parents description
+  pure $ mkRecordDecl recordName rowTypeDecls parents recordMetadata
+
+parseRecordMetadata :: A.Object -> Parser RecordDeclMetadata
+parseRecordMetadata recordDecl = do
+  transparency <- tryParseTransparency recordDecl
+  let description = getDescriptionFromNodeWithSpecificMetadataBlock recordDecl
+  pure $ RecordDeclMetadata transparency description
 
 parseRowTypeDecl :: A.Object -> Parser RowTypeDecl
 parseRowTypeDecl rowTypeDecl =
   (rowTypeDecl .: "$type" :: Parser Text) >>= \case
     "RowType" -> do
       rowName <- getName rowTypeDecl
-      typeExpr <- parseTypeExpr =<< rowTypeDecl .: "value"
-      pure (rowName, typeExpr)
+      typeAnnot <- parseTypeExpr =<< rowTypeDecl .: "value"
+      description <- rowTypeDecl .:? "description"
+      pure MkRowTypeDecl{name=rowName, typeAnnot=typeAnnot, metadata=MkRowMetadata description}
     other -> throwError $ "getting " <> T.unpack other <> " but shld be RowType"
 
 {------------------------
@@ -455,17 +472,17 @@ parseParam = getName
 parseAnonFun :: A.Object -> Parser Expr
 parseAnonFun anonFun = do
   paramNames <- traverse parseParam anonFunParams
-  body <- parseExpr =<< anonFun .: "body"
-  pure $ Fun paramNames body Nothing
+  body       <- parseExpr =<< anonFun .: "body"
+  pure $ Fun emptyRuleMetadata paramNames body
     where
       anonFunParams = anonFun ^.. ix "params" % values % cosmos % ix "param" % _Object
 
 parseFunE :: A.Object -> Parser Expr
 parseFunE fun = do
-  paramNames <- traverse parseParam (fun `getObjectsAtField` "params")
-  body <- parseExpr =<< fun .: "body"
-  originalRuleRef <- extractOriginalRuleRef fun
-  pure $ Fun paramNames body originalRuleRef
+  paramNames   <- traverse parseParam (fun `getObjectsAtField` "params")
+  body         <- parseExpr =<< fun .: "body"
+  ruleMetadata <- parseRuleMetadata fun
+  pure $ Fun ruleMetadata paramNames body
 
 {- | Treating predicate exprs separately from function expressions,
 even though the current code is similar,
@@ -474,10 +491,10 @@ because predicates will likely be treated differently in symbolic execution
 -}
 parsePredicateE :: A.Object -> Parser Expr
 parsePredicateE predicate = do
-  paramNames <- traverse parseParam (getPredicateParams predicate)
-  body <- parseExpr =<< predicate .: "body"
-  originalRuleRef <- extractOriginalRuleRef predicate
-  pure $ Predicate paramNames body originalRuleRef
+  paramNames       <- traverse parseParam (getPredicateParams predicate)
+  body             <- parseExpr =<< predicate .: "body"
+  ruleMetadata     <- parseRuleMetadata predicate
+  pure $ Predicate ruleMetadata paramNames body
     where
       getPredicateParams predicateNode = predicateNode ^.. ix "params" % values % ix "param" % _Object
 
@@ -491,7 +508,7 @@ parsePredicateAppArg arg =
 parsePredicateApp ::  A.Object -> Parser Expr
 parsePredicateApp predApp = do
     predicate <- parseExpr =<< predApp .: "predicate"
-    args <- traverse parsePredicateAppArg (predApp `getObjectsAtField` "args")
+    args      <- traverse parsePredicateAppArg (predApp `getObjectsAtField` "args")
     pure $ PredApp predicate args
 
 parseFunApp :: A.Object -> Parser Expr
@@ -520,6 +537,26 @@ parseLiteral literalExprCtor literalNode = do
 {----------------------
     Utils
 -----------------------}
+
+{- | The input must be a node with the @WithSpecificMetadataBlock@ fragment in the Langium grammar.
+-}
+getDescriptionFromNodeWithSpecificMetadataBlock :: A.Object -> Maybe Text
+getDescriptionFromNodeWithSpecificMetadataBlock node  = node ^? ix "metadata" % ix "description" % ix "value" % _String
+
+tryParseTransparency :: A.Object -> Parser Transparency
+tryParseTransparency (getTransparency -> Just "Opaque")      = pure Opaque
+tryParseTransparency (getTransparency -> Just "Transparent") = pure Transparent
+tryParseTransparency _                                       = pure Transparent
+
+getTransparency :: A.Object -> Maybe Text
+getTransparency node = node ^? ix "transparency" % ix "$type" % _String
+
+parseRuleMetadata :: A.Object -> Parser RuleMetadata
+parseRuleMetadata node = do
+  description  <- node .:? "description"
+  originalRuleRef  <- extractOriginalRuleRef node
+  transparency     <- tryParseTransparency node
+  pure $ RuleMetadata{originalRuleRef, transparency, description}
 
 {- | Gets/Makes the Name of an NamedElement node
       that has both a `name` and `nodePath` key.

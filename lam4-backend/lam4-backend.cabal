@@ -49,6 +49,11 @@ library
         Lam4.Expr.Parser
         Lam4.Parser.Type
         Lam4.Parser.Monad
+        Lam4.Expr.ConEvalAST
+        Lam4.Expr.ToConcreteEvalAST
+        Lam4.Expr.SymEvalAST
+        Lam4.Expr.ToSimala
+    other-modules:
 
 
     build-depends:
@@ -66,7 +71,8 @@ library
         bytestring,
         either,
         pretty-show,
-        grisette >= 0.8
+        grisette >= 0.8,
+        simala
 
 
 

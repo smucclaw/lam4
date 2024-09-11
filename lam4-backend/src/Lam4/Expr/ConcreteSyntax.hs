@@ -1,3 +1,9 @@
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
+
 {-
 TODO:
 * Add Builtin list operations
@@ -5,11 +11,12 @@ TODO:
 module Lam4.Expr.ConcreteSyntax
   (
   -- re-exports from common syntax
-    TypeExpr(..) 
+    TypeExpr(..)
   , BuiltinType(..)
-  , RowTypeDecl
+  , RowTypeDecl(..)
   -- * Decl and convenience constructors
   , Decl
+  , DeclF(..)
   , mkStatementBlockDecl
   , mkSingletonStatementDecl
   , mkRecordDecl
@@ -24,6 +31,10 @@ module Lam4.Expr.ConcreteSyntax
   -- * Statements
   , Statement(..)
   , DeonticModal(..)
+
+  -- * Traversals
+  , exprSubexprs
+  , exprSubexprsVL
 )
   where
 
@@ -34,7 +45,7 @@ import           Lam4.Expr.Name         (Name (..))
 
 -- a Name can refer to an Expr or a Statement (but note that not all kinds of Statements can have names)
 
-type Decl = DeclF Expr TypeDecl
+type Decl = DeclF Expr
 
 -- TODO: Think about whether to use pattern synonyms instead, re the following constructor functions
 
@@ -44,8 +55,8 @@ mkStatementBlockDecl name statements = NonRec name $ StatementBlock statements
 mkSingletonStatementDecl :: Name -> Statement -> Decl
 mkSingletonStatementDecl name statement = mkStatementBlockDecl name $ singleton statement
 
-mkRecordDecl :: Name -> [RowTypeDecl] -> [Name] -> Maybe Text -> Decl
-mkRecordDecl recordName rowTypeDecls parents description = TypeDecl recordName (RecordDecl rowTypeDecls parents description)
+mkRecordDecl :: Name -> [RowTypeDecl] -> [Name] -> RecordDeclMetadata -> Decl
+mkRecordDecl recordName rowTypeDecls parents recordDeclMetadata = TypeDecl recordName (RecordDecl rowTypeDecls parents recordDeclMetadata)
 
 
 {-
@@ -58,16 +69,18 @@ TODO:
 data Expr
   = Var        Name
   | Lit        Lit
+  | Cons       Expr Expr                           -- list cons
   | List       [Expr]                              -- construct a list
   | Unary      UnaryOp Expr
   | BinExpr    BinOp Expr Expr
   | IfThenElse Expr Expr Expr
   -- TODO: Not Yet Implemented / need to think more about what collection types to support
+  -- TODO: Add Cons after have wired up to an evaluator
   -- | ListExpr   ListOp [Expr]
   | FunApp     Expr [Expr]
   | Record     (Row Expr)                          -- record construction
   | Project    Expr Name                           -- record projection
-  | Fun        [Name] Expr (Maybe OriginalRuleRef) -- Function
+  | Fun        RuleMetadata [Name] Expr            -- Function
   | Let        Decl Expr
   | StatementBlock  (NonEmpty Statement)
 
@@ -78,7 +91,8 @@ data Expr
   | NormIsInfringed Name                           -- NormIsInfringed NameOfNorm.
                                                    -- This is a predicate that checks if @nameOfNorm@ is violated (users can supply unique identifiers for Deontics and IfThenOtherwise statements that contain a Deontic)
 
-  | Predicate  [Name] Expr (Maybe OriginalRuleRef) -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
+-- TODO: Add type sigs into ConcreteSyntax
+  | Predicate  RuleMetadata [Name] Expr            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
   | PredApp    Expr [Expr]
 
   {--------------------------
@@ -89,7 +103,7 @@ data Expr
   because they're useful for certain sorts of analyses;
   but not sure that we really want them
   -}
-  -- The currently supported Sigs are 'ONE' Sigs
+  -- The currently supported Sigs are 'ONE' Sigs (and only those)
   | Sig        [Name] [Expr]                       -- Sig parents relations
   -- Sep 2024: Join is currently disabled; de-emphasizing these things for now
   -- | Join       Expr Expr                           -- Relational join
@@ -180,8 +194,8 @@ data Lit
 data Statement = IfStatement Expr Statement    [Statement]  -- If   Condition Then         Otherwise
                | Norm        Name DeonticModal Action       -- Norm Agent     DeonticModal Action
     deriving stock (Show, Eq, Ord)                          -- will think about how to add deadline(s) only in v2 / v3
-    
-                                                       
+
+
 {- | Actions can be given a name with the `Decl` construct
 Think of an ActionBlock as a function with side effects / a function where the statements in the body are PrimActions
 (and where a block of actions corresponds to 'sequencing' them in the usual 'imperative language' way)
@@ -195,7 +209,7 @@ ACTION `pay for bike`
 will become a non-recursive Decl with a StatementBlock consisting of an ActionBlock with an empty list of PrimActions.
 
 (Such 'opaque' actions / events are often enough to model a lot of things;
-see the SLEEC work, e.g. "Normative Requirements Operationalization with Large Language Models", for some nice examples of this. 
+see the SLEEC work, e.g. "Normative Requirements Operationalization with Large Language Models", for some nice examples of this.
 This is also a common pattern / idiom in formal modelling in general.)
 
 But for certain modelling purposes, we may want richer structure; e.g.
@@ -220,7 +234,7 @@ ACTION TransferMoolah = DO {
 
 ------------------
 
-TODO: 
+TODO:
   * Think about adding an `unknown` variant, a la https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/master/UnknownDL.hs
 -}
 data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock NameOfThisActionBlock Params Body(of PrimAction)
@@ -229,10 +243,40 @@ data Action = ActionBlock     (Maybe Name) [Name] [PrimAction] -- ActionBlock Na
   deriving stock (Show, Eq, Ord)
 
 -- | TODO: Not sure tt we really want ActionRefs in the concrete syntax
-data PrimAction = Assign      Name   Expr     
-                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action) 
+data PrimAction = Assign      Name   Expr
+                | ActionRef   Name                 -- ActionRef Name (that resolves to an Decl of an Action)
   deriving stock (Show, Eq, Ord)
 
 -- | Can add prohibitions as sugar in the future
 data DeonticModal = Obligation | Permission
   deriving stock (Eq, Show, Ord)
+
+makePrisms ''Expr
+
+{- | https://www.michaelpj.com/blog/2020/08/02/lenses-for-tree-traversals.html
+"you give it a function that does stuff to subterms,
+and it will give you one that does that to all the subterms of a particular term" -}
+exprSubexprsVL :: TraversalVL' Expr Expr
+exprSubexprsVL f = \case
+  -- Exprs with sub-exprs
+  Cons first rest                    -> Cons <$> f first <*> f rest
+  List xs                            -> List <$> traverse f xs
+  Unary op expr                      -> Unary op <$> f expr
+  BinExpr op left right              -> BinExpr op <$> f left <*> f right
+  IfThenElse cond thn els            -> IfThenElse <$> f cond <*> f thn <*> f els
+  FunApp fun args                    -> FunApp <$> f fun <*> traverse f args
+  Record rows                        -> Record <$> traverse (\(name, expr) -> (name,) <$> f expr) rows
+  Project record label               -> Project <$> f record <*> pure label
+  Fun ruleMetadata args body         -> Fun ruleMetadata args <$> f body
+  Let decl body                      -> Let decl <$> f body
+  Predicate ruleMetadata params body -> Predicate ruleMetadata params <$> f body
+  PredApp predicate args             -> PredApp <$> f predicate <*> traverse f args
+  Sig parents relations              -> Sig parents <$> traverse f relations
+
+  StatementBlock statements          -> undefined -- TODO
+
+  -- Exprs w/o sub-exprs: Var, Lit, NormIsInfringed, Relation
+  x                                  -> pure x
+
+exprSubexprs :: Traversal' Expr Expr
+exprSubexprs = traversalVL exprSubexprsVL

@@ -1,5 +1,6 @@
 // Demonstrates the various kinds of infix predicate application
 
+-- A Person is pretty much what you would expect
 STRUCTURE Person {}
 
 GIVEN (x: Person 

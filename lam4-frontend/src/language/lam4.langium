@@ -114,32 +114,38 @@ ToplevelElement:
        Metadata
 ======================================== */
 
-GeneralMetadataBlock:
-    '{'
-        properties+=MetadataKVPair+
-    '}'
-;
-MetadataKey returns string:
-    ID | "description" 
-    // | "description_for_semantic_parser"
-;
+// GeneralMetadataBlock:
+//     '{'
+//         properties+=MetadataKVPair+
+//     '}'
+// ;
+// MetadataKey returns string:
+//     ID | "description" 
+//     // | "description_for_semantic_parser"
+// ;
 
-MetadataKVPair:
-    name=MetadataKey ':' value=MetadataValue
-;
+// MetadataKVPair:
+//     name=MetadataKey ':' value=MetadataValue
+// ;
 
-MetadataValue:
-    GeneralMetadataBlock | ListOfMetadataValues | Literal
-;
+// MetadataValue:
+//     GeneralMetadataBlock | ListOfMetadataValues | Literal
+// ;
 
-ListOfMetadataValues:
-    '[' value+=Literal 
-        (',' value+=Literal)* ']'
-;
+// ListOfMetadataValues:
+//     '[' value+=Literal 
+//         (',' value+=Literal)* ']'
+// ;
 
+
+// Sep 2024 -- Limiting the metadata keys / don't allow for arbitrary metadata key-value pairs in the short term.
 SpecificMetadataBlock:
     '/-'
-        properties+=MetadataKVPair+
+        // 'About' instead of 'about' b/c that feels more in line with legal style
+        // TODO: not sure if we want the delimiters to be double quotes
+        ("About:" description=StringLiteral)?
+        
+        // TODO: Add constructs for annotating / adjusting what the rendered explanations look like
     '-/'
 ;
 
@@ -163,6 +169,10 @@ ParamTypePair:
 
 // ------- PredicateDecl, FunDecl -------
 
+// Sep 2024: Now trying to be more selective about where this sort of key-value metadata can be inserted, 
+// because I'm not sure that a key-value syntax is really the best for this,
+// because this simplifies some of the downstream parsing, 
+// and because it feels safer to be more selective till we are sure we need it
 fragment WithSpecificMetadataBlock:
     metadata=SpecificMetadataBlock
 ;
@@ -174,8 +184,9 @@ OriginalRuleRef:
 
 // a terse FunDecl
 FunDecl:
+    description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
@@ -191,9 +202,9 @@ FunDecl:
 // a predicate amounts to a special case of a function; 
 // namely, a function whose return type is Boolean
 PredicateDecl:
+    description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
-    
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
 
     GivenParamBlock?
     'DECIDE' name=IDOrBackTickedID 
@@ -538,22 +549,23 @@ type CustomType = SigDecl | RecordDecl;
 // ;
 
 RowType:
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
+    description=SINGLELINE_METADATA_ANNOTATION?
 
     name=IDOrBackTickedID 
     (':' | 'IS_A') 
     value=TypeAnnot
-    description=SINGLELINE_METADATA_ANNOTATION?
+
 ;
 
 Relation:
-    WithSpecificMetadataBlock?
+    // WithSpecificMetadataBlock?
+    description=SINGLELINE_METADATA_ANNOTATION?
 
     name=ID 
     // optional?='?'? 
     (':' | 'IS_A') 
     relatum=TypeAnnot // TODO: Support plural relata 
-    description=SINGLELINE_METADATA_ANNOTATION?
 ;
 
 // Not expecting non-programmers to understand the more complicated type annotations in the textual form
