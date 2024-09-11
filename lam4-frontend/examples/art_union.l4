@@ -1,0 +1,60 @@
+// WIP attempt at formalizing https://legislation.nsw.gov.au/view/html/inforce/current/sl-2020-0304#sec.4
+// This piece of legislation has been formalized in YScript (see 'Coding in YScript') and Catala (https://github.com/CatalaLang/catala-examples/blob/8a70c64ffc37d3f597ec07c44b5fa5a81b22f61e/NSW_community_gaming/nsw_art_union.catala_en). 
+// For that reason, it makes for a good point of comparison between the various legal DSLs.
+
+// I want to eventually figure out how best to handle constructs like <x means ...> 
+// and how best to render the relevant constructs and structures in a more 'first-order', less technical way.
+// But first, let's just start by getting the basic logic down.
+
+// Questions:
+// * If we're trying to produce an interview/questionnaire, how best to handle the 'is a gaming activity an art union gaming activity' transition? How to figure out what exactly should be asked? How to pass values along?
+
+
+STRUCTURE VoluntaryAssociation {
+  // purpose: TODO
+}
+STRUCTURE ArtUnion {
+
+}
+
+
+STRUCTURE GamingActivity {}
+
+// The challenge with rendering this: distinguishing between (i) a description for programmers working with this structure and (ii) a description we might use when 'rendering' it 
+/- 
+About: "Info about an Art Union (more precisely, an art union gaming activity)"
+@As_defined_by `Art Union Gaming Activity`
+-/
+STRUCTURE ArtUnionGamingActivity SPECIALIZES GamingActivity {
+  -- The art union that this gaming activity is associated with
+  art_union: ArtUnion
+  -- How much the gross proceeds are
+  gross_proceeds: Integer
+  proceeds_to_the_benefitting_org: Integer
+  -- How much can be won from the prize pool.
+  prize_pool: Integer
+}
+
+§3
+GIVEN (association: VoluntaryAssociation)
+DECIDE `is an Art Union`
+IF association `was formed to raise funds for a charitable organisation or non-profit organisation or an object of a genuinely public or charitable character`
+
+// This can be rendered as: "A voluntary association is an Art Union if it was formed to raise funds for a charitable organisation or non-profit organisation or an object of a genuinely public or charitable character"
+// TODO: Think about how to annotate that VoluntaryAssociations should be referred to as 'voluntary association'
+
+GIVEN (association: VoluntaryAssociation)
+DECIDE `was formed to raise funds for a charitable organisation or non-profit organisation or an object of a genuinely public or charitable character`
+IF True // TODO
+
+
+§4: `Art Union Gaming Activity`
+GIVEN (gaming_activity: GamingActivity)
+DECIDE `is an art union gaming activity`
+IF gaming_activity `is the awarding of prizes by lot by an art union`
+
+
+
+// `The awarding of prizes by lot by the art union (an art union gaming activity) is a permitted gaming activity for the purposes of section 10 of the Act`
+// IF art_union`s` proceeds_to_the_benefitting_org >= art_union`s` gross_proceeds * 30 / 100
+// TODO

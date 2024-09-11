@@ -138,6 +138,8 @@ ToplevelElement:
 // ;
 
 
+ExplainWithDetails: {infer WithDetails} '@explain_with_details';
+
 // Sep 2024 -- Limiting the metadata keys / don't allow for arbitrary metadata key-value pairs in the short term.
 SpecificMetadataBlock:
     '/-'
@@ -145,6 +147,9 @@ SpecificMetadataBlock:
         // TODO: not sure if we want the delimiters to be double quotes
         ("About:" description=StringLiteral)?
         
+        ("@As_defined_by" as_defined_by=[Rule:IDOrBackTickedID])?
+
+        explain_with_details=ExplainWithDetails? 
         // TODO: Add constructs for annotating / adjusting what the rendered explanations look like
     '-/'
 ;
@@ -185,7 +190,7 @@ OriginalRuleRef:
 // a terse FunDecl
 FunDecl:
     description=SINGLELINE_METADATA_ANNOTATION?
-    originalRuleRef=OriginalRuleRef?
+    ruleRefInfo=RuleRefInfo?
     // WithSpecificMetadataBlock?
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
@@ -203,7 +208,7 @@ FunDecl:
 // namely, a function whose return type is Boolean
 PredicateDecl:
     description=SINGLELINE_METADATA_ANNOTATION?
-    originalRuleRef=OriginalRuleRef?
+    ruleRefInfo=RuleRefInfo?
     // WithSpecificMetadataBlock?
 
     GivenParamBlock?
@@ -423,6 +428,12 @@ Decrement:
     left=[NamedElement:IDOrBackTickedID] ('-=' | 'decreases_by') right=Expr
 ;
 
+// TODO: Need to override scoping for this
+RuleRefInfo:
+    originalRuleRef=OriginalRuleRef (':' name=IDOrBackTickedID)?
+;
+
+
 fragment OrigRuleRefWithOptionalName:
     originalRuleRef=OriginalRuleRef (':' name=IDOrBackTickedID)?
 ;
@@ -582,6 +593,8 @@ PrimitiveTypeAnnot:
 CustomTypeDef:
     annot = [CustomType:ID]
 ;
+
+type Rule = PredicateDecl | FunDecl;
 
 type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm; 
 
