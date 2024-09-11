@@ -5,6 +5,14 @@ A legal DSL that is, at its core, a functional expression language, but that als
 * incorporate solver / automated reasoning capabilities, so that you can ask questions like, what needs to happen for me to be able to make this insurance claim (probably coming soon)
 * offer a 'low-code', intuitive GUI with an AI (+ PL / program synthesis / formal methods methods)-powered Copilot (on the long-term roadmap)
 
+## How to compile Lam4 files
+
+Use the `lam4-cli`.
+
+EG, from the root `lam4` dir: 
+
+> `cabal run lam4-cli -- examples/arithmetic.l4`
+
 ## How to build
 
 This will be simpler soon enough, once I've set up a Nix environment etc. But in the meantime:
@@ -34,7 +42,7 @@ The goal is to get something that
 
 If you don't need to use record field access or predicate declarations, you can paste the grammar into the playground (https://langium.org/playground/) to see the generated parser in action.
 
-### To build / generate
+### To build / generate the Langium frontend parser
 
 If you do need either of those:
 
