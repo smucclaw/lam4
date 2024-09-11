@@ -26,6 +26,7 @@ common defaults
 
 executable lam4-cli
     import:           defaults
+    ghc-options:      -threaded
     main-is:          Main.hs
     other-modules:
           Base 
@@ -39,10 +40,14 @@ executable lam4-cli
         , optparse-applicative
         , pretty-show
         , optics
+        , lens
         , mtl
         , transformers-base
         , lam4-backend
         , simala
+        , filepath
+        , bytestring
+        , lens-regex-pcre
 
     hs-source-dirs:   app
     default-language: GHC2021
