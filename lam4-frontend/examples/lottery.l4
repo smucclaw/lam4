@@ -1,4 +1,4 @@
-/- @about "Info about a lottery." -/
+/- About: "Info about a lottery." -/
 STRUCTURE Lottery {
   -- how much can be won from the jackpot.
   total_jackpot: Integer
