@@ -23,6 +23,11 @@ export async function getProgramAst(fileName: string) {
     return program;
 } 
 
+export function consoleLogAST(ast: string) {
+    const prettiedStr = chalk.cyan("<ast_from_frontend>" + ast + "</ast_from_frontend>");
+    console.log(prettiedStr);
+}
+
 export async function toMinimalAst(fileName: string, opts: GenerateOptions) {
     const noMetadataSerializationConfig = {
         space: 4,
@@ -36,6 +41,8 @@ export async function toMinimalAst(fileName: string, opts: GenerateOptions) {
     const noMetadataAstString = serializeProgramToJson(program, noMetadataSerializationConfig) as string;
     const astJsonOutPath = writeToDisk(noMetadataAstString, fileName, 
         "", opts.destination);
+
+    consoleLogAST(noMetadataAstString);
     console.log(chalk.green(`AST without source metadata serialized to JSON at ${astJsonOutPath}`));
 
 }
@@ -47,6 +54,13 @@ export const toAstAction = async (fileName: string, opts: GenerateOptions): Prom
     // console.log(chalk.green(`JavaScript code generated successfully: ${generatedFilePath}`));
 
     const astString = serializeProgramToJson(program) as string;
+    consoleLogAST(astString);
+
+    // for quick debugging
+    // const parsedJson = JSON.parse(astString);
+    // console.log(chalk.cyan(JSON.stringify(parsedJson, null, 2)));
+
+
     const astJsonOutPath = writeToDisk(astString, fileName, "_with_source_metadata", opts.destination);
     console.log(chalk.green(`AST serialized to JSON at ${astJsonOutPath}`));
 };

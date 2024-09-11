@@ -20,12 +20,7 @@ const DEFAULT_SERIALIZATION_CONFIG: JsonSerializeOptions =
 export function serializeProgramToJson(program: Program, serializationConfig: JsonSerializeOptions = DEFAULT_SERIALIZATION_CONFIG): JSONString {
     const services = createLam4Services(NodeFileSystem).lam4Services;
     
-    const astJson = services.serializer.JsonSerializer.serialize(program, serializationConfig);
-
-    // for quick debugging
-    const parsedJson = JSON.parse(astJson);
-    console.log(chalk.cyan(JSON.stringify(parsedJson, null, 2)));
-    
+    const astJson = services.serializer.JsonSerializer.serialize(program, serializationConfig);    
     return astJson as JSONString;
 }
 
