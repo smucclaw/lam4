@@ -1,7 +1,0 @@
-/- @about "Info about a lottery." -/
-STRUCTURE Lottery {
-  -- how much can be won from the jackpot.
-  total_jackpot: Integer
-  -- whether buying tickets from this lottery is tax deductible.  
-  `tax deductible status`: Boolean
-}

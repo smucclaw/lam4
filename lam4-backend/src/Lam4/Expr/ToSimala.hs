@@ -10,6 +10,9 @@ module Lam4.Expr.ToSimala (
 
     -- * Utilities to work with simala terms
   , render
+
+  , SimalaProgram
+  , SimalaDecl
 ) where
 
 import           Base
@@ -23,6 +26,9 @@ import           Lam4.Expr.Name           (Name (..))
 import           Data.Bifunctor           (bimap)
 import qualified Simala.Expr.Render       as SM
 import qualified Simala.Expr.Type         as SM
+
+type SimalaDecl = SM.Decl
+type SimalaProgram = [SM.Decl]
 
 defaultTransparency :: SM.Transparency
 defaultTransparency = SM.Transparent
@@ -58,12 +64,12 @@ compileBinOp = \case
   Modulo -> SM.Modulo
 
 
-compile  :: [AST.ConEvalDecl] -> [SM.Decl]
+compile  :: [AST.ConEvalDecl] -> SimalaProgram
 compile decls = decls
   & filter (\case { TypeDecl{} -> False; _ -> True })
   & map compileDecl
 
-compileDecl :: AST.ConEvalDecl -> SM.Decl
+compileDecl :: AST.ConEvalDecl -> SimalaDecl
 compileDecl = \case
 
   ------------------------------------

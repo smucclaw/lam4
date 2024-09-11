@@ -1,0 +1,8 @@
+cradle:
+  multi:
+    - path: "./lam4-backend/src"
+      config: { cradle: { cabal: { component: "lib:lam4-backend" } } }
+    - path: "./lam4-cli/app"
+      config: { cradle: { cabal: { component: "exe:lam4-cli" } } }
+    - path: "./lam4-frontend"
+      config: { cradle: { none } }

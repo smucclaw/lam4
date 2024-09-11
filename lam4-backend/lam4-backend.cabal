@@ -76,22 +76,22 @@ library
 
 
 
-executable lam4-backend
+-- executable lam4-backend
 
-    import:           defaults
-    main-is:          Main.hs
+--     import:           defaults
+--     main-is:          Main.hs
 
-    -- Modules included in this executable, other than Main.
-    -- other-modules:
+--     -- Modules included in this executable, other than Main.
+--     -- other-modules:
 
-    default-language: GHC2021
+--     default-language: GHC2021
 
-    hs-source-dirs:   app
-    build-depends:
-        base,
-        optparse-applicative,
-        bytestring,
-        lam4-backend
+--     hs-source-dirs:   app
+--     build-depends:
+--         base,
+--         optparse-applicative,
+--         bytestring,
+--         lam4-backend
 
 -- test-suite lam4-backend-test
 --     import:           defaults
