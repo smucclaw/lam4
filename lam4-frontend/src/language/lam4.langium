@@ -137,11 +137,15 @@ ToplevelElement:
 //         (',' value+=Literal)* ']'
 // ;
 
+
 // Sep 2024 -- Limiting the metadata keys / don't allow for arbitrary metadata key-value pairs in the short term.
 SpecificMetadataBlock:
     '/-'
-        "@about" description=StringLiteral
-        // TODO: maybe adjust this not to require quotes?
+        // 'About' instead of 'about' b/c that feels more in line with legal style
+        // TODO: not sure if we want the delimiters to be double quotes
+        ("About:" description=StringLiteral)?
+        
+        // TODO: Add constructs for annotating / adjusting what the rendered explanations look like
     '-/'
 ;
 
