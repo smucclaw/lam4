@@ -379,6 +379,10 @@ UnaryExpr:
     op=(OpMinus | OpNot) value=Expr
 ;
 
+ReportAnnot:
+    "@Report" value=ToplevelElement
+;
+
 /* ============================
     Statements
 =============================== */
@@ -572,6 +576,10 @@ Relation:
     relatum=TypeAnnot // TODO: Support plural relata 
 ;
 
+/* ========================================
+       TypeAnnot
+=========================================== */
+
 // Not expecting non-programmers to understand the more complicated type annotations in the textual form
 // This would be visualized / rendered in more accessible ways for non-programmers
 TypeAnnot:
@@ -586,6 +594,10 @@ PrimitiveTypeAnnot:
 CustomTypeDef:
     annot = [CustomType:ID]
 ;
+
+/* ========================================
+       NamedElement, ToplevelStatement
+=========================================== */
 
 type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm; 
 
@@ -610,7 +622,7 @@ BuiltinTypeAnnot returns string:
 
 /* ========================================
         LITERALS
-======================================== */
+========================================== */
 
 // Literal: IntegerLiteral | StringLiteral | BooleanLiteral;
 
@@ -630,9 +642,9 @@ BooleanLiteral:
 //     INT ('.' INT)?;
 
 
-/* ========================================
+/* =======================================
         TERMINALS
-======================================== */
+========================================== */
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
