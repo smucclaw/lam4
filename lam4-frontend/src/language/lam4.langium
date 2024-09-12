@@ -393,7 +393,11 @@ StatementRef:
     value=[Statement:IDOrBackTickedID]
 ;
 
-/* For top level var declarations (as opposed to within the context of a LET) */
+/* For top level var declarations (as opposed to within the context of a LET ... IN) 
+   TODO: Not clear that we really want `DEFINE` surface syntax for this. Alternatives include:
+        * FACT ...
+        * LET (but without IN)
+*/
 VarDeclStmt:
     description=SINGLELINE_METADATA_ANNOTATION?
     'DEFINE' Var
@@ -608,7 +612,7 @@ BuiltinTypeAnnot returns string:
         LITERALS
 ======================================== */
 
-Literal: IntegerLiteral | StringLiteral | BooleanLiteral;
+// Literal: IntegerLiteral | StringLiteral | BooleanLiteral;
 
 IntegerLiteral:
     value=INTEGER
