@@ -5,4 +5,5 @@ sumIntegers(x, y) = x + y
 DECIDE `some predicate`
 IF sumIntegers(1, 2) > 2
 
-@REPORT `some predicate` HOLDS? // HOLDS? only works for nullary predicates
+@REPORT `some predicate` HOLDS? 
+// HOLDS? only works for nullary predicates
