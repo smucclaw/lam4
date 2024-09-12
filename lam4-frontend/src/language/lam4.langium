@@ -230,7 +230,9 @@ IDOrBackTickedID returns string:
 ;
 
 
-// ------- Expr -------
+/* ============================
+    Expr
+=============================== */
 
 Expr:
     OrExpr | LetExpr | RecordExpr
@@ -337,17 +339,23 @@ FunctionApplication:
 ;
 
 // sugar for func app, when doing *concrete* evaluation
+// Also probably want to add syntactic sugar for stuff like X `pred` Y.
 // TODO: I'm not sure that it's worth having two different styles of syntax for InfixPredicateApplication, sigh
 InfixPredicateApplication: 
-   ( args+=[NamedElement:ID] 'IS'? predicate=Expr ) // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
-   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=Expr )
+   ( args+=[NamedElement:ID] 'IS'? predicate=[PredicateDecl:IDOrBackTickedID]
+ ) // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
+   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID]
+ )
 ;
 
 InfixActionApplication:
-   ( (args+=[NamedElement:IDOrBackTickedID])
+    ( (args+=[NamedElement:IDOrBackTickedID])
     | ( '(' args+=Expr (',' args+=Expr)* ')' ) 
     )
-   action=[ActionDecl:IDOrBackTickedID]
+    ("DOES" | "DO") 
+    // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication. 
+    // TODO: When time permits, probably want to just overload the surface syntax for action/predicate application and use type inference to distinguish them?
+    action=[ActionDecl:IDOrBackTickedID]
 ;
 
 // sugar for a predicate that checks if the referenced norm is violated
@@ -400,7 +408,8 @@ StatementRef:
 ;
 
 /* For top level var declarations (as opposed to within the context of a LET ... IN) 
-   TODO: Not clear that we really want `DEFINE` surface syntax for this. Alternatives include:
+   TODO: Not clear that we really want `DEFINE` surface syntax for this, given that the sorts of "Definitions" one sees in legal texts are more like type declarations
+   Alternatives include:
         * FACT ...
         * LET (but without IN)
 */

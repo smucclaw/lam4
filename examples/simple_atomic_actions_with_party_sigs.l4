@@ -4,5 +4,5 @@ ONE CONCEPT Seller {}
 ACTION `pay for bike`
 ACTION `transfer bike to Buyer`
 
-IF        Buyer `pay for bike`
+IF        Buyer DOES `pay for bike`
 THEN      Seller MUST `transfer bike to Buyer`

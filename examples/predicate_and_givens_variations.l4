@@ -2,7 +2,6 @@ STRUCTURE Person {
     age: Integer
 }
 
-GIVEN ()
 DECIDE `pred blah blah`
 // use the backtick syntax when you want an identifier with spaces
 IF True
