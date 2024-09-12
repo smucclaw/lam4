@@ -107,7 +107,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | SigDecl | PredicateDecl | FunDecl | ToplevelStatement | ReportAnnot
+    RecordDecl | SigDecl | PredicateDecl | FunDecl | ToplevelStatement | ReportDecl
 ;
 
 /* ========================================
@@ -390,7 +390,7 @@ UnaryExpr:
 
 // Denotes entrypoint / what to evaluate. Basically Simala's #eval
 // TODO: Not sure about the 'Report' surface syntax
-ReportAnnot:
+ReportDecl:
     "@REPORT" value=Expr
 ;
 
