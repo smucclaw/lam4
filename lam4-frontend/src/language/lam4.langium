@@ -331,11 +331,15 @@ Join infers Expr:
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
+fragment ExprArgs: 
+    '(' (args+=Expr)? (',' args+=Expr)* ')'
+;
+
 // with postfix predicate application as a special case of this, when doing *concrete* evaluation
 FunctionApplication:
     PrimitiveExpr
     ({infer FunctionApplication.func=current}
-    ('(' args+=Expr* ')'))*
+    ExprArgs)*
 ;
 
 // sugar for func app, when doing *concrete* evaluation
@@ -345,7 +349,7 @@ InfixPredicateApplication:
    ( args+=[NamedElement:ID] 'IS'? predicate=[PredicateDecl:IDOrBackTickedID]
     ) 
     // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
-   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID] )
+   | ( ExprArgs ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID] )
    | (predicate=[PredicateDecl:IDOrBackTickedID] 'HOLDS?') // for nullary predicates
 ;
 
