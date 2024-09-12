@@ -2,6 +2,7 @@ import { type Module, inject } from 'langium';
 import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
 import { Lam4GeneratedModule, Lam4GeneratedSharedModule } from './generated/module.js';
 import { Lam4Validator, registerValidationChecks } from './lam4-validator.js';
+import { Lam4ValueConverter } from "./lam4-value-converter.js"
 import { Lam4ScopeProvider, Lam4ScopeComputation } from './lam4-scope.js';
 import { Lam4HoverProvider } from './lsp/lam4-hover-provider.js';
 import {WithNamedEltRefPathJsonSerializer} from "./lam4-json-serializer.js";
@@ -27,6 +28,9 @@ export type Lam4Services = LangiumServices & Lam4AddedServices
  * selected services, while the custom services must be fully specified.
  */
 export const Lam4Module: Module<Lam4Services, PartialLangiumServices & Lam4AddedServices> = {
+    parser: {
+        ValueConverter: () => new Lam4ValueConverter()
+    },
     validation: {
         Lam4Validator: () => new Lam4Validator()
     },
