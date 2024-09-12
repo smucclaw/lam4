@@ -16,7 +16,7 @@ import qualified Lam4.Expr.ConcreteSyntax      as CST (Decl)
 import           Lam4.Expr.Parser              (parseProgramByteStr)
 import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            (SimalaProgram)
-import qualified Lam4.Expr.ToSimala            as ToSimala (compile, render)
+import qualified Lam4.Expr.ToSimala            as ToSimala (compile, render, doEvalDeclsTracing, TraceMode(..), emptyEnv)
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
 import           System.FilePath               ((</>))
@@ -38,13 +38,23 @@ frontendConfig = MkFrontendConfig { runner      = "node"
 -- TODO: Think about exposing a tracing option?
 data Options =
   MkOptions
-    { files   :: [FilePath]
+    { tracing :: ToSimala.TraceMode
+    , files   :: [FilePath]
     }
+
+-- | Copied from Simala
+toTracingMode :: String -> ToSimala.TraceMode
+toTracingMode "full"    = ToSimala.TraceFull
+toTracingMode "results" = ToSimala.TraceResults
+toTracingMode "off"     = ToSimala.TraceOff
+toTracingMode _         = ToSimala.TraceFull
+
 
 optionsDescription :: Options.Parser Options
 optionsDescription =
   MkOptions
-  <$> many (strArgument (metavar ".l4 FILES..."))
+  <$> (toTracingMode <$> strOption (long "tracing" <> help "Tracing, one of \"off\", \"full\" (default), \"results\"") <|> pure ToSimala.TraceResults)
+  <*> many (strArgument (metavar ".l4 FILES..."))
 
 optionsConfig :: Options.ParserInfo Options
 optionsConfig =
@@ -65,17 +75,21 @@ main = do
           smDecls = ToSimala.compile . cstProgramToConEvalProgram $ cstDecls
       print "------- CST -------------"
       pPrint cstDecls
-      print "-------- Simala ---------"
+      print "-------- Simala exprs ---------"
       putStr $ T.unpack $ ToSimala.render smDecls
+      print "-------------------------------"
+      -- TODO: What to do if no explicit Eval?
+      _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv smDecls
+      pure ()
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
 getCSTJsonFromFrontend config files = do
   let argsForFrontendCLI = config.args <> files
-  ret@(exitCode :: ExitCode, StdoutRaw rawstdout, StderrRaw err) <- run $ cmd config.runner
+  (exitCode :: ExitCode, StdoutRaw rawstdout, StderrRaw err) <- run $ cmd config.runner
     & addArgs argsForFrontendCLI
   case exitCode of
     ExitFailure _ ->
-      error (ppShow ret)
+      error ("Frontend parser failed:\n" <> ppShow err)
       -- TODO: Improve the error reporting
     ExitSuccess ->
       pure $ concat $ rawstdout ^.. cstJsonTraversal

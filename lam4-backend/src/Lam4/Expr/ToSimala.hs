@@ -4,34 +4,43 @@ module Lam4.Expr.ToSimala (
     -- * Entry point
     compile
 
-    -- * Helpers
+    -- * Compile Helpers
   , compileDecl
   , compileExpr
 
-    -- * Utilities to work with simala terms
+    -- * Utilities to work with simala terms (basically a copy and paste)
   , render
 
+    -- * Convenient type aliases
   , SimalaProgram
   , SimalaDecl
+
+  -- re-exports
+  , SM.doEvalDeclsTracing
+  , SM.TraceMode(..)
+  , SM.emptyEnv
 ) where
 
 import           Base
 import qualified Base.Text                as T
-import           Lam4.Expr.ConEvalAST     as AST
 import           Lam4.Expr.CommonSyntax   (BinOp (..), RuleMetadata (..),
                                            Transparency (..), UnaryOp (..))
 import           Lam4.Expr.ConcreteSyntax as CST (Lit (..))
+import           Lam4.Expr.ConEvalAST     as AST
 import           Lam4.Expr.Name           (Name (..))
 -- import qualified Simala.Expr.Parser       as SM
 import           Data.Bifunctor           (bimap)
+import qualified Simala.Expr.Evaluator    as SM (doEvalDeclsTracing)
 import qualified Simala.Expr.Render       as SM
-import qualified Simala.Expr.Type         as SM
+import qualified Simala.Expr.Type         as SM 
+
+
+defaultTransparency :: SM.Transparency
+defaultTransparency = SM.Opaque
+
 
 type SimalaDecl = SM.Decl
 type SimalaProgram = [SM.Decl]
-
-defaultTransparency :: SM.Transparency
-defaultTransparency = SM.Transparent
 
 lam4ToSimalaName :: Name -> SM.Name
 lam4ToSimalaName (MkName name unique) = name <> "_" <> T.pack (show unique)
@@ -87,12 +96,11 @@ compileDecl = \case
   NonRec name fun@(Fun ruleMetadata _ _) -> SM.NonRec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
   Rec name fun@(Fun ruleMetadata _ _)    -> SM.Rec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
 
-  NonRec name expr -> SM.NonRec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
-  Rec name expr    -> SM.Rec SM.Transparent (lam4ToSimalaName name) (compileExpr expr)
+  NonRec name expr -> SM.NonRec defaultTransparency (lam4ToSimalaName name) (compileExpr expr)
+  Rec name expr    -> SM.Rec defaultTransparency (lam4ToSimalaName name) (compileExpr expr)
+  Eval expr        -> SM.Eval (compileExpr expr)
   -- TODO: Improve the error handling later
   TypeDecl{}       -> error "[ToSimala] Type declarations not supported in Simala and should already have been pre-filtered out, prior to this phase"
-
-
 
 
 compileExpr :: AST.ConEvalExpr -> SM.Expr

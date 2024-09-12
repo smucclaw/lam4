@@ -27,6 +27,7 @@ The parsing/translation in Parser.hs preserves well-scopedness etc
   ----------
     TODOs
   ----------
+  * Improve error logging -- this is probably the place that needs that the most
   * Find a way to automatedly keep the Langium grammar in sync with this backend parser.
       * At the very least, write property based tests
 
@@ -166,13 +167,12 @@ initializeEnvs nodePaths programElementValues = do
         setRecordLabelEnv recordLabelAssocList
 
 
-{-| Constructor for @Decl@s.
+{-| Constructor for non-ReportDecl @Decl@s (TODO: Clean this up later).
 Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
-mkDecl :: Text -> Name -> Expr -> Decl
-mkDecl typeOfNode name expr =
-  if has (contains typeOfNode) recursiveTypes
-  then Rec name expr
-  else NonRec name expr
+mkNonEvalDecl :: Text -> Name -> Expr -> Decl
+mkNonEvalDecl typeOfNode name expr
+  | has (contains typeOfNode) recursiveTypes = Rec name expr
+  | otherwise = NonRec name expr
 
 parseDecls :: [A.Object] -> Parser [Decl]
 parseDecls = traverse parseDecl
@@ -184,12 +184,13 @@ parseDecl obj = do
     -- non-expr, non-statement decls
     "VarDeclStmt" -> parseVarDecl obj
     "RecordDecl"  -> parseRecordDecl obj
+    "ReportDecl"  -> Eval <$> parseExpr (getValueFieldOfNode obj)
 
     -- exprs
     _ ->  do
       expr <- parseExpr obj
       name <- getName obj
-      pure $ mkDecl eltType name expr
+      pure $ mkNonEvalDecl eltType name expr
 
 {----------------------
     parseExpr
@@ -204,7 +205,7 @@ parseExpr node = do
     -- literals
     "IntegerLiteral" -> parseIntegerLiteral node
     -- "StringLiteral"  -> parseLiteral StringLit node
-    "BooleanLiteral" -> parseLiteral BoolLit node
+    "BooleanLiteral" -> parseBooleanLiteral node
 
     "LetExpr"        -> parseLet            node
     "FunDecl"        -> parseFunE           node
@@ -219,9 +220,9 @@ parseExpr node = do
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
 
-    {-  
+    {-
     * Join: Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
-    * Sig: May want to remove Sigs as well. 
+    * Sig: May want to remove Sigs as well.
             Not sure right now.
             For now, only allowing One Sig through the parser,
             and only One Sig with no Relations (which basically would be an Atom) for concrete-eval-only evaluators.
@@ -427,7 +428,7 @@ parseVarDecl varDecl = do
   let valObj = getValueFieldOfNode varDecl
   val <- parseExpr valObj
   valLangiumParserNodeType <- valObj .: "$type"
-  pure $ mkDecl valLangiumParserNodeType name val
+  pure $ mkNonEvalDecl valLangiumParserNodeType name val
 
 parseRecordDecl :: A.Object -> Parser Decl
 parseRecordDecl recordDecl = do
@@ -507,7 +508,7 @@ parsePredicateAppArg arg =
 
 parsePredicateApp ::  A.Object -> Parser Expr
 parsePredicateApp predApp = do
-    predicate <- parseExpr =<< predApp .: "predicate"
+    predicate <- parseBareRefToVar =<< predApp .: "predicate"
     args      <- traverse parsePredicateAppArg (predApp `getObjectsAtField` "args")
     pure $ PredApp predicate args
 
@@ -529,10 +530,18 @@ parseIntegerLiteral literalNode = do
       Just litVal -> pure . Lit $ IntLit litVal
       Nothing -> throwError $ "Failed to parse integer value. Node: " <> ppShow literalNode
 
-parseLiteral :: FromJSON t => (t -> Lit) -> A.Object -> Parser Expr
-parseLiteral literalExprCtor literalNode = do
-    literalVal <- literalNode .: "value"
-    return $ Lit $ literalExprCtor literalVal
+parseBooleanLiteral :: A.Object -> Parser Expr
+parseBooleanLiteral literalNode = do
+    let literalVal = literalNode ^? ix "value" % _String
+    case literalVal of
+      Just "True" -> pure . Lit $ BoolLit True
+      Just "False" -> pure . Lit $ BoolLit False
+      _ -> throwError $ "Failed to parse boolean literal. Node: " <> ppShow literalNode
+
+-- parseLiteral :: FromJSON t => (t -> Lit) -> A.Object -> Parser Expr
+-- parseLiteral literalExprCtor literalNode = do
+--     literalVal <- literalNode .: "value"
+--     return $ Lit $ literalExprCtor literalVal
 
 {----------------------
     Utils

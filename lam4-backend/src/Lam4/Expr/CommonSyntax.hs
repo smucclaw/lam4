@@ -109,6 +109,7 @@ data TypeDecl = RecordDecl [RowTypeDecl] [Name] RecordDeclMetadata -- ^ Labels P
 data DeclF expr =
     NonRec      Name expr
   | Rec         Name expr
+  | Eval        expr
   | TypeDecl    Name TypeDecl
   deriving stock (Show, Eq, Ord, Generic)
 
