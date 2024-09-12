@@ -335,17 +335,18 @@ Join infers Expr:
 FunctionApplication:
     PrimitiveExpr
     ({infer FunctionApplication.func=current}
-    ('(' args+=Expr (',' args+=Expr)* ')'))*
+    ('(' args+=Expr* ')'))*
 ;
 
 // sugar for func app, when doing *concrete* evaluation
 // Also probably want to add syntactic sugar for stuff like X `pred` Y.
-// TODO: I'm not sure that it's worth having two different styles of syntax for InfixPredicateApplication, sigh
+// TODO: I'm not sure that it's worth having all these different styles of syntax for InfixPredicateApplication, sigh
 InfixPredicateApplication: 
    ( args+=[NamedElement:ID] 'IS'? predicate=[PredicateDecl:IDOrBackTickedID]
- ) // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
-   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID]
- )
+    ) 
+    // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
+   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID] )
+   | (predicate=[PredicateDecl:IDOrBackTickedID] 'HOLDS?') // for nullary predicates
 ;
 
 InfixActionApplication:
