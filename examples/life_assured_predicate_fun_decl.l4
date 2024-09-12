@@ -7,8 +7,13 @@ STRUCTURE LifeAssured {}
 LifeAssured => Accident => Integer
 payout(life_assured, accident) = 0
   
+
 -- Checks if the life assured is eligible for a payout.
-GIVEN ()
-DECIDE `life_assured is eligible for a payout`
+GIVEN (x: LifeAssured)
+DECIDE `is eligible for a payout`
 // use the backtick syntax when you want an identifier with spaces
 IF True
+
+DEFINE x: LifeAssured = {| |}
+
+@REPORT x `is eligible for a payout`

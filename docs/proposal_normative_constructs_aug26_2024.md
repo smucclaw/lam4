@@ -158,11 +158,11 @@ ACTION `compensate Seller`
 ACTION `compensate Buyer`
 
 §1: SellerTransferObligation
-IF    Buyer `pay for bike`
+IF    Buyer DOES `pay for bike`
 THEN  Seller MUST `transfer bike to Courier within two days`
 
 §2: BikeTransportRule
-IF   Seller `transfer bike to Courier within two days`
+IF   Seller DOES `transfer bike to Courier within two days`
 THEN Courier MUST `ferry bike to Buyer within three days`
 
 // Reparations
@@ -173,7 +173,7 @@ IF   BikeTransportRule IS_INFRINGED
 THEN Courier MUST `compensate Seller`
 
 // -- or, if we want to just talk in terms of events / actions:
-// IF NOT (Courier `ferry bike to Buyer within three days`)
+// IF NOT (Courier DOES `ferry bike to Buyer within three days`)
 // THEN Courier MUST `compensate Seller`
 ```
 

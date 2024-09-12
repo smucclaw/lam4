@@ -1,0 +1,11 @@
+Unit => Integer
+f() = 3 + 5
+
+Integer => Integer
+g(x) = x * 2 - 1 / 3
+
+@REPORT g(0)
+
+@REPORT g(-1)
+
+@REPORT f()

@@ -107,7 +107,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | SigDecl | PredicateDecl | FunDecl | ToplevelStatement
+    RecordDecl | SigDecl | PredicateDecl | FunDecl | ToplevelStatement | ReportDecl
 ;
 
 /* ========================================
@@ -230,7 +230,9 @@ IDOrBackTickedID returns string:
 ;
 
 
-// ------- Expr -------
+/* ============================
+    Expr
+=============================== */
 
 Expr:
     OrExpr | LetExpr | RecordExpr
@@ -329,25 +331,36 @@ Join infers Expr:
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
+fragment ExprArgs: 
+    '(' (args+=Expr)? (',' args+=Expr)* ')'
+;
+
 // with postfix predicate application as a special case of this, when doing *concrete* evaluation
 FunctionApplication:
     PrimitiveExpr
     ({infer FunctionApplication.func=current}
-    ('(' args+=Expr (',' args+=Expr)* ')'))*
+    ExprArgs)*
 ;
 
 // sugar for func app, when doing *concrete* evaluation
-// TODO: I'm not sure that it's worth having two different styles of syntax for InfixPredicateApplication, sigh
+// Also probably want to add syntactic sugar for stuff like X `pred` Y.
+// TODO: I'm not sure that it's worth having all these different styles of syntax for InfixPredicateApplication, sigh
 InfixPredicateApplication: 
-   ( args+=[NamedElement:ID] 'IS'? predicate=Expr ) // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
-   | ( '(' args+=Expr (',' args+=Expr)* ')' ('IS' | 'ARE')? predicate=Expr )
+   ( args+=[NamedElement:ID] 'IS'? predicate=[PredicateDecl:IDOrBackTickedID]
+    ) 
+    // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
+   | ( ExprArgs ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID] )
+   | (predicate=[PredicateDecl:IDOrBackTickedID] 'HOLDS?') // for nullary predicates
 ;
 
 InfixActionApplication:
-   ( (args+=[NamedElement:IDOrBackTickedID])
+    ( (args+=[NamedElement:IDOrBackTickedID])
     | ( '(' args+=Expr (',' args+=Expr)* ')' ) 
     )
-   action=[ActionDecl:IDOrBackTickedID]
+    ("DOES" | "DO") 
+    // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication. 
+    // TODO: When time permits, probably want to just overload the surface syntax for action/predicate application and use type inference to distinguish them?
+    action=[ActionDecl:IDOrBackTickedID]
 ;
 
 // sugar for a predicate that checks if the referenced norm is violated
@@ -379,6 +392,12 @@ UnaryExpr:
     op=(OpMinus | OpNot) value=Expr
 ;
 
+// Denotes entrypoint / what to evaluate. Basically Simala's #eval
+// TODO: Not sure about the 'Report' surface syntax
+ReportDecl:
+    "@REPORT" value=Expr
+;
+
 /* ============================
     Statements
 =============================== */
@@ -393,7 +412,12 @@ StatementRef:
     value=[Statement:IDOrBackTickedID]
 ;
 
-/* For top level var declarations (as opposed to within the context of a LET) */
+/* For top level var declarations (as opposed to within the context of a LET ... IN) 
+   TODO: Not clear that we really want `DEFINE` surface syntax for this, given that the sorts of "Definitions" one sees in legal texts are more like type declarations
+   Alternatives include:
+        * FACT ...
+        * LET (but without IN)
+*/
 VarDeclStmt:
     description=SINGLELINE_METADATA_ANNOTATION?
     'DEFINE' Var
@@ -568,6 +592,10 @@ Relation:
     relatum=TypeAnnot // TODO: Support plural relata 
 ;
 
+/* ========================================
+       TypeAnnot
+=========================================== */
+
 // Not expecting non-programmers to understand the more complicated type annotations in the textual form
 // This would be visualized / rendered in more accessible ways for non-programmers
 TypeAnnot:
@@ -582,6 +610,10 @@ PrimitiveTypeAnnot:
 CustomTypeDef:
     annot = [CustomType:ID]
 ;
+
+/* ========================================
+       NamedElement, ToplevelStatement
+=========================================== */
 
 type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm; 
 
@@ -606,9 +638,9 @@ BuiltinTypeAnnot returns string:
 
 /* ========================================
         LITERALS
-======================================== */
+========================================== */
 
-Literal: IntegerLiteral | StringLiteral | BooleanLiteral;
+// Literal: IntegerLiteral | StringLiteral | BooleanLiteral;
 
 IntegerLiteral:
     value=INTEGER
@@ -626,9 +658,9 @@ BooleanLiteral:
 //     INT ('.' INT)?;
 
 
-/* ========================================
+/* =======================================
         TERMINALS
-======================================== */
+========================================== */
 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
