@@ -171,7 +171,7 @@ initializeEnvs nodePaths programElementValues = do
 Note: typeOfNode here refers to the @$type@; i.e., the type of an @AstNode@ from the Langium parser -}
 mkNonEvalDecl :: Text -> Name -> Expr -> Decl
 mkNonEvalDecl typeOfNode name expr
-  | has (contains typeOfNode) recursiveTypes = Rec name expr
+  | typeOfNode `elem` recursiveTypes = Rec name expr
   | otherwise = NonRec name expr
 
 parseDecls :: [A.Object] -> Parser [Decl]
