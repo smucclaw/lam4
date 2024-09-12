@@ -9,11 +9,11 @@ ACTION `compensate Seller`
 ACTION `compensate Buyer`
 
 §1: SellerTransferObligation
-IF    Buyer `pay for bike`
+IF    Buyer DOES `pay for bike`
 THEN  Seller MUST `transfer bike to Courier within two days`
 
 §2: BikeTransportRule
-IF   Seller `transfer bike to Courier within two days`
+IF   Seller DOES `transfer bike to Courier within two days`
 THEN Courier MUST `ferry bike to Buyer within three days`
 
 // Reparations
