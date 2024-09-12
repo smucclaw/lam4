@@ -6,9 +6,12 @@ Applicant => Integer
 numberOfPublications(applicant) = applicant`s` publications
 
 GIVEN (x IS_A Applicant)
-DECIDE `eligible for grant`
+DECIDE `is eligible for grant`
 IF NOT x`s` publications < 2
 
 GIVEN (x IS_A Applicant)
 DECIDE `happy`
-IF x IS `eligible for grant` AND NOT NOT x IS `eligible for grant` // deliberately overly complicated example
+IF x IS `is eligible for grant` AND NOT NOT x IS `is eligible for grant` // deliberately overly complicated example
+
+DEFINE x = {| publications = 3 |}
+@REPORT x `is eligible for grant`
