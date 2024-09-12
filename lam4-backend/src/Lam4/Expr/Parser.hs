@@ -390,12 +390,12 @@ parseBinOp opObj = do
 
 parseUnaryExpr :: A.Object -> Parser Expr
 parseUnaryExpr node = do
-    op <- node .: "op"
+    let op = node ^?! ix "op" ^?! ix "$type" % _String
     value <- parseExpr $ getValueFieldOfNode node
     case op of
         "OpMinus" -> pure $ Unary UnaryMinus value
         "OpNot"   -> pure $ Unary Not value
-        _         -> throwError $ "Unknown unary operator: " <> op
+        _         -> throwError $ "Unknown unary operator: " <> T.unpack op
 
 parseIfThenElse :: A.Object -> Parser Expr
 parseIfThenElse obj = do
