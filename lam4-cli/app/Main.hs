@@ -16,7 +16,7 @@ import qualified Lam4.Expr.ConcreteSyntax      as CST (Decl)
 import           Lam4.Expr.Parser              (parseProgramByteStr)
 import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            (SimalaProgram)
-import qualified Lam4.Expr.ToSimala            as ToSimala (compile, render, doEvalDeclsTracing, TraceMode(..), emptyEnv)
+import qualified Lam4.Expr.ToSimala            as ToSimala
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
 import           System.FilePath               ((</>))
