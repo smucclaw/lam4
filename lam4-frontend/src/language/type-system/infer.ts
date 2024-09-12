@@ -400,11 +400,15 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
         const predType = predicateTTagFromPredDecl(env, term);
         typeTag = check(env, term, predType);
     } else if (isInfixPredicateApplication(term)) {
-        const predType = inferType(env, term.predicate);
+        if (!term.predicate.ref) {
+            typeTag = new ErrorTypeTag(term, `Could not establish reference to predicate`);
+        }
+        
+        const predType = inferType(env, term.predicate.ref as PredicateDecl);
         if (isPredicateTTag(predType)) {
             typeTag = checkFunclikeApplication(env, term, predType);   
         } else {
-            typeTag = new ErrorTypeTag(term.predicate, `We expected a predicate type because of the predicate application, but this is not a predicate type.`);
+            typeTag = new ErrorTypeTag(term.predicate.ref as PredicateDecl, `We expected a predicate type because of the predicate application, but this is not a predicate type.`);
         }
 
     } else {
