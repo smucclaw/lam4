@@ -40,11 +40,9 @@ executable lam4-cli
         , optparse-applicative
         , pretty-show
         , optics
-        , lens
         , mtl
         , transformers-base
         , lam4-backend
-        , simala
         , filepath
         , bytestring
         , lens-regex-pcre
