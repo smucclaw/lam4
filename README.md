@@ -3,6 +3,7 @@
 A legal DSL that is, at its core, a functional expression language, but that also aims, in the long run, to
 
 * incorporate solver / automated reasoning capabilities, so that you can ask questions like, what needs to happen for me to be able to make this insurance claim (probably coming soon)
+
 * offer a 'low-code', intuitive GUI with an AI (+ PL / program synthesis / formal methods methods)-powered Copilot (on the long-term roadmap)
 
 
@@ -11,10 +12,12 @@ A legal DSL that is, at its core, a functional expression language, but that als
 This will be simpler soon enough, once I've set up a Nix environment etc. But in the meantime:
 
 You basically have to set up two things:
-1. The Langium frontend: see the detailed instructions below
-2. The Langium backend:  see the detailed instructions in the `lam4-backend` readme
 
-There will be wrapper scripts / services to make working with this more ergonomic soon enough. But in the very short term, you have to generate the AST from the lam4 frontend, and then run it through the backend parser.
+1. The Langium frontend: see the detailed instructions in the "To build / generate the Langium frontend parser" section below
+
+2. The Haskell codebase: Use GHC 9.8.2 and `cabal`.
+
+When building the Haskell codebase, if the `Grisette` dependencies complains about not having Z3 on your PATH, you may need to add it to your PATH.
 
 ## How to compile Lam4 files
 
