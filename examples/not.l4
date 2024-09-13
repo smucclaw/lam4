@@ -11,7 +11,7 @@ IF NOT x`s` publications < 2
 
 GIVEN (x IS_A Applicant)
 DECIDE `happy`
-IF x IS `is eligible for grant` AND NOT NOT x IS `is eligible for grant` // deliberately overly complicated example
+IF x `is eligible for grant` AND NOT NOT x `is eligible for grant` // deliberately overly complicated example
 
 DEFINE x = {| publications = 3 |}
 @REPORT x `is eligible for grant`
