@@ -300,7 +300,7 @@ Mult infers Expr:
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 */
 Project infers Expr:
-    FunctionApplication ({infer Project.left=current} '`s`' right=Ref)*
+    InfixPredicateApplication ({infer Project.left=current} '`s`' right=Ref)*
     // Right can't be [NamedElement:ID]
     // because we want the scoper to visit `left` first,
     // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
@@ -331,11 +331,20 @@ Join infers Expr:
     // Can prob allow for "'s" by customizing the TokenBuilder
 ;
 
+
+InfixPredicateApplication infers Expr:
+    FunctionApplication
+    ({infer InfixPredicateApplication.left = current}
+     predicate=[PredicateDecl:IDOrBackTickedID]
+     right=FunctionApplication?
+    )*
+;
+
 fragment ExprArgs: 
     '(' (args+=Expr)? (',' args+=Expr)* ')'
 ;
 
-// with postfix predicate application as a special case of this, when doing *concrete* evaluation
+
 FunctionApplication:
     PrimitiveExpr
     ({infer FunctionApplication.func=current}
@@ -345,23 +354,25 @@ FunctionApplication:
 // sugar for func app, when doing *concrete* evaluation
 // Also probably want to add syntactic sugar for stuff like X `pred` Y.
 // TODO: I'm not sure that it's worth having all these different styles of syntax for InfixPredicateApplication, sigh
-InfixPredicateApplication: 
-   ( args+=[NamedElement:ID] 'IS'? predicate=[PredicateDecl:IDOrBackTickedID]
-    ) 
-    // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
-   | ( ExprArgs ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID] )
-   | (predicate=[PredicateDecl:IDOrBackTickedID] 'HOLDS?') // for nullary predicates
-;
+// InfixPredicateApplication: 
+//    ( args+=[NamedElement:IDOrBackTickedID] 'IS'? predicate=Expr
+//     ) 
+//     // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
+//    | ( ExprArgs ('IS' | 'ARE')? predicate=Expr )
+//    | (predicate=Expr 'HOLDS?') // for nullary predicates
+// ;
 
-InfixActionApplication:
-    ( (args+=[NamedElement:IDOrBackTickedID])
-    | ( '(' args+=Expr (',' args+=Expr)* ')' ) 
-    )
-    ("DOES" | "DO") 
-    // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication. 
-    // TODO: When time permits, probably want to just overload the surface syntax for action/predicate application and use type inference to distinguish them?
-    action=[ActionDecl:IDOrBackTickedID]
-;
+
+
+// InfixActionApplication:
+//     ( (args+=[NamedElement:IDOrBackTickedID])
+//     | ( '(' args+=Expr (',' args+=Expr)* ')' ) 
+//     )
+//     ("DOES" | "DO") 
+//     // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication. 
+//     // TODO: When time permits, probably want to just overload the surface syntax for action/predicate application and use type inference to distinguish them?
+//     action=[ActionDecl:IDOrBackTickedID]
+// ;
 
 // sugar for a predicate that checks if the referenced norm is violated
 NormIsInfringed:
@@ -379,9 +390,11 @@ AnonFunction:
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixActionApplication 
+    '(' Expr ')' | AnonFunction 
+    // | InfixActionApplication 
     // InFixActionApplication must be declared before InfixPredicateApplication
-    | InfixPredicateApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    // | InfixPredicateApplication 
+    | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 

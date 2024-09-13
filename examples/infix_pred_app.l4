@@ -6,23 +6,21 @@ About: "A Person is pretty much what you would expect"
 STRUCTURE Person {}
 
 GIVEN (x: Person 
-       y: Person 
-       z: Person)
-DECIDE special
+       y: Person)
+DECIDE `has helped`
 IF True
 
 GIVEN (
     person1: Person
     person2: Person
-    person3: Person
 )
 DECIDE eligible 
-IF (person1, person2, person3) ARE special
+IF person1 `has helped` person2
 
 GIVEN (person: Person)
-DECIDE fun
+DECIDE `is fun`
 IF True
 
 GIVEN (x: Person)
 DECIDE bleh
-IF x IS fun
+IF x `is fun`
