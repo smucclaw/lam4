@@ -7,7 +7,8 @@ import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax
 import           Lam4.Expr.Name (Name(..))
 import           Data.String.Interpolate  (i)
-import qualified Text.Regex.PCRE.Heavy    as PCRE
+import           Control.Lens             ((&), (%~))
+import           Control.Lens.Regex.Text  (match, regex)
 import           Paths_lam4_backend (getDataFileName)
 
 -- GF-related stuff
@@ -37,7 +38,7 @@ myNLGEnv = do
     postprocessText :: T.Text -> T.Text
     postprocessText = newlines . tabs . rmBIND
     rmBIND :: T.Text -> T.Text
-    rmBIND = PCRE.gsub [PCRE.re|\s+&\+\s+|] ("" :: T.Text)
+    rmBIND input = input & [regex|\s+&\+\s+|] . match %~ const ""
 
     tabs :: T.Text -> T.Text
     tabs = T.map (\c -> if c == '°' then ' ' else c)

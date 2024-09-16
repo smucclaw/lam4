@@ -86,7 +86,7 @@ library
         gf,
         cgi == 3001.5.0.0,
         multipart == 0.2.0,
-        pcre-heavy,
+        lens-regex-pcre,
         string-interpolate
 
 
