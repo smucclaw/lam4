@@ -8,7 +8,7 @@ cat Lam4.hs |
     sed 's/instance Show .*//' | \
     sed 's/-- below this line machine-generated/-- below this line machine-generated\ninstance (Gf (Tree a)) => Show (Tree a) where\n    show = showExpr [] . gf/' | \
     sed 's/LANGUAGE GADTs, FlexibleInstances, KindSignatures, RankNTypes, TypeSynonymInstances/LANGUAGE GADTs, UndecidableInstances/' | \
-    sed 's/import Control.Monad.Identity/import Control.Monad.Identity (Identity ( Identity, runIdentity), MonadPlus (..), ap )/' | \
+    sed 's/import Control.Monad.Identity/import Control.Monad.Identity (Identity ( Identity, runIdentity))/' | \
     sed 's/import Data.Monoid/import Control.Monad (MonadPlus, ap, mzero, mplus)/' | \
     sed 's/import PGF hiding (Tree)/import PGF (Expr, mkApp, mkCId, mkFloat, mkInt, mkStr, showCId, showExpr, unApp, unFloat, unInt, unStr )/'  > ../src/Lam4/Render/Lam4Gf.hs
 
