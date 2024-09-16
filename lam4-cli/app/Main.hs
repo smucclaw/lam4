@@ -20,10 +20,35 @@ import           Lam4.Expr.Parser              (parseProgramByteStr)
 import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
+import qualified Lam4.Render.Render            as Render
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
 import           System.Directory
 import           System.FilePath               ((</>))
+
+--------- Temporary, just to make sure we print out something even if parser doesn't work ---------
+import           Lam4.Expr.ConcreteSyntax
+import           Lam4.Expr.CommonSyntax
+import           Lam4.Expr.Name
+
+dummyCSTdecl :: CST.Decl
+dummyCSTdecl = TypeDecl
+  (MkName "Lottery" 1)
+  (RecordDecl
+    [ MkRowTypeDecl
+        (MkName "total_    &+     jackpot" 2)
+        (BuiltinType BuiltinTypeInteger)
+        (MkRowMetadata $ Just "how much can be won from the jackpot")
+
+    , MkRowTypeDecl
+        (MkName "`tax deductible status`" 4)
+        (BuiltinType BuiltinTypeBoolean)
+        (MkRowMetadata $ Just "whether buying tickets from this lottery is tax deductible") ]
+    []
+    (RecordDeclMetadata Transparent (Just "game where you lose money"))
+  )
+--------- end temporary definitions ---------
+
 
 data FrontendConfig =
   MkFrontendConfig { frontendDir :: FilePath
@@ -112,7 +137,13 @@ main = do
       print "-------- Simala exprs ---------"
       putStr $ T.unpack $ ToSimala.render simalaProgram
       print "-------------------------------"
-
+      -- TODO: What to do if no explicit Eval?
+      _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv smDecls
+      putStrLn "-------- Natural language (sort of) ---------"
+      env <- Render.myNLGEnv
+      mapM_ (putStrLn . T.unpack) (Render.renderNL env <$> cstDecls)
+      mapM_ (putStrLn . T.unpack) (Render.renderNL env <$> [dummyCSTdecl]) -- here to make sure that something is printed out
+      pure ()
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
 getCSTJsonFromFrontend config files = do
