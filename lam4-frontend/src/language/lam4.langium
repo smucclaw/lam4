@@ -333,22 +333,37 @@ Join infers Expr:
 
 
 InfixPredicateApplication infers Expr:
-    FunctionApplication
+    PostfixPredicateApplication
     ({infer InfixPredicateApplication.left = current}
      predicate=[PredicateDecl:IDOrBackTickedID]
-     right=FunctionApplication?
+     right=PostfixPredicateApplication?
     )*
 ;
 
 fragment ExprArgs: 
-    '(' (args+=Expr)? (',' args+=Expr)* ')'
+    (args+=Expr)? (',' args+=Expr)*
+;
+
+fragment ExprArgsInParens:
+    '(' ExprArgs ')'
+;
+
+
+PostfixPredicateApplication:
+    FunctionApplication
+    ({infer PostfixPredicateApplication.predicate=current}
+
+    ( ( ('IS_SATISFIED_BY' | 'HOLDS_OF') ExprArgsInParens )
+    | 'HOLDS?' )   
+    
+    )*
 ;
 
 
 FunctionApplication:
     PrimitiveExpr
     ({infer FunctionApplication.func=current}
-    ExprArgs)*
+    ExprArgsInParens)*
 ;
 
 // sugar for func app, when doing *concrete* evaluation
