@@ -5,11 +5,11 @@ module Lam4.Render.Render where
 import qualified Base.Text                as T
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax
-import           Lam4.Expr.Name (Name(..))
+import           Lam4.Expr.Name           (Name(..))
 import           Data.String.Interpolate  (i)
 import           Control.Lens             ((&), (%~))
 import           Control.Lens.Regex.Text  (match, regex)
-import           Paths_lam4_backend (getDataFileName)
+import           Paths_lam4_backend       (getDataFileName)
 
 -- GF-related stuff
 import           Lam4.Render.Lam4Gf
