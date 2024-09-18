@@ -586,10 +586,6 @@ parseBooleanLiteral literalNode = do
       Just "False" -> pure . Lit $ BoolLit False
       _ -> throwError $ "Failed to parse boolean literal. Node: " <> ppShow literalNode
 
--- parseLiteral :: FromJSON t => (t -> Lit) -> A.Object -> Parser Expr
--- parseLiteral literalExprCtor literalNode = do
---     literalVal <- literalNode .: "value"
---     return $ Lit $ literalExprCtor literalVal
 
 {----------------------
     Utils
