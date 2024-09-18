@@ -4,11 +4,10 @@
     "version": "0.0.1",
     "license": "MIT",
     "files": [
-        "!**/.DS_Store",
-        "!**/.vscode/**",
-        "!**/.vscode-test/**",
-        "!**/.gitignore",
-        "!**/langium-quickstart.md"
+        "bin",
+        "src",
+        "out",
+        "LICENSE"
     ],
     "repository": {
         "type": "git",
@@ -26,7 +25,7 @@
     "scripts": {
         "build": "tsc -b tsconfig.src.json && node esbuild.mjs",
         "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.src.json --watch\" \"node esbuild.mjs --watch\"",
-        "lint": "eslint src --ext ts",
+        "lint": "eslint src",
         "langium:generate": "langium generate",
         "langium:watch": "langium generate --watch",
         "vscode:prepublish": "npm run esbuild-base -- --minify && npm run lint",
@@ -42,37 +41,40 @@
         "test": "vitest run"
     },
     "dependencies": {
-        "@codingame/monaco-vscode-editor-service-override": "1.83.16",
-        "@codingame/monaco-vscode-keybindings-service-override": "1.83.16",
+        "@codingame/monaco-vscode-editor-service-override": "9.0.3",
+        "@codingame/monaco-vscode-keybindings-service-override": "9.0.3",
         "chalk": "~5.3.0",
-        "commander": "~11.0.0",
-        "langium": "~3.0.0",
-        "monaco-editor": "npm:@codingame/monaco-editor-treemended@1.83.16",
-        "monaco-editor-workers": "~0.44.0",
-        "monaco-editor-wrapper": "~3.5.0",
-        "monaco-languageclient": "~7.2.0",
-        "ts-pattern": "^5.2.0",
+        "commander": "~12.1.0",
+        "langium": "~3.2.0",
+        "monaco-editor": "npm:@codingame/monaco-editor-treemended@1.85.6",
+        "monaco-editor-workers": "~0.45.0",
+        "monaco-editor-wrapper": "~5.5.3",
+        "monaco-languageclient": "~8.8.3",
+        "ts-pattern": "^5.3.1",
         "tslog": "^4.9.3",
         "vscode-languageclient": "~9.0.1",
         "vscode-languageserver": "~9.0.1"
     },
     "devDependencies": {
-        "@types/node": "^18.0.0",
-        "@types/vscode": "~1.67.0",
-        "@typescript-eslint/eslint-plugin": "~6.4.1",
-        "@typescript-eslint/parser": "~6.4.1",
-        "concurrently": "~8.2.1",
-        "esbuild": "^0.19.12",
-        "eslint": "~8.47.0",
-        "langium-cli": "~3.0.0",
-        "typescript": "~5.1.6",
-        "vite": "~4.4.11",
-        "vitest": "~1.4.0",
-        "vscode": "npm:@codingame/monaco-vscode-api@1.83.16"
+        "@eslint/js": "^9.10.0",
+        "@types/eslint__js": "^8.42.3",
+        "@types/node": "^22.5.5",
+        "@types/vscode": "~1.93.0",
+        "@typescript-eslint/eslint-plugin": "~8.6.0",
+        "@typescript-eslint/parser": "~8.6.0",
+        "concurrently": "~9.0.1",
+        "esbuild": "^0.23.1",
+        "eslint": "~9.10.0",
+        "langium-cli": "~3.2.0",
+        "typescript": "~5.6.0",
+        "typescript-eslint": "^8.6.0",
+        "vite": "~5.4.6",
+        "vitest": "~2.1.1",
+        "vscode": "npm:@codingame/monaco-vscode-api@9.0.3"
     },
     "displayName": "lam4",
     "engines": {
-        "vscode": "^1.67.0",
+        "vscode": "^1.93.0",
         "node": ">=18.0.0"
     },
     "categories": [

@@ -1,6 +1,6 @@
-import {DefaultJsonSerializer, LangiumDocument, type LangiumCoreServices, type AstNode, } from "langium";
+import {DefaultJsonSerializer, type LangiumCoreServices, type AstNode, } from "langium";
 import type {JsonSerializeOptions} from "langium";
-import {isNamedElement, NamedElement} from "./generated/ast.js";
+import {NamedElement} from "./generated/ast.js";
 
 
 export class WithNamedEltRefPathJsonSerializer extends DefaultJsonSerializer {
@@ -12,7 +12,7 @@ export class WithNamedEltRefPathJsonSerializer extends DefaultJsonSerializer {
     override replacer(key: string, value: unknown, options: JsonSerializeOptions): unknown {
         // Only need to add nodePath to NamedElements, 
         // since refs will be only to NamedElements
-        if (Object.hasOwn(value as Object, "name")) {
+        if (Object.hasOwn(value as object, "name")) {
             // Might need to add more URI handling
             (value as NamedElement & {"nodePath": string})["nodePath"] = "#" + this.astNodeLocator.getAstNodePath(value as AstNode);
         }

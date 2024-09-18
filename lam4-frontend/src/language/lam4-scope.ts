@@ -1,10 +1,10 @@
 import type {LangiumCoreServices} from "langium";
 import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, DefaultScopeProvider, EMPTY_SCOPE, ReferenceInfo, Scope } from "langium";
 import { Logger } from "tslog";
-import { SigDecl, RecordDecl, Project } from "./generated/ast.js";
+import { RecordDecl, Project } from "./generated/ast.js";
 import {isProjectExpr} from "./lam4-lang-utils.js";
 import { getRecordAncestors, inferType, TypeEnv } from "./type-system/infer.js";
-import { isRecordTTag, isSigTTag } from "./type-system/type-tags.js";
+import { isRecordTTag } from "./type-system/type-tags.js";
 
 const scopeLogger = new Logger({ 
   name: "scoper",

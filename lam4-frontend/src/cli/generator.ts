@@ -1,7 +1,6 @@
 import { JSONString } from '../utils.js';
 import type { Program } from '../language/generated/ast.js';
 // import { expandToNode, joinToNode, toString } from 'langium/generate';
-import chalk from 'chalk';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { extractDestinationAndName } from './cli-util.js';
