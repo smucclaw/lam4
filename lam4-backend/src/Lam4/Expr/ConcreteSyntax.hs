@@ -4,10 +4,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-{-
-TODO:
-* Add Builtin list operations
--}
+
 module Lam4.Expr.ConcreteSyntax
   (
   -- re-exports from common syntax
