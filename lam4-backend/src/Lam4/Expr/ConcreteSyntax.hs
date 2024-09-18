@@ -9,7 +9,7 @@ module Lam4.Expr.ConcreteSyntax
   (
   -- re-exports from common syntax
     TypeExpr(..)
-  , BuiltinType(..)
+  , TyBuiltin(..)
   , RowTypeDecl(..)
   -- * Decl and convenience constructors
   , Decl
@@ -53,7 +53,7 @@ mkSingletonStatementDecl :: Name -> Statement -> Decl
 mkSingletonStatementDecl name statement = mkStatementBlockDecl name $ singleton statement
 
 mkRecordDecl :: Name -> [RowTypeDecl] -> [Name] -> RecordDeclMetadata -> Decl
-mkRecordDecl recordName rowTypeDecls parents recordDeclMetadata = TypeDecl recordName (RecordDecl rowTypeDecls parents recordDeclMetadata)
+mkRecordDecl recordName rowTypeDecls parents recordDeclMetadata = DataDecl recordName (RecordDecl rowTypeDecls parents recordDeclMetadata)
 
 
 {-

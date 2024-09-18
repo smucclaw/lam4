@@ -27,7 +27,7 @@ toConEvalDecl = \case
   CST.NonRec name expr       -> AST.NonRec name (toConEvalExpr expr)
   CST.Rec name expr          -> AST.Rec name (toConEvalExpr expr)
   CST.Eval expr              -> AST.Eval (toConEvalExpr expr)
-  CST.TypeDecl name typedecl -> AST.TypeDecl name typedecl
+  CST.DataDecl name typedecl -> AST.DataDecl name typedecl
 
 toConEvalExpr :: CST.Expr -> AST.ConEvalExpr
 toConEvalExpr expression =

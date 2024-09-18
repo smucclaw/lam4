@@ -254,7 +254,7 @@ parseExpr node = do
     TypeExpr and Relation related
 -----------------------------------}
 
-parseBuiltinType :: Text -> Parser BuiltinType
+parseBuiltinType :: Text -> Parser TyBuiltin
 parseBuiltinType = \case
     "Integer" -> pure BuiltinTypeInteger
     "String"  -> pure BuiltinTypeString
@@ -266,10 +266,10 @@ parseTypeExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "CustomTypeDef" -> do
       name <- relabelBareRef $ coerce $ node `objAtKey` "annot"
-      pure $ CustomType name
+      pure $ TyCustom name
     "BuiltinType"   -> do
       builtinType <- parseBuiltinType =<< (node .: "annot" :: Parser Text)
-      pure $ BuiltinType builtinType
+      pure $ TyBuiltin builtinType
     other           -> throwError $ "unrecognized type"  <> T.unpack other
 
 parseRelation :: Name -> A.Object -> Parser Expr
