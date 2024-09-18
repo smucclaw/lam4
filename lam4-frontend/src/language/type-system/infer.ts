@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*
 This is a simple bidirectional type checker modelled along the lines of 
 that in David Christansen's tutorial.
@@ -11,14 +12,13 @@ Status, as of Jul 8 2024:
     to support a more type-safe scoping mechanism for record field access / joins.
     
 Biggest TODOs:
-    * Augment Lam4 parser and type checker with support for type annotations with more structure, e.g. "(A => B) => C" 
-    * Think about rewriting / desguaring FunDecls to a more convenient representation (esp. re param types)
-    * Support LET
-    * Support anon func
-    * The type inference/checking is currently only triggered from the scoper when certain constructs are present --- need to wire it up more systematically.
-    * Think about treating records as tuples or arrays / desugaring them into that
-        * Keep a bidir mapping between anme of field and pos in tuple
-        * 
+    - Augment Lam4 parser and type checker with support for type annotations with more structure, e.g. "(A => B) => C" 
+    - Think about rewriting / desguaring FunDecls to a more convenient representation (esp. re param types)
+    - Support LET
+    - Support anon func
+    - The type inference/checking is currently only triggered from the scoper when certain constructs are present --- need to wire it up more systematically.
+    - Think about treating records as tuples or arrays / desugaring them into that
+        - Keep a bidir mapping between anme of field and pos in tuple
 
 Some intuition on bidirectional typechecking, for those unfamiliar with it:
 -----------------------------------------------------------------------------
@@ -42,7 +42,7 @@ Some intuition on bidirectional typechecking, for those unfamiliar with it:
     * https://www.reddit.com/r/ProgrammingLanguages/comments/v3z7r8/comment/ib32xpr/ points out that this does save you from having to 
     annotate function args when using higher order functions
 */
-
+/* eslint-enable */
 
 import { AstNode, Reference, isReference } from "langium";
 
@@ -50,7 +50,7 @@ import {
     isExpr,
     Expr,
     Param,
-    SigDecl, isSigDecl, StringLiteral, BooleanLiteral, IntegerLiteral,TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
+    SigDecl, isSigDecl, StringLiteral, BooleanLiteral, IntegerLiteral,TypeAnnot, isRelation, BuiltinType, CustomTypeDef, isParamTypePair, isIfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
     isFunctionApplication,
     PredicateDecl,
     isPredicateDecl,
@@ -69,7 +69,7 @@ import {
     isRecordDecl,
     IDOrBackTickedID,
     isRowType} from "../generated/ast.js";
-import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, isSigTTag, isRelationTTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag, isRecordTTag, RecordTTag, RowTypeTTag} from "./type-tags.js";
+import { TypeTag, ErrorTypeTag, StringTTag, IntegerTTag, isBooleanTTag, FunctionDeclTTag, isFunctionDeclTTag, PredicateTTag, isPredicateTTag, SigTTag, BooleanTTag, FunctionParameterTypePair, PredicateParameterTypePair, isErrorTypeTag, RelationTTag, UnitTTag, isUnitTTag, FunOrPredDeclTTag, ParamlessFunctionTTag, isParamlessFunctionTTag, isRecordTTag, RecordTTag, RowTypeTTag} from "./type-tags.js";
 import type {FunctionParameterTypePairSequence} from "./type-tags.js";
 import { isProjectExpr } from "../lam4-lang-utils.js";
 
@@ -187,13 +187,13 @@ function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | Bu
     // Inductive case
     } else if (annot.$type === "TypeAnnot") {
         typecheckLogger.trace(`[synthTypeAnnot -- inductive]`);
-        let argTypes = [inferType(env, annot.left)];
+        const argTypes = [inferType(env, annot.left)];
         let rightmost = annot.right;
 
         while (!isBasecaseTypeAnnot(rightmost) && !isBasecaseFunctionTypeAnnot(rightmost)) {
             rightmost = (rightmost as TypeAnnot).right;
 
-            let newArgType = inferType(env, (rightmost as TypeAnnot).left);
+            const newArgType = inferType(env, (rightmost as TypeAnnot).left);
             argTypes.push(newArgType);
         }
 
@@ -472,6 +472,7 @@ function checkFunType(env: TypeEnv, parameters: FunctionParameterTypePairSequenc
     return check(newExtendedEnv, body, returnType);
 }
 
+/* eslint-disable */
 const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
     match([term, type])
         .with([P._, P.when(isErrorTypeTag)],
@@ -508,11 +509,11 @@ const check = (env: TypeEnv, term: AstNode, type: TypeTag): TypeTag =>
                 return iteChecksPass ? type : new ErrorTypeTag(ite, "Type error in if-then-else expression (a more helpful error msg is possible with more work)");
             })
         .otherwise(([term, type]) => {
-            let termType = inferType(env, term);
+            const termType = inferType(env, term);
             return termType.sameTypeAs(type) ? type : new ErrorTypeTag(term, "Type error");
             // TODO in the future: isSubtype(termType, type) ? type : new ErrorTypeTag(term, "Type error");
         });
-
+/* eslint-enable */
 
 /* ===========================
  *      Utils 
@@ -527,7 +528,7 @@ function getAncestors(sigOrRecord: SigOrRecordDecl): SigOrRecordDecl[] {
     const toVisit: SigOrRecordDecl[] = [sigOrRecord];
 
     while (toVisit.length > 0) {
-        let next: SigOrRecordDecl | undefined = toVisit.pop();
+        const next: SigOrRecordDecl | undefined = toVisit.pop();
         if (!next) break; // TODO: temp hack cos TS can't narrow based on length out of box
 
         if (!seen.has(next)) {

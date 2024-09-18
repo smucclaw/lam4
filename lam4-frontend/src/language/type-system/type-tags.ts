@@ -9,7 +9,6 @@ import {
     RecordDecl,
     isRecordDecl,
     IDOrBackTickedID,
-    TypeAnnot,
     RowType
 } from "../generated/ast.js"; 
 import { zip } from "../../utils.js"

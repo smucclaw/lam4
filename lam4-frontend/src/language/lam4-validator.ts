@@ -1,6 +1,8 @@
-import type { ValidationAcceptor, ValidationChecks } from 'langium';
+import type { 
+    // ValidationAcceptor, 
+    ValidationChecks } from 'langium';
 import type { Lam4AstType } from './generated/ast.js';
-import {ToplevelElement, isNamedElement, isToplevelElement} from './generated/ast.js';
+// import {ToplevelElement, isNamedElement, isToplevelElement} from './generated/ast.js';
 import type { Lam4Services } from './lam4-module.js';
 
 /**
