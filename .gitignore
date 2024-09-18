@@ -25,3 +25,4 @@ cabal.project.local~
 node_modules
 
 /generated/
+lam4-frontend/generated/
