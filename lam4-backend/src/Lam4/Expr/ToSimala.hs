@@ -75,7 +75,7 @@ compileBinOp = \case
 
 compile  :: [AST.ConEvalDecl] -> SimalaProgram
 compile decls = decls
-  & filter (\case { TypeDecl{} -> False; _ -> True })
+  & filter (\case { DataDecl{} -> False; _ -> True })
   & map compileDecl
 
 compileDecl :: AST.ConEvalDecl -> SimalaDecl
@@ -100,7 +100,7 @@ compileDecl = \case
   Rec name expr    -> SM.Rec defaultTransparency (lam4ToSimalaName name) (compileExpr expr)
   Eval expr        -> SM.Eval (compileExpr expr)
   -- TODO: Improve the error handling later
-  TypeDecl{}       -> error "[ToSimala] Type declarations not supported in Simala and should already have been pre-filtered out, prior to this phase"
+  DataDecl{}       -> error "[ToSimala] Type declarations not supported in Simala and should already have been pre-filtered out, prior to this phase"
 
 
 compileExpr :: AST.ConEvalExpr -> SM.Expr

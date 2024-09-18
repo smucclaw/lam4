@@ -84,8 +84,12 @@ data BinOp
   deriving (Mergeable, ExtractSym, EvalSym) via (Default BinOp)
 
 data TypeExpr
-  = CustomType  Name
-  | BuiltinType BuiltinType
+  = TyCustom  Name
+    -- ^ aka "CustomType" from the Langium grammar
+  | TyBuiltin TyBuiltin
+    -- ^ aka "BuiltinType" from the Langium grammar
+  | TyFun     TypeExpr TypeExpr
+    -- ^ functions
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeExpr)
 
@@ -96,23 +100,23 @@ data RowTypeDecl = MkRowTypeDecl { name      :: Name
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default RowTypeDecl)
 
-data BuiltinType = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
+data TyBuiltin = BuiltinTypeString | BuiltinTypeInteger | BuiltinTypeBoolean
   deriving stock (Eq, Show, Ord, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default BuiltinType)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default TyBuiltin)
 
 -- TODO: Think about stuffing other metadata here too?
-data TypeDecl = RecordDecl [RowTypeDecl] [Name] RecordDeclMetadata -- ^ Labels Parents Description RecordDeclMetadata
+data DataDecl = RecordDecl [RowTypeDecl] [Name] RecordDeclMetadata -- ^ Labels Parents Description RecordDeclMetadata
   deriving stock (Eq, Show, Ord, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default TypeDecl)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default DataDecl)
 
 -- | Basically a 'Binding'
 data DeclF expr =
     NonRec      Name expr
   | Rec         Name expr
   | Eval        expr
-  | TypeDecl    Name TypeDecl
+  | DataDecl    Name DataDecl
   deriving stock (Show, Eq, Ord, Generic)
 
 makePrisms ''TypeExpr
-makePrisms ''TypeDecl
+makePrisms ''DataDecl
 makePrisms ''DeclF

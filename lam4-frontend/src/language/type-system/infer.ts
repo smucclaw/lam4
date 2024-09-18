@@ -47,15 +47,17 @@ Some intuition on bidirectional typechecking, for those unfamiliar with it:
 import { AstNode, Reference, isReference } from "langium";
 
 import { 
+    isExpr,
+    Expr,
     Param,
     SigDecl, isSigDecl, StringLiteral, BooleanLiteral, IntegerLiteral,TypeAnnot, isRelation, Relation, isBuiltinType, BuiltinType, isCustomTypeDef, CustomTypeDef, isParamTypePair, isIfThenElseExpr, isComparisonOp, isBinExpr, BinExpr, FunDecl, isFunDecl, 
     isFunctionApplication,
     PredicateDecl,
     isPredicateDecl,
     Ref,
-    Join,
     Project,
     FunctionApplication,
+    PostfixPredicateApplication,
     InfixPredicateApplication,
     isInfixPredicateApplication,
     UnaryExpr,
@@ -113,6 +115,7 @@ export class TypeEnv {
         return new TypeEnv(newEnvMap);
     }
 }
+
 
 /* =====================================
  *            Synth 
@@ -423,18 +426,27 @@ export function synthNewNode(env: TypeEnv, term: AstNode): TypeTag {
  *      Check 
  * =========================== */
 
-export type FunclikeApplication = InfixPredicateApplication | FunctionApplication;
+export type FunclikeApplication = InfixPredicateApplication | PostfixPredicateApplication | FunctionApplication;
 
 /** Check that Γ |- arg : expected type, for each of the (arg, expected type) pairs */
 function checkFunclikeApplication(env: TypeEnv, term: FunclikeApplication, inferredFunOrPredDeclTTag: FunOrPredDeclTTag) {
     let typeTag: TypeTag  = new ErrorTypeTag(term, 'Could not check fun / pred application');
     const inferredArgTypes = inferredFunOrPredDeclTTag.getParameterTypePairs().getTypes();
 
-    const args = term.args.map(arg => isReference(arg) ? arg.ref : arg).filter(arg => arg) as AstNode[];
+    // Desugar the args
+    let args;
+    if (isInfixPredicateApplication(term)) {
+        args = [term.left, term.right].filter(arg => isExpr(arg)) as Expr[];
+    } else {
+        args = term.args.map(arg => isReference(arg) ? arg.ref : arg).filter(arg => arg) as AstNode[];
+    }
+
+    // arg length check
     if (args.length !== inferredArgTypes.length) {
         return new ErrorTypeTag(term, "Number of args do not match the number of declared params (there may have been an unlinked reference)");
     }
     
+    // Check that the synthed types agree with the expected types
     let checkPassed = true;
     for (const [arg, expectedType] of zip(args, inferredArgTypes)) {
         const checkRetType = check(env, arg as AstNode, expectedType as TypeTag);

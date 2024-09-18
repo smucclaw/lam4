@@ -1,0 +1,20 @@
+// Demonstrates postfix predicate application
+
+/- 
+About: "A Person is pretty much what you would expect"
+-/
+STRUCTURE Person { some_number IS_A Integer }
+
+Integer => Integer
+f(x) = 2
+
+DECIDE `some fact`
+IF True
+
+GIVEN (person: Person)
+DECIDE `is eligible`
+IF `some fact` HOLDS?
+AND f(1) + person`s` some_number EQUALS 2
+
+DEFINE x: Person = {| some_number = 1 |}
+@REPORT x `is eligible`

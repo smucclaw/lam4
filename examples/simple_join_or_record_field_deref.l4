@@ -8,9 +8,9 @@ Applicant => Integer
 numberOfPublications(applicant) = applicant`s` publications
 
 GIVEN (x IS_A Applicant)
-DECIDE `eligible for grant`
+DECIDE `is eligible for grant`
 IF x`s` publications > 10
 
 GIVEN (x IS_A Applicant)
 DECIDE `happy`
-IF x IS `eligible for grant`
+IF x `is eligible for grant`

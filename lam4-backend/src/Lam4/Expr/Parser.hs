@@ -98,7 +98,21 @@ relabelBareRef = relabelRefHelper getRefPath getRefText
     getRefPath node = node ^? ix "$ref" % _String
     getRefText node = node ^? ix "$refText" % _String
 
-{- | Relabel an object that is a ('wrapped') `Ref` to a `Name` -}
+{- | Relabel an object that is a ('wrapped') `Ref` to a `Name`.
+
+An example of a 'wrapped' Ref:
+  @
+  {
+    "$type": "Ref",
+    "value": {
+        "$ref": "#/elements@2",
+        "$refText": "some fact"
+    }
+  }
+  @
+
+A wrapped Ref differs from a bare/unwrapped one in that the underlying bare ref is tucked into the @value@ field.
+-}
 relabelRef :: WrappedRef -> Parser Name
 relabelRef wrappedRef = relabelRefHelper getRef getRefText (coerce wrappedRef)
   where
@@ -114,7 +128,7 @@ relabelRefHelper getRefPath getRefText (MkRef node) = do
     (Just refPath', Just refText') -> do
       refUnique <- refPathToUnique refPath'
       pure $ MkName refText' refUnique
-    _ -> throwError $ ppShow node <> " impossible"
+    _ -> throwError $ "[relabelRefHelper]\n" <> ppShow node <> " impossible"
 
 {----------------------
     Program
@@ -213,7 +227,8 @@ parseExpr node = do
     "PredicateDecl"  -> parsePredicateE     node
 
     "FunctionApplication"       -> parseFunApp node
-    "InfixPredicateApplication" -> parsePredicateApp node
+    "InfixPredicateApplication" -> parseInfixPredicateApp node
+    "PostfixPredicateApplication" -> parsePostfixPredicateApp node
 
     "BinExpr"        -> parseBinExpr        node
 
@@ -239,7 +254,7 @@ parseExpr node = do
     TypeExpr and Relation related
 -----------------------------------}
 
-parseBuiltinType :: Text -> Parser BuiltinType
+parseBuiltinType :: Text -> Parser TyBuiltin
 parseBuiltinType = \case
     "Integer" -> pure BuiltinTypeInteger
     "String"  -> pure BuiltinTypeString
@@ -251,10 +266,10 @@ parseTypeExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "CustomTypeDef" -> do
       name <- relabelBareRef $ coerce $ node `objAtKey` "annot"
-      pure $ CustomType name
+      pure $ TyCustom name
     "BuiltinType"   -> do
       builtinType <- parseBuiltinType =<< (node .: "annot" :: Parser Text)
-      pure $ BuiltinType builtinType
+      pure $ TyBuiltin builtinType
     other           -> throwError $ "unrecognized type"  <> T.unpack other
 
 parseRelation :: Name -> A.Object -> Parser Expr
@@ -506,11 +521,44 @@ parsePredicateAppArg arg =
   then parseExpr arg
   else parseBareRefToVar (coerce arg)
 
-parsePredicateApp ::  A.Object -> Parser Expr
-parsePredicateApp predApp = do
+{- | Sep 18 2024: I'm desugaring this to PredApp, instead of adding a separate InfixPredApp construct,
+because having a more faithful concrete syntax is not the priority right now. 
+But will add that when time permits, since it is useful for things like rendering, synchronization, automated refactoring.
+-}
+parseInfixPredicateApp ::  A.Object -> Parser Expr
+parseInfixPredicateApp predApp = do
     predicate <- parseBareRefToVar =<< predApp .: "predicate"
+    left  <- parseExpr  =<< predApp .: "left"
+    -- the @right@ may not be present
+    right <- traverse parseExpr $ predApp ^? ix "right" % _Object
+    pure $ case right of
+      Just rightExpr -> 
+        let args = [left, rightExpr]
+        in PredApp predicate args
+      Nothing ->
+        PredApp predicate [left]
+
+{- | Example of a PostfixPredicateApplication node (Sep 18 2024):
+
+    @
+    {
+        "$type": "PostfixPredicateApplication",
+        "predicate": {
+            "$type": "Ref",
+            "value": {
+                "$ref": "#/elements@2",
+                "$refText": "some fact"
+            }
+        }
+    }
+    @
+-}
+parsePostfixPredicateApp ::  A.Object -> Parser Expr
+parsePostfixPredicateApp predApp = do
+    predicate <- parseRefToVar =<< predApp .: "predicate"
     args      <- traverse parsePredicateAppArg (predApp `getObjectsAtField` "args")
     pure $ PredApp predicate args
+
 
 parseFunApp :: A.Object -> Parser Expr
 parseFunApp funApp = do
@@ -538,10 +586,6 @@ parseBooleanLiteral literalNode = do
       Just "False" -> pure . Lit $ BoolLit False
       _ -> throwError $ "Failed to parse boolean literal. Node: " <> ppShow literalNode
 
--- parseLiteral :: FromJSON t => (t -> Lit) -> A.Object -> Parser Expr
--- parseLiteral literalExprCtor literalNode = do
---     literalVal <- literalNode .: "value"
---     return $ Lit $ literalExprCtor literalVal
 
 {----------------------
     Utils

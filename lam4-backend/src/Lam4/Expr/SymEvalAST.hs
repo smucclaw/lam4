@@ -11,7 +11,7 @@ import           Base.Grisette
 
 import           Lam4.Expr.Name (Name (..))
 import           Lam4.Expr.CommonSyntax
-import           Lam4.Expr.ConcreteSyntax qualified as CST (Lit (..), Decl)
+-- import           Lam4.Expr.ConcreteSyntax qualified as CST (Lit (..), Decl)
 
 {-================================================
           For symbolic eval

@@ -300,7 +300,7 @@ Mult infers Expr:
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 */
 Project infers Expr:
-    FunctionApplication ({infer Project.left=current} '`s`' right=Ref)*
+    InfixPredicateApplication ({infer Project.left=current} '`s`' right=Ref)*
     // Right can't be [NamedElement:ID]
     // because we want the scoper to visit `left` first,
     // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
@@ -311,57 +311,58 @@ Project infers Expr:
 /* ---------------------------------------------------
 Aug 24 2024: Join is currently disabled; 
 am porting what I currently have for Join to Project
--------------------------------------------------------
-TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
+-------------------------------------------------------*/
 
-(To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 
-The relationship between relational join and a more conventional member access operator:
-    Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
-*/
-Join infers Expr:
-    FunctionApplication ({infer Join.left=current} '`s`' right=Ref)*
-    // Right can't be [NamedElement:ID]
-    // because we want the scoper to visit `left` first,
-    // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
-    // This allows us to then use that resolved reference
-    // as a base case in figuring out the reference for `right`
-
-    // TODO: 's and `s don't work out of the box
-    // Can prob allow for "'s" by customizing the TokenBuilder
+InfixPredicateApplication infers Expr:
+    InfixActionApplication
+    (
+        {infer InfixPredicateApplication.left = current}
+        predicate=[PredicateDecl:IDOrBackTickedID]
+        right=InfixActionApplication?
+    )*
 ;
+
+InfixActionApplication infers Expr:
+    PostfixPredicateApplication
+    (
+        {infer InfixActionApplication.left = current}
+        ("DOES" | "DO") 
+        // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication.
+        // TODO: Might want to just overload the surface syntax for action/predicate application and use type annotations / inference to distinguish them?
+        // Also, may want to add an infix fun app and then use Langium actions to desugar this to an infix fun app?
+        action=[ActionDecl:IDOrBackTickedID]
+        right=PostfixPredicateApplication?
+    )*
+;
+
 
 fragment ExprArgs: 
-    '(' (args+=Expr)? (',' args+=Expr)* ')'
+    (args+=Expr)? (',' args+=Expr)*
 ;
 
-// with postfix predicate application as a special case of this, when doing *concrete* evaluation
+fragment ExprArgsInParens:
+    '(' ExprArgs ')'
+;
+
+
+PostfixPredicateApplication:
+    FunctionApplication
+    ({infer PostfixPredicateApplication.predicate=current}
+
+    ( ( ('IS_SATISFIED_BY' | 'HOLDS_OF') ExprArgsInParens )
+    | 'HOLDS?' )   
+    
+    )*
+;
+
+
 FunctionApplication:
     PrimitiveExpr
     ({infer FunctionApplication.func=current}
-    ExprArgs)*
+    ExprArgsInParens)*
 ;
 
-// sugar for func app, when doing *concrete* evaluation
-// Also probably want to add syntactic sugar for stuff like X `pred` Y.
-// TODO: I'm not sure that it's worth having all these different styles of syntax for InfixPredicateApplication, sigh
-InfixPredicateApplication: 
-   ( args+=[NamedElement:ID] 'IS'? predicate=[PredicateDecl:IDOrBackTickedID]
-    ) 
-    // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
-   | ( ExprArgs ('IS' | 'ARE')? predicate=[PredicateDecl:IDOrBackTickedID] )
-   | (predicate=[PredicateDecl:IDOrBackTickedID] 'HOLDS?') // for nullary predicates
-;
-
-InfixActionApplication:
-    ( (args+=[NamedElement:IDOrBackTickedID])
-    | ( '(' args+=Expr (',' args+=Expr)* ')' ) 
-    )
-    ("DOES" | "DO") 
-    // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication. 
-    // TODO: When time permits, probably want to just overload the surface syntax for action/predicate application and use type inference to distinguish them?
-    action=[ActionDecl:IDOrBackTickedID]
-;
 
 // sugar for a predicate that checks if the referenced norm is violated
 NormIsInfringed:
@@ -379,9 +380,8 @@ AnonFunction:
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | InfixActionApplication 
-    // InFixActionApplication must be declared before InfixPredicateApplication
-    | InfixPredicateApplication | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    '(' Expr ')' | AnonFunction 
+    | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
