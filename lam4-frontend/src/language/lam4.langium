@@ -311,25 +311,7 @@ Project infers Expr:
 /* ---------------------------------------------------
 Aug 24 2024: Join is currently disabled; 
 am porting what I currently have for Join to Project
--------------------------------------------------------
-TODO: Add a variant of this in the standard library for relational join in the other direction --- maybe use "`of`"
-
-(To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
-
-The relationship between relational join and a more conventional member access operator:
-    Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
-*/
-// Join infers Expr:
-//     FunctionApplication ({infer Join.left=current} '`s`' right=Ref)*
-    // Right can't be [NamedElement:ID]
-    // because we want the scoper to visit `left` first,
-    // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
-    // This allows us to then use that resolved reference
-    // as a base case in figuring out the reference for `right`
-
-    // TODO: 's and `s don't work out of the box
-    // Can prob allow for "'s" by customizing the TokenBuilder
-// ;
+-------------------------------------------------------*/
 
 
 InfixPredicateApplication infers Expr:
