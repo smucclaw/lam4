@@ -333,12 +333,27 @@ Join infers Expr:
 
 
 InfixPredicateApplication infers Expr:
-    PostfixPredicateApplication
-    ({infer InfixPredicateApplication.left = current}
-     predicate=[PredicateDecl:IDOrBackTickedID]
-     right=PostfixPredicateApplication?
+    InfixActionApplication
+    (
+        {infer InfixPredicateApplication.left = current}
+        predicate=[PredicateDecl:IDOrBackTickedID]
+        right=InfixActionApplication?
     )*
 ;
+
+InfixActionApplication infers Expr:
+    PostfixPredicateApplication
+    (
+        {infer InfixActionApplication.left = current}
+        ("DOES" | "DO") 
+        // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication.
+        // TODO: Might want to just overload the surface syntax for action/predicate application and use type annotations / inference to distinguish them?
+        // Also, may want to add an infix fun app and then use Langium actions to desugar this to an infix fun app?
+        action=[ActionDecl:IDOrBackTickedID]
+        right=PostfixPredicateApplication?
+    )*
+;
+
 
 fragment ExprArgs: 
     (args+=Expr)? (',' args+=Expr)*
@@ -366,28 +381,6 @@ FunctionApplication:
     ExprArgsInParens)*
 ;
 
-// sugar for func app, when doing *concrete* evaluation
-// Also probably want to add syntactic sugar for stuff like X `pred` Y.
-// TODO: I'm not sure that it's worth having all these different styles of syntax for InfixPredicateApplication, sigh
-// InfixPredicateApplication: 
-//    ( args+=[NamedElement:IDOrBackTickedID] 'IS'? predicate=Expr
-//     ) 
-//     // TODO: not sure actually that we even want to have `IS` as an option -- might be better style to have that in the name of the predicate itself
-//    | ( ExprArgs ('IS' | 'ARE')? predicate=Expr )
-//    | (predicate=Expr 'HOLDS?') // for nullary predicates
-// ;
-
-
-
-// InfixActionApplication:
-//     ( (args+=[NamedElement:IDOrBackTickedID])
-//     | ( '(' args+=Expr (',' args+=Expr)* ')' ) 
-//     )
-//     ("DOES" | "DO") 
-//     // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication. 
-//     // TODO: When time permits, probably want to just overload the surface syntax for action/predicate application and use type inference to distinguish them?
-//     action=[ActionDecl:IDOrBackTickedID]
-// ;
 
 // sugar for a predicate that checks if the referenced norm is violated
 NormIsInfringed:
@@ -406,9 +399,6 @@ AnonFunction:
 
 PrimitiveExpr infers Expr:
     '(' Expr ')' | AnonFunction 
-    // | InfixActionApplication 
-    // InFixActionApplication must be declared before InfixPredicateApplication
-    // | InfixPredicateApplication 
     | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
