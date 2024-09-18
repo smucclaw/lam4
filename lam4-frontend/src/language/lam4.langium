@@ -207,7 +207,7 @@ PredicateDecl:
     // WithSpecificMetadataBlock?
 
     GivenParamBlock?
-    'DECIDE' name=IDOrBackTickedID 
+    'DECIDE' left=[Param:ID]? name=IDOrBackTickedID right=[Param:ID]?
     // can think of 'name' as 'head'
     'IF' body=Expr 
     /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
