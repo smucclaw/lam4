@@ -1,19 +1,79 @@
 abstract Lam4 = {
-  flags startcat = TypeDecl ;
+  flags startcat = S ;
   cat
+    S ;
     TypeDecl ;
     RowTypeDecl ;
     [RowTypeDecl]{0} ;
     Metadata ;
+
+    Expr ;
+    [Expr]{0} ;
+    UnaryOp ;
+    BinOp ;
+    Name ;
+    [Name]{0} ;
+
   fun
+    -- Placeholder, or skip some constructs?
+    EmptyS : S ;
+    TypeDeclS : TypeDecl -> S ;
+    ExprS : Expr -> S ;
+
+    -- Metadata
     MkMetadata : String -> Metadata ;
     NoMetadata : Metadata ; -- empty
 
-    MkRowTypeDecl : Metadata -> (fld : String) -> (typ : String) -> RowTypeDecl ;
-    MkRowDecl : Metadata -> (fld : String) -> RowTypeDecl ; -- no type
+    -- Type declarations
+    MkRowTypeDecl : Metadata -> (fld : Name) -> (typ : Name) -> RowTypeDecl ;
+    MkRowDecl : Metadata -> (fld : Name) -> RowTypeDecl ; -- no type
 
-    MkTypeDecl : Metadata -> (name : String) -> [RowTypeDecl] -> TypeDecl ;
+    MkTypeDecl : Metadata -> (name : Name) -> [RowTypeDecl] -> TypeDecl ;
 
+    -- Expressions
+    MkName : String -> Name ;
+
+    Var : Name -> Expr ;
+  -- | Lit        Lit
+  -- | Cons       Expr Expr                           -- list cons
+  -- | List       [Expr]                              -- construct a list
+    Unary   : UnaryOp -> Expr -> Expr ;
+    BinExpr : BinOp -> Expr -> Expr -> Expr ;
+    IfThenElse : Expr -> Expr -> Expr -> Expr ;
+  -- TODO: Not Yet Implemented / need to think more about what collection types to support
+  -- TODO: Add Cons after have wired up to an evaluator
+  -- | ListExpr   ListOp [Expr]
+    FunApp : Expr -> [Expr] -> Expr ;
+    -- Record : (Row Expr) -> Expr ;               -- record construction
+    Project : Expr -> Name -> Expr ;             -- record projection
+    Fun : (funname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;  -- Function
+    -- Let :        Decl Expr
+    -- StatementBlock :  (NonEmpty Statement)
+
+    NormIsInfringed : Name -> Expr ;             -- NormIsInfringed NameOfNorm.
+                                                   -- This is a predicate that checks if @nameOfNorm@ is violated (users can supply unique identifiers for Deontics and IfThenOtherwise statements that contain a Deontic)
+
+
+    Predicate : (predname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
+    PredApp : Expr -> [Expr] -> Expr ;
+
+    -- Unary and binary operators
+    Not : UnaryOp ;
+    UnaryMinus : UnaryOp ;
+
+    Or : BinOp ;
+    And : BinOp ;
+    Plus : BinOp ;
+    Minus : BinOp ;
+    Modulo : BinOp ;   -- ^ (integer) remainder
+    Mult : BinOp ;
+    Divide : BinOp ;
+    Lt : BinOp ;
+    Le : BinOp ;
+    Gt : BinOp ;
+    Ge : BinOp ;      -- ^ greater-than-or-equal
+    Eq : BinOp ;      -- ^ equality (of Booleans, numbers or atoms)
+    Ne : BinOp ;      -- ^ inequality (of Booleans, numbers or atoms)
 }
 
 {-
