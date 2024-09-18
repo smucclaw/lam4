@@ -319,8 +319,8 @@ TODO: Add a variant of this in the standard library for relational join in the o
 The relationship between relational join and a more conventional member access operator:
     Can think of dereferencing a field of an object as corresponding to a special case of relational join --- this is a common trick / idiom in the Alloy community
 */
-Join infers Expr:
-    FunctionApplication ({infer Join.left=current} '`s`' right=Ref)*
+// Join infers Expr:
+//     FunctionApplication ({infer Join.left=current} '`s`' right=Ref)*
     // Right can't be [NamedElement:ID]
     // because we want the scoper to visit `left` first,
     // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
@@ -329,7 +329,7 @@ Join infers Expr:
 
     // TODO: 's and `s don't work out of the box
     // Can prob allow for "'s" by customizing the TokenBuilder
-;
+// ;
 
 
 InfixPredicateApplication infers Expr:
