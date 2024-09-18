@@ -60,7 +60,8 @@ library
         base,
         containers,
         foldable1-classes-compat,
-        lens,
+        lens, 
+        -- just for Control.Lens.Plated
         optics,
         mtl,
         transformers-base,
