@@ -62,11 +62,11 @@ npm run build
 
 After building:
 
-* To see what the grammar looks like, you can **generate a railroad diagram from VSCode**, using the Langium VSCode extension.
-* To print to std out and save to disk a **human-readable version of the concrete syntax** (i.e., a version without the metadata): `node ./bin/cli toMinimalAst <lam4program filename>.l4`
-* To do that for a version of the concrete syntax that includes source text metadata: `node ./bin/cli toAstWithSrcMetadata <lam4program filename>.l4`
-  * Note that this is still more like concrete than abstract syntax --- I hope to be able to do that desugaring / simplfiying within the next 1-1.5 weeks. I'll aim to target Andres' AST for concrete evaluation, but I'll probably also experiment with another version on the side that has a few more constructs for symbolic execution.
-* To **generate a VSCode extension**: `vsce package`
+* To see what the surface Langium grammar looks like, you can **generate a railroad diagram from VSCode**, using the Langium VSCode extension.
+* To print to std out and save to disk a **human-readable version of the surface Langium grammar syntax** (i.e., a version without the metadata): from `lam4-frontend`, do `node ./bin/cli toMinimalAst <lam4program filename>.l4`
+* To do that for a version that includes source text metadata: `node ./bin/cli toAstWithSrcMetadata <lam4program filename>.l4`.
+* To **generate and install a VSCode extension** at the command line (after removing previously-generated ones): `rm lam4-*.vsix; vsce package; code --install-extension lam4-*.vsix`
+* To remove a VSCode extension at the command line: `code --list-extensions` to list extensions and get the name of the lam4 extension, then `code --uninstall-extension <name of the lam4 extension>`
 
 ## Noteworthy TODOs
 
