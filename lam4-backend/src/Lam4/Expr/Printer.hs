@@ -110,7 +110,7 @@ instance Print String where
   prt _ = printString
 
 instance Print T.Text where
-  prt i x = prPrec i 0 (concatD [doc (showString (backtickIfSpaces (T.unpack x)))])
+  prt i x = doc (showString (backtickIfSpaces (T.unpack x)))
 
 backtickIfSpaces :: String -> String
 backtickIfSpaces t = if any (==' ') t then [I.i|`#{t}`|] else t
@@ -134,6 +134,21 @@ instance Print Int where
 
 instance Print Double where
   prt _ x = doc (shows x)
+
+
+-- Function arguments are separated by newlines
+newtype FunArg = FunArg {unFunArg :: String}
+
+mkFunArg :: T.Text -> FunArg
+mkFunArg t = FunArg [I.i|#{t} : TypeMissing|]
+
+instance Print FunArg where
+  prt _ x = doc (showString (unFunArg x))
+
+instance Print [FunArg] where
+  prt _ [] = concatD []
+  prt _ [x] = concatD [prt 0 x]
+  prt _ (x:xs) = concatD [prt 0 x, doc (showChar '\n'), prt 0 xs]
 
 instance Print [Expr] where
   prt _ [] = concatD []
@@ -266,12 +281,23 @@ instance Print Expr where
     Let decl expr -> prPrec i 0 (concatD [doc (showString "LET"), doc (showString "{"), prt 0 decl, doc (showString "}"), doc (showString "IN"), doc (showString "{"), prt 0 expr, doc (showString "}")])
     StatementBlock (st :| sts) -> prPrec i 0 (concatD [prt 0 (st:sts)])
     NormIsInfringed name -> prPrec i 0 (concatD [prt 0 name, doc (showString "IS_INFRINGED")])
-    Predicate metadata names expr ->
+    Predicate metadata [funname] expr ->
       prPrec i 0 (concatD [
           prt 0 metadata
-        , doc (showString "GIVEN ()")
         , doc (showString "\nDECIDE")
-        , prt 0 names
+        , prt 0 funname
+        , doc (showString "\nIF")
+        , prt 0 expr
+        ])
+    Predicate metadata (funname:args) expr ->
+      prPrec i 0 (concatD [
+          prt 0 metadata
+        , doc (showString "GIVEN")
+        , doc (showString "(")
+        , prt 0 (fmap (\a -> mkFunArg a.name) args) -- custom newtype to print args in a specific way
+        , doc (showString ")")
+        , doc (showString "\nDECIDE")
+        , prt 0 funname
         , doc (showString "\nIF")
         , prt 0 expr])
     PredApp expr exprs -> prPrec i 0 (concatD [prt 0 expr, doc (showString "("), prt 0 exprs, doc (showString ")")])
