@@ -16,7 +16,7 @@ If you don't need to use record field access or predicate declarations:
 
 If you do need either of those:
    1. `npm run langium:generate;  npm run build`
-   2. Then either print to console the resulting AST with `node ./bin/cli printAstForHumans <name of .l4 file>` 
+   2. Then either print to console the resulting AST with `node ./bin/cli printAstForHumans <name of .l4 file>`
    or build a VSCode extension with `vsce package --allow-missing-repository
 ` and install it from VSCode
 
@@ -34,7 +34,7 @@ https://langium.org/docs/recipes/multiple-languages/
 
 after first draft of bidir type checker is done
 * Add Let, anon func to the type checker
-* Add Fractions back in 
+* Add Fractions back in
 * Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
 
 
@@ -44,8 +44,8 @@ Is it important to support mixfix operators?
 ============================================
 
 I was initially worried about this.
-But after thinking about it more and looking at a range of examples 
-(Meng's and Joe's formalizations, various spreadsheet examples, etc), 
+But after thinking about it more and looking at a range of examples
+(Meng's and Joe's formalizations, various spreadsheet examples, etc),
 I don't feel as worried -- a lot of the uses of mixfix in the LE-targeted-formalizations
 can be rephrased, and in any case, it doesn't seem as necessary in a more functional style.
 It feels enough to support Haskell-like infix.
@@ -62,7 +62,7 @@ Jun 13 2024
     Andres:
         I think we need at least:
             strings,
-            numbers (at least integers, probably also some form of fractional numbers, 
+            numbers (at least integers, probably also some form of fractional numbers,
             but possibly rational numbers are sufficient; it'd be good to avoid IEEE floats completely),
             lists (or possibly another collection type)
         Less clear are:
@@ -71,9 +71,9 @@ Jun 13 2024
             sets,
             dictionaries (possibly subsumed by being to define user-defined record types)
 
-    YM: 
+    YM:
         * Added Fraction as per the above (though might be more user-friendly to call it 'Ratio'?)
-        * Added dates since those were needed for the insurance web form. 
+        * Added dates since those were needed for the insurance web form.
             Could think of dates as being in a library instead of the core language, indeed
             that might be cleaner, but it's more convenient for now to have them as a built-in type.
         * Shelving `Money` for the time being
@@ -120,7 +120,7 @@ ToplevelElement:
 //     '}'
 // ;
 // MetadataKey returns string:
-//     ID | "description" 
+//     ID | "description"
 //     // | "description_for_semantic_parser"
 // ;
 
@@ -133,7 +133,7 @@ ToplevelElement:
 // ;
 
 // ListOfMetadataValues:
-//     '[' value+=Literal 
+//     '[' value+=Literal
 //         (',' value+=Literal)* ']'
 // ;
 
@@ -144,7 +144,7 @@ SpecificMetadataBlock:
         // 'About' instead of 'about' b/c that feels more in line with legal style
         // TODO: not sure if we want the delimiters to be double quotes
         ("About:" description=StringLiteral)?
-        
+
         // TODO: Add constructs for annotating / adjusting what the rendered explanations look like
     '-/'
 ;
@@ -157,7 +157,7 @@ SpecificMetadataBlock:
 fragment GivenParamBlock:
     'GIVEN' '('
         params+=ParamTypePair*
-    ')' 
+    ')'
 ;
 
 Param:
@@ -169,9 +169,9 @@ ParamTypePair:
 
 // ------- PredicateDecl, FunDecl -------
 
-// Sep 2024: Now trying to be more selective about where this sort of key-value metadata can be inserted, 
+// Sep 2024: Now trying to be more selective about where this sort of key-value metadata can be inserted,
 // because I'm not sure that a key-value syntax is really the best for this,
-// because this simplifies some of the downstream parsing, 
+// because this simplifies some of the downstream parsing,
 // and because it feels safer to be more selective till we are sure we need it
 fragment WithSpecificMetadataBlock:
     metadata=SpecificMetadataBlock
@@ -194,12 +194,12 @@ FunDecl:
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
-    ( '=' | 'equals') 
+    ( '=' | 'equals')
     body=Expr
 ;
 
-// When doing concrete (as opposed to symbolic) execution, 
-// a predicate amounts to a special case of a function; 
+// When doing concrete (as opposed to symbolic) execution,
+// a predicate amounts to a special case of a function;
 // namely, a function whose return type is Boolean
 PredicateDecl:
     description=SINGLELINE_METADATA_ANNOTATION?
@@ -209,15 +209,15 @@ PredicateDecl:
     GivenParamBlock?
     'DECIDE' left=[Param:IDOrBackTickedID]? name=IDOrBackTickedID right=[Param:IDOrBackTickedID]?
     // can think of 'name' as 'head'
-    'IF' body=Expr 
+    'IF' body=Expr
     /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
-    since "the law implicitly assumes a condition is false unless specified otherwise" 
+    since "the law implicitly assumes a condition is false unless specified otherwise"
     (https://catala-lang.org/en/examples/tutorial)
     In this way this is similar to Catala's 'Rule' */
 ;
 
 fragment Var:
-    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=Expr 
+    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=Expr
 ;
 
 VarBinding returns NamedElement:
@@ -256,11 +256,11 @@ LetExpr:
 ;
 
 Row:
-    label=IDOrBackTickedID ( '=' | 'is') value=Expr 
+    label=IDOrBackTickedID ( '=' | 'is') value=Expr
 ;
 
 RecordExpr:
-    '{|' (rows+=Row  (',' rows+=Row )*)? '|}' 
+    '{|' (rows+=Row  (',' rows+=Row )*)? '|}'
 ;
 
 
@@ -295,7 +295,7 @@ Mult infers Expr:
 
 // TODO: 's and `s don't work out of the box
 // Can prob allow for "'s" by customizing the TokenBuilder
-/* Projects or Selects the value of a from a record 
+/* Projects or Selects the value of a from a record
 
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 */
@@ -309,7 +309,7 @@ Project infers Expr:
 ;
 
 /* ---------------------------------------------------
-Aug 24 2024: Join is currently disabled; 
+Aug 24 2024: Join is currently disabled;
 am porting what I currently have for Join to Project
 -------------------------------------------------------*/
 
