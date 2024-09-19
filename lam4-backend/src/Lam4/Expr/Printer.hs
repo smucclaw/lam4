@@ -110,10 +110,10 @@ instance Print String where
   prt _ = printString
 
 instance Print T.Text where
-  prt i x = doc (showString (backtickIfSpaces (T.unpack x)))
+  prt _ x = doc (showString (backtickIfSpaces x))
 
-backtickIfSpaces :: String -> String
-backtickIfSpaces t = if any (==' ') t then [I.i|`#{t}`|] else t
+backtickIfSpaces :: T.Text -> String
+backtickIfSpaces t = if T.any (==' ') t then [I.i|`#{t}`|] else T.unpack t
 
 printString :: String -> Doc
 printString s = doc (showChar '"' . concatS (map (mkEsc '"') s) . showChar '"')
@@ -140,7 +140,7 @@ instance Print Double where
 newtype FunArg = FunArg {unFunArg :: String}
 
 mkFunArg :: T.Text -> FunArg
-mkFunArg t = FunArg [I.i|#{t} : TypeMissing|]
+mkFunArg t = FunArg [I.i|#{backtickIfSpaces t} : TypeMissing|]
 
 instance Print FunArg where
   prt _ x = doc (showString (unFunArg x))
@@ -202,6 +202,7 @@ instance Print Decl where
       let newDecl = RecordDecl (dummyRowTypeDecl name:rowtypedecls) parents descr
       in prPrec i 0 (concatD [prt 0 newDecl])
 
+    Eval (PredApp expr []) -> prPrec i 0 (concatD [doc (showString "@REPORT"), prt 0 expr, doc (showString "HOLDS?")])
     Eval expr -> prPrec i 0 (concatD [doc (showString "@REPORT"), prt 0 expr])
 
 dummyRowTypeDecl :: Name -> RowTypeDecl
@@ -269,7 +270,7 @@ instance Print Expr where
     IfThenElse expr1 expr2 expr3 -> prPrec i 0 (concatD [doc (showString "IF"), prt 0 expr1, doc (showString "THEN"), prt 0 expr2, doc (showString "ELSE"), prt 0 expr3])
     FunApp expr exprs -> prPrec i 0 (concatD [prt 0 expr, doc (showString "("), prt 0 exprs, doc (showString ")")])
     Record rows -> prPrec i 0 (concatD [doc (showString "{|"), prt 0 rows, doc (showString "|}")])
-    Project expr name -> prPrec i 0 (concatD [prt 0 expr, prt 0 name])
+    Project expr name -> prPrec i 0 (concatD [prt 0 expr, doc (showString "`s`"), prt 0 name])
     Fun metadata names expr ->
       prPrec i 0 (concatD [
           prt 0 metadata
@@ -300,7 +301,18 @@ instance Print Expr where
         , prt 0 funname
         , doc (showString "\nIF")
         , prt 0 expr])
-    PredApp expr exprs -> prPrec i 0 (concatD [prt 0 expr, doc (showString "("), prt 0 exprs, doc (showString ")")])
+    PredApp f [arg] ->
+      prPrec i 0 (concatD [
+        prt 0 arg
+      , prt 0 f  -- postfix by default. Could match prefix "is" to determine if postfix or prefix?
+      ])
+    PredApp f [left,right] ->
+        prPrec i 0 (concatD [
+          prt 0 left
+        , prt 0 f    -- infix by default
+        , prt 0 right
+        ])
+    PredApp f args -> prPrec i 0 (concatD [prt 0 f, prt 0 args])
     List exprs -> prt i exprs
     Sig{} -> error "not yet implemented: Sig"
     Relation{} -> error "not yet implemented: Relation"
