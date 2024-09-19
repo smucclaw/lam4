@@ -16,7 +16,7 @@ If you don't need to use record field access or predicate declarations:
 
 If you do need either of those:
    1. `npm run langium:generate;  npm run build`
-   2. Then either print to console the resulting AST with `node ./bin/cli printAstForHumans <name of .l4 file>` 
+   2. Then either print to console the resulting AST with `node ./bin/cli printAstForHumans <name of .l4 file>`
    or build a VSCode extension with `vsce package --allow-missing-repository
 ` and install it from VSCode
 
@@ -34,7 +34,7 @@ https://langium.org/docs/recipes/multiple-languages/
 
 after first draft of bidir type checker is done
 * Add Let, anon func to the type checker
-* Add Fractions back in 
+* Add Fractions back in
 * Implement source maps functionality: https://www.typefox.io/blog/code-generation-for-langium-based-dsls-3/
 
 
@@ -44,8 +44,8 @@ Is it important to support mixfix operators?
 ============================================
 
 I was initially worried about this.
-But after thinking about it more and looking at a range of examples 
-(Meng's and Joe's formalizations, various spreadsheet examples, etc), 
+But after thinking about it more and looking at a range of examples
+(Meng's and Joe's formalizations, various spreadsheet examples, etc),
 I don't feel as worried -- a lot of the uses of mixfix in the LE-targeted-formalizations
 can be rephrased, and in any case, it doesn't seem as necessary in a more functional style.
 It feels enough to support Haskell-like infix.
@@ -62,7 +62,7 @@ Jun 13 2024
     Andres:
         I think we need at least:
             strings,
-            numbers (at least integers, probably also some form of fractional numbers, 
+            numbers (at least integers, probably also some form of fractional numbers,
             but possibly rational numbers are sufficient; it'd be good to avoid IEEE floats completely),
             lists (or possibly another collection type)
         Less clear are:
@@ -71,9 +71,9 @@ Jun 13 2024
             sets,
             dictionaries (possibly subsumed by being to define user-defined record types)
 
-    YM: 
+    YM:
         * Added Fraction as per the above (though might be more user-friendly to call it 'Ratio'?)
-        * Added dates since those were needed for the insurance web form. 
+        * Added dates since those were needed for the insurance web form.
             Could think of dates as being in a library instead of the core language, indeed
             that might be cleaner, but it's more convenient for now to have them as a built-in type.
         * Shelving `Money` for the time being
@@ -120,7 +120,7 @@ ToplevelElement:
 //     '}'
 // ;
 // MetadataKey returns string:
-//     ID | "description" 
+//     ID | "description"
 //     // | "description_for_semantic_parser"
 // ;
 
@@ -133,7 +133,7 @@ ToplevelElement:
 // ;
 
 // ListOfMetadataValues:
-//     '[' value+=Literal 
+//     '[' value+=Literal
 //         (',' value+=Literal)* ']'
 // ;
 
@@ -144,7 +144,7 @@ SpecificMetadataBlock:
         // 'About' instead of 'about' b/c that feels more in line with legal style
         // TODO: not sure if we want the delimiters to be double quotes
         ("About:" description=StringLiteral)?
-        
+
         // TODO: Add constructs for annotating / adjusting what the rendered explanations look like
     '-/'
 ;
@@ -157,7 +157,7 @@ SpecificMetadataBlock:
 fragment GivenParamBlock:
     'GIVEN' '('
         params+=ParamTypePair*
-    ')' 
+    ')'
 ;
 
 Param:
@@ -169,9 +169,9 @@ ParamTypePair:
 
 // ------- PredicateDecl, FunDecl -------
 
-// Sep 2024: Now trying to be more selective about where this sort of key-value metadata can be inserted, 
+// Sep 2024: Now trying to be more selective about where this sort of key-value metadata can be inserted,
 // because I'm not sure that a key-value syntax is really the best for this,
-// because this simplifies some of the downstream parsing, 
+// because this simplifies some of the downstream parsing,
 // and because it feels safer to be more selective till we are sure we need it
 fragment WithSpecificMetadataBlock:
     metadata=SpecificMetadataBlock
@@ -194,12 +194,12 @@ FunDecl:
 
     'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
-    ( '=' | 'equals') 
+    ( '=' | 'equals')
     body=Expr
 ;
 
-// When doing concrete (as opposed to symbolic) execution, 
-// a predicate amounts to a special case of a function; 
+// When doing concrete (as opposed to symbolic) execution,
+// a predicate amounts to a special case of a function;
 // namely, a function whose return type is Boolean
 PredicateDecl:
     description=SINGLELINE_METADATA_ANNOTATION?
@@ -209,15 +209,15 @@ PredicateDecl:
     GivenParamBlock?
     'DECIDE' left=[Param:IDOrBackTickedID]? name=IDOrBackTickedID right=[Param:IDOrBackTickedID]?
     // can think of 'name' as 'head'
-    'IF' body=Expr 
+    'IF' body=Expr
     /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
-    since "the law implicitly assumes a condition is false unless specified otherwise" 
+    since "the law implicitly assumes a condition is false unless specified otherwise"
     (https://catala-lang.org/en/examples/tutorial)
     In this way this is similar to Catala's 'Rule' */
 ;
 
 fragment Var:
-    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=Expr 
+    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=Expr
 ;
 
 VarBinding returns NamedElement:
@@ -256,11 +256,11 @@ LetExpr:
 ;
 
 Row:
-    label=IDOrBackTickedID ( '=' | 'is') value=Expr 
+    label=IDOrBackTickedID ( '=' | 'is') value=Expr
 ;
 
 RecordExpr:
-    '{|' (rows+=Row  (',' rows+=Row )*)? '|}' 
+    '{|' (rows+=Row  (',' rows+=Row )*)? '|}'
 ;
 
 
@@ -295,7 +295,7 @@ Mult infers Expr:
 
 // TODO: 's and `s don't work out of the box
 // Can prob allow for "'s" by customizing the TokenBuilder
-/* Projects or Selects the value of a from a record 
+/* Projects or Selects the value of a from a record
 
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 */
@@ -309,7 +309,7 @@ Project infers Expr:
 ;
 
 /* ---------------------------------------------------
-Aug 24 2024: Join is currently disabled; 
+Aug 24 2024: Join is currently disabled;
 am porting what I currently have for Join to Project
 -------------------------------------------------------*/
 
@@ -324,20 +324,27 @@ InfixPredicateApplication infers Expr:
 ;
 
 InfixActionApplication infers Expr:
-    PostfixPredicateApplication
+    Cons
     (
         {infer InfixActionApplication.left = current}
-        ("DOES" | "DO") 
+        ("DOES" | "DO")
         // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication.
         // TODO: Might want to just overload the surface syntax for action/predicate application and use type annotations / inference to distinguish them?
         // Also, may want to add an infix fun app and then use Langium actions to desugar this to an infix fun app?
         action=[ActionDecl:IDOrBackTickedID]
-        right=PostfixPredicateApplication?
+        right=Cons?
     )*
 ;
 
+Cons infers Expr:
+    PostfixPredicateApplication
+    ({infer Cons.first=current}
+     'followed_by_items_in'
+     rest=PostfixPredicateApplication
+    )*
+;
 
-fragment ExprArgs: 
+fragment ExprArgs:
     (args+=Expr)? (',' args+=Expr)*
 ;
 
@@ -351,8 +358,8 @@ PostfixPredicateApplication:
     ({infer PostfixPredicateApplication.predicate=current}
 
     ( ( ('IS_SATISFIED_BY' | 'HOLDS_OF') ExprArgsInParens )
-    | 'HOLDS?' )   
-    
+    | 'HOLDS?' )
+
     )*
 ;
 
@@ -369,18 +376,31 @@ NormIsInfringed:
     normRef=[Statement:IDOrBackTickedID] 'IS_INFRINGED'
 ;
 
-// This is meant for programmers to implement libraries with; 
+// This is meant for programmers to implement libraries with;
 // it's not something I'm expecting ordinary, non-programmer users to use or understand
 AnonFunction:
-    '\\'  
-    ( ('(' ')') | (params+=(ParamTypePair | Param) (params+=(ParamTypePair | Param))*) ) 
-    '=>' 
+    '\\'
+    ( ('(' ')') | (params+=(ParamTypePair | Param) (params+=(ParamTypePair | Param))*) )
+    '=>'
     body=Expr
+;
+
+List:
+    EmptyList | NonEmptyList
+;
+
+EmptyList:
+    {infer List}
+    'EMPTY_LIST'
+;
+
+NonEmptyList infers List:
+    'LIST_OF' elements+=Expr (',' elements+=Expr)* '.'
 ;
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction 
+    '(' Expr ')' | AnonFunction | List
     | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
@@ -403,8 +423,8 @@ ReportDecl:
 =============================== */
 
 Statement:
-    VarDeclStmt 
-    | IfStmt | Norm 
+    VarDeclStmt
+    | IfStmt | Norm
     | StatementRef
 ;
 
@@ -412,7 +432,7 @@ StatementRef:
     value=[Statement:IDOrBackTickedID]
 ;
 
-/* For top level var declarations (as opposed to within the context of a LET ... IN) 
+/* For top level var declarations (as opposed to within the context of a LET ... IN)
    TODO: Not clear that we really want `DEFINE` surface syntax for this, given that the sorts of "Definitions" one sees in legal texts are more like type declarations
    Alternatives include:
         * FACT ...
@@ -423,7 +443,7 @@ VarDeclStmt:
     'DEFINE' Var
 ;
 
-Action: 
+Action:
     PrimAction | PrimActionBlock
 ;
 
@@ -457,7 +477,7 @@ IfStmt:
     // TODO: add a validator that allows a name to be supplied
     // if and only if there's a deontic in either the Then or Else.
 
-    'IF'         condition=Expr 
+    'IF'         condition=Expr
     'THEN'       then=(Statement | StatementBlock)
     ('OTHERWISE' else=(Statement | StatementBlock))?
     // ('UNLESS' defeaters=+Expr)? // for v2
@@ -465,7 +485,7 @@ IfStmt:
 
 ActionDecl:
     GivenParamBlock?
-    'ACTION' name=IDOrBackTickedID 
+    'ACTION' name=IDOrBackTickedID
     ('=' PrimActionBlock)?
 ;
 
@@ -478,13 +498,13 @@ fragment StatementBlock: 'DO' '{'
 '}';
 
 Norm:
-    originalRuleRef=OriginalRuleRef? 
+    originalRuleRef=OriginalRuleRef?
     (':' name=IDOrBackTickedID)?
-    // TODO: Add validator to prevent users from adding a rule ref or name here 
+    // TODO: Add validator to prevent users from adding a rule ref or name here
     // if the deontic appears in the scope of another Statement that already has a rule ref or name
 
-    agent=[NamedElement:ID] 
-    deonticModal=DeonticModal 
+    agent=[NamedElement:ID]
+    deonticModal=DeonticModal
     action=Action
 ;
 
@@ -496,14 +516,14 @@ Must: {infer Must} 'MUST';
 May: {infer May} 'MAY';
 
 /* ============================
-   A normal record 
+   A normal record
 =============================== */
 
 RecordDecl:
     WithSpecificMetadataBlock?
 
-    'STRUCTURE' 
-    name=ID 
+    'STRUCTURE'
+    name=ID
     ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )? '{'
         rowTypes+=RowType*
     '}'
@@ -536,11 +556,11 @@ E.g., the above sig would be translated to a relation named myField of type A ->
 
 And then the `'s` operator would correspond to relational join / composition.
 
-Why do this? The rough motivation was, because, 
+Why do this? The rough motivation was, because,
     1. I wanted to have, not only a functional expression language, but also the ability to do some kind of formal modelling or querying on top of that
-    2. and as Alloy and its ilk have shown, 
-    modelling data with relations and adding a relational-logic constraint language 
-    (the quantifiers of first-order logic with the operators of the relational calculus) 
+    2. and as Alloy and its ilk have shown,
+    modelling data with relations and adding a relational-logic constraint language
+    (the quantifiers of first-order logic with the operators of the relational calculus)
     on top of that gives you a nice way to formally model a lot of things.
     (See Daniel Jackson's book *Software Abstractions* for more on this.)
     And we can think of something like a conventional OOP '<object>.<field>` as being a special case of relational join,
@@ -555,8 +575,8 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 SigDecl:
     WithSpecificMetadataBlock?
 
-    multiplicity=SigMultOne? 'CONCEPT' 
-    name=ID 
+    multiplicity=SigMultOne? 'CONCEPT'
+    name=ID
     ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
         relations+=Relation*
     '}'
@@ -567,8 +587,8 @@ SigMultOne: {infer SigMultOne} 'ONE';
 
 type CustomType = SigDecl | RecordDecl;
 // CustomType:
-//     SigDecl 
-// | UnionType 
+//     SigDecl
+// | UnionType
 // | Alias
 // ;
 
@@ -576,8 +596,8 @@ RowType:
     // WithSpecificMetadataBlock?
     description=SINGLELINE_METADATA_ANNOTATION?
 
-    name=IDOrBackTickedID 
-    (':' | 'IS_A') 
+    name=IDOrBackTickedID
+    (':' | 'IS_A')
     value=TypeAnnot
 
 ;
@@ -586,10 +606,10 @@ Relation:
     // WithSpecificMetadataBlock?
     description=SINGLELINE_METADATA_ANNOTATION?
 
-    name=ID 
-    // optional?='?'? 
-    (':' | 'IS_A') 
-    relatum=TypeAnnot // TODO: Support plural relata 
+    name=ID
+    // optional?='?'?
+    (':' | 'IS_A')
+    relatum=TypeAnnot // TODO: Support plural relata
 ;
 
 /* ========================================
@@ -599,12 +619,13 @@ Relation:
 // Not expecting non-programmers to understand the more complicated type annotations in the textual form
 // This would be visualized / rendered in more accessible ways for non-programmers
 TypeAnnot:
-    // `=>` is right-associative (c.f. https://www.typefox.io/blog/parsing-expressions-with-xtext/)
+    // Note the quantity operator and the self-reference at the end. (If left-associative, would be `*` instead of `?`).
+    // This is because`=>` is right-associative (c.f. https://www.typefox.io/blog/parsing-expressions-with-xtext/)
     PrimitiveTypeAnnot ({infer TypeAnnot.left=current} '=>' right=TypeAnnot)?
 ;
 
-PrimitiveTypeAnnot:
-    CustomTypeDef | BuiltinType | '(' TypeAnnot ')'
+PrimitiveTypeAnnot infers TypeAnnot:
+    CustomTypeDef | 'LIST_OF' TypeAnnot | BuiltinType | '(' TypeAnnot ')'
 ;
 
 CustomTypeDef:
@@ -615,7 +636,7 @@ CustomTypeDef:
        NamedElement, ToplevelStatement
 =========================================== */
 
-type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm; 
+type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm;
 
 fragment ToplevelStatement: VarDeclStmt | ActionDecl | IfStmt | Norm;
 
@@ -631,7 +652,7 @@ BuiltinType:
 // https://json-schema.org/understanding-json-schema/reference/string
 BuiltinTypeAnnot returns string:
      'Integer' | 'String' |  'Boolean' | 'Unit'
-    //  'Fraction' 
+    //  'Fraction'
     //  'Date'
 ;
 

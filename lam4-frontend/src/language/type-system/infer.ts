@@ -61,7 +61,6 @@ import {
     InfixPredicateApplication,
     isInfixPredicateApplication,
     UnaryExpr,
-    PrimitiveTypeAnnot,
     VarBinding,
     VarDeclStmt,
     ParamTypePair,
@@ -139,7 +138,7 @@ function synthRecord(env: TypeEnv, record: RecordDecl): TypeTag {
     return  new RecordTTag(record, rowTypeTags);
 }
 
-function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): TypeTag {
+function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | BuiltinType): TypeTag {
     typecheckLogger.trace(`[synthTypeAnnot]`);
     function builtinTypeAnnotToTypeTag(typeAnnot: BuiltinType) {
         const annot = typeAnnot.annot;
@@ -170,11 +169,11 @@ function synthTypeAnnot(env: TypeEnv, annot: TypeAnnot | PrimitiveTypeAnnot | Bu
                 new SigTTag(customType as SigDecl);
     }
 
-    function isBasecaseTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
+    function isBasecaseTypeAnnot(annot: TypeAnnot | BuiltinType): boolean {
         return annot.$type === "BuiltinType" || annot.$type === "CustomTypeDef";
     }
     
-    function isBasecaseFunctionTypeAnnot(annot: TypeAnnot | PrimitiveTypeAnnot | BuiltinType): boolean {
+    function isBasecaseFunctionTypeAnnot(annot: TypeAnnot | BuiltinType): boolean {
         return annot.$type === "TypeAnnot" && annot.right && isBasecaseTypeAnnot(annot.right);
     }    
 
@@ -573,29 +572,3 @@ export const getRecordAncestors = (record: RecordDecl) => getAncestors(record) a
 
 //     return seenArr;
 // }
-
-
-/*============= Error ================================ */
-// class TCError {
-//     readonly tag = "TCError";
-//     readonly node: AstNode;
-//     readonly message: string;
-
-//     constructor(node: AstNode, message: string) {
-//         this.node = node;
-//         this.message = message;
-//     }
-
-// }
-// type CheckResult = Either<TCError, TypeTag>;
-
-// TODO: This is hacky -- figure out what a better way of handling type errors is, after the first draft
-// function tcErrorToTypeTag(tcError: TCError): TypeTag {
-//     return new ErrorTypeTag(tcError.astNode, tcError.message);
-// }
-
-// const unwrapResult = (either: Either<TCError, TypeTag>): TypeTag =>
-//      match(either)
-//         .with({tag: "failure"}, (either) => tcErrorToTypeTag(either.value))
-//         .with({tag: "success"}, (either) => either.value)
-//         .exhaustive();

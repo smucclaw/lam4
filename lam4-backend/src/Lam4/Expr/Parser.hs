@@ -235,6 +235,10 @@ parseExpr node = do
     "UnaryExpr"      -> parseUnaryExpr      node
     "IfThenElseExpr" -> parseIfThenElse     node
 
+
+    "List"           -> parseList           node
+    "Cons"           -> parseCons           node
+
     {-
     * Join: Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
     * Sig: May want to remove Sigs as well.
@@ -421,6 +425,21 @@ parseIfThenElse obj = do
 
 
 {------------------------
+    List, Cons
+-------------------------}
+
+parseList :: A.Object -> Parser Expr
+parseList listNode = do
+  elements <- traverse parseExpr (listNode `getObjectsAtField` "elements")
+  pure $ List elements
+
+parseCons :: A.Object -> Parser Expr
+parseCons consNode = do
+  first <- parseExpr =<< consNode .: "first"
+  rest  <- parseExpr =<< consNode .: "rest"
+  pure $ Cons first rest
+
+{------------------------
     Let
 -------------------------}
 
@@ -522,7 +541,7 @@ parsePredicateAppArg arg =
   else parseBareRefToVar (coerce arg)
 
 {- | Sep 18 2024: I'm desugaring this to PredApp, instead of adding a separate InfixPredApp construct,
-because having a more faithful concrete syntax is not the priority right now. 
+because having a more faithful concrete syntax is not the priority right now.
 But will add that when time permits, since it is useful for things like rendering, synchronization, automated refactoring.
 -}
 parseInfixPredicateApp ::  A.Object -> Parser Expr
@@ -532,7 +551,7 @@ parseInfixPredicateApp predApp = do
     -- the @right@ may not be present
     right <- traverse parseExpr $ predApp ^? ix "right" % _Object
     pure $ case right of
-      Just rightExpr -> 
+      Just rightExpr ->
         let args = [left, rightExpr]
         in PredApp predicate args
       Nothing ->
