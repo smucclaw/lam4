@@ -77,7 +77,7 @@ main = do
       let cstDecls = concatMap parseCSTByteString frontendCSTJsons
           smDecls = ToSimala.compile . cstProgramToConEvalProgram $ cstDecls
       putStrLn "------- Prettyprinted -------------"
-      mapM_ (putStrLn . printTree) cstDecls
+      mapM_ (\x -> putStrLn (printTree x) >> putStrLn "") cstDecls
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"
