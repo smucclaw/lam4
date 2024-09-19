@@ -161,7 +161,7 @@ fragment GivenParamBlock:
 ;
 
 Param:
-    name=ID;
+    name=IDOrBackTickedID;
 
 ParamTypePair:
     param=Param (':' | 'IS_A') type=TypeAnnot
@@ -207,7 +207,7 @@ PredicateDecl:
     // WithSpecificMetadataBlock?
 
     GivenParamBlock?
-    'DECIDE' left=[Param:ID]? name=IDOrBackTickedID right=[Param:ID]?
+    'DECIDE' left=[Param:IDOrBackTickedID]? name=IDOrBackTickedID right=[Param:IDOrBackTickedID]?
     // can think of 'name' as 'head'
     'IF' body=Expr 
     /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
