@@ -324,20 +324,27 @@ InfixPredicateApplication infers Expr:
 ;
 
 InfixActionApplication infers Expr:
-    PostfixPredicateApplication
+    ListCons
     (
         {infer InfixActionApplication.left = current}
-        ("DOES" | "DO") 
+        ("DOES" | "DO")
         // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication.
         // TODO: Might want to just overload the surface syntax for action/predicate application and use type annotations / inference to distinguish them?
         // Also, may want to add an infix fun app and then use Langium actions to desugar this to an infix fun app?
         action=[ActionDecl:IDOrBackTickedID]
-        right=PostfixPredicateApplication?
+        right=ListCons?
     )*
 ;
 
+ListCons infers Expr:
+    PostfixPredicateApplication
+    ({infer ListCons.first=current}
+     'FOLLOWED_BY_ITEMS_IN'
+     rest=PostfixPredicateApplication
+    )*
+;
 
-fragment ExprArgs: 
+fragment ExprArgs:
     (args+=Expr)? (',' args+=Expr)*
 ;
 
@@ -351,8 +358,8 @@ PostfixPredicateApplication:
     ({infer PostfixPredicateApplication.predicate=current}
 
     ( ( ('IS_SATISFIED_BY' | 'HOLDS_OF') ExprArgsInParens )
-    | 'HOLDS?' )   
-    
+    | 'HOLDS?' )
+
     )*
 ;
 
@@ -369,18 +376,31 @@ NormIsInfringed:
     normRef=[Statement:IDOrBackTickedID] 'IS_INFRINGED'
 ;
 
-// This is meant for programmers to implement libraries with; 
+// This is meant for programmers to implement libraries with;
 // it's not something I'm expecting ordinary, non-programmer users to use or understand
 AnonFunction:
-    '\\'  
-    ( ('(' ')') | (params+=(ParamTypePair | Param) (params+=(ParamTypePair | Param))*) ) 
-    '=>' 
+    '\\'
+    ( ('(' ')') | (params+=(ParamTypePair | Param) (params+=(ParamTypePair | Param))*) )
+    '=>'
     body=Expr
+;
+
+List:
+    EmptyList | NonEmptyList
+;
+
+EmptyList:
+    {infer List}
+    'EMPTY_LIST'
+;
+
+NonEmptyList infers List:
+    'LIST_OF' values+=Expr (',' values+=Expr)* '.'
 ;
 
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction 
+    '(' Expr ')' | AnonFunction | List
     | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
@@ -403,8 +423,8 @@ ReportDecl:
 =============================== */
 
 Statement:
-    VarDeclStmt 
-    | IfStmt | Norm 
+    VarDeclStmt
+    | IfStmt | Norm
     | StatementRef
 ;
 
@@ -412,7 +432,7 @@ StatementRef:
     value=[Statement:IDOrBackTickedID]
 ;
 
-/* For top level var declarations (as opposed to within the context of a LET ... IN) 
+/* For top level var declarations (as opposed to within the context of a LET ... IN)
    TODO: Not clear that we really want `DEFINE` surface syntax for this, given that the sorts of "Definitions" one sees in legal texts are more like type declarations
    Alternatives include:
         * FACT ...
@@ -423,7 +443,7 @@ VarDeclStmt:
     'DEFINE' Var
 ;
 
-Action: 
+Action:
     PrimAction | PrimActionBlock
 ;
 
@@ -457,7 +477,7 @@ IfStmt:
     // TODO: add a validator that allows a name to be supplied
     // if and only if there's a deontic in either the Then or Else.
 
-    'IF'         condition=Expr 
+    'IF'         condition=Expr
     'THEN'       then=(Statement | StatementBlock)
     ('OTHERWISE' else=(Statement | StatementBlock))?
     // ('UNLESS' defeaters=+Expr)? // for v2
@@ -465,7 +485,7 @@ IfStmt:
 
 ActionDecl:
     GivenParamBlock?
-    'ACTION' name=IDOrBackTickedID 
+    'ACTION' name=IDOrBackTickedID
     ('=' PrimActionBlock)?
 ;
 
@@ -478,13 +498,13 @@ fragment StatementBlock: 'DO' '{'
 '}';
 
 Norm:
-    originalRuleRef=OriginalRuleRef? 
+    originalRuleRef=OriginalRuleRef?
     (':' name=IDOrBackTickedID)?
-    // TODO: Add validator to prevent users from adding a rule ref or name here 
+    // TODO: Add validator to prevent users from adding a rule ref or name here
     // if the deontic appears in the scope of another Statement that already has a rule ref or name
 
-    agent=[NamedElement:ID] 
-    deonticModal=DeonticModal 
+    agent=[NamedElement:ID]
+    deonticModal=DeonticModal
     action=Action
 ;
 
@@ -496,14 +516,14 @@ Must: {infer Must} 'MUST';
 May: {infer May} 'MAY';
 
 /* ============================
-   A normal record 
+   A normal record
 =============================== */
 
 RecordDecl:
     WithSpecificMetadataBlock?
 
-    'STRUCTURE' 
-    name=ID 
+    'STRUCTURE'
+    name=ID
     ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )? '{'
         rowTypes+=RowType*
     '}'
@@ -536,11 +556,11 @@ E.g., the above sig would be translated to a relation named myField of type A ->
 
 And then the `'s` operator would correspond to relational join / composition.
 
-Why do this? The rough motivation was, because, 
+Why do this? The rough motivation was, because,
     1. I wanted to have, not only a functional expression language, but also the ability to do some kind of formal modelling or querying on top of that
-    2. and as Alloy and its ilk have shown, 
-    modelling data with relations and adding a relational-logic constraint language 
-    (the quantifiers of first-order logic with the operators of the relational calculus) 
+    2. and as Alloy and its ilk have shown,
+    modelling data with relations and adding a relational-logic constraint language
+    (the quantifiers of first-order logic with the operators of the relational calculus)
     on top of that gives you a nice way to formally model a lot of things.
     (See Daniel Jackson's book *Software Abstractions* for more on this.)
     And we can think of something like a conventional OOP '<object>.<field>` as being a special case of relational join,
@@ -555,8 +575,8 @@ That said, I'm *not* sure if this really is the way to handle data --- it just f
 SigDecl:
     WithSpecificMetadataBlock?
 
-    multiplicity=SigMultOne? 'CONCEPT' 
-    name=ID 
+    multiplicity=SigMultOne? 'CONCEPT'
+    name=ID
     ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
         relations+=Relation*
     '}'
@@ -567,8 +587,8 @@ SigMultOne: {infer SigMultOne} 'ONE';
 
 type CustomType = SigDecl | RecordDecl;
 // CustomType:
-//     SigDecl 
-// | UnionType 
+//     SigDecl
+// | UnionType
 // | Alias
 // ;
 
@@ -576,8 +596,8 @@ RowType:
     // WithSpecificMetadataBlock?
     description=SINGLELINE_METADATA_ANNOTATION?
 
-    name=IDOrBackTickedID 
-    (':' | 'IS_A') 
+    name=IDOrBackTickedID
+    (':' | 'IS_A')
     value=TypeAnnot
 
 ;
@@ -586,10 +606,10 @@ Relation:
     // WithSpecificMetadataBlock?
     description=SINGLELINE_METADATA_ANNOTATION?
 
-    name=ID 
-    // optional?='?'? 
-    (':' | 'IS_A') 
-    relatum=TypeAnnot // TODO: Support plural relata 
+    name=ID
+    // optional?='?'?
+    (':' | 'IS_A')
+    relatum=TypeAnnot // TODO: Support plural relata
 ;
 
 /* ========================================
@@ -615,7 +635,7 @@ CustomTypeDef:
        NamedElement, ToplevelStatement
 =========================================== */
 
-type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm; 
+type NamedElement = VarBinding | Param | PredicateDecl | FunDecl | Relation | SigDecl | RowType | RecordDecl | VarDeclStmt | ActionDecl | IfStmt | Norm;
 
 fragment ToplevelStatement: VarDeclStmt | ActionDecl | IfStmt | Norm;
 
@@ -631,7 +651,7 @@ BuiltinType:
 // https://json-schema.org/understanding-json-schema/reference/string
 BuiltinTypeAnnot returns string:
      'Integer' | 'String' |  'Boolean' | 'Unit'
-    //  'Fraction' 
+    //  'Fraction'
     //  'Date'
 ;
 
