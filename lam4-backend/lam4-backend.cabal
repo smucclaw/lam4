@@ -61,7 +61,7 @@ library
         base,
         containers,
         foldable1-classes-compat,
-        lens, 
+        lens,
         -- just for Control.Lens.Plated
         optics,
         mtl,
@@ -71,6 +71,7 @@ library
         aeson,
         aeson-optics,
         bytestring,
+        string-interpolate,
         either,
         pretty-show,
         grisette >= 0.8,
