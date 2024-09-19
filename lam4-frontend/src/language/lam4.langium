@@ -395,7 +395,7 @@ EmptyList:
 ;
 
 NonEmptyList infers List:
-    'LIST_OF' values+=Expr (',' values+=Expr)* '.'
+    'LIST_OF' elements+=Expr (',' elements+=Expr)* '.'
 ;
 
 
