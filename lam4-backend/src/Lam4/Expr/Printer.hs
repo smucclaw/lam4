@@ -196,19 +196,24 @@ instance Print RuleMetadata where
   prt i md =
     case md.description of
       Nothing -> id
-      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "description: "), prt 0 descr, doc (showString "-/")])
+      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "About:"), prt 0 (T.unpack descr), doc (showString "-/")])
 
 instance Print RecordDeclMetadata where
   prt i md =
     case md.description of
       Nothing -> id
-      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "description: "), prt 0 descr, doc (showString "-/")])
+      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "About:"), prt 0 (T.unpack descr), doc (showString "-/")])
 
 instance Print RowMetadata where
   prt i md =
     case md.description of
       Nothing -> id
-      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "description: "), prt 0 descr, doc (showString "-/")])
+      Just descr -> prPrec i 0 (concatD [
+          doc (showString "/-")
+        , doc (showString "About:")
+        , prt 0 (T.unpack descr)
+        , doc (showString "-/")
+        ])
 
 instance Print DataDecl where
   {- TODO: description is something like
@@ -219,22 +224,24 @@ instance Print DataDecl where
   prt i = \case
     RecordDecl (recname:rowtypedecls) []      metadata ->
       prPrec i 0 (concatD [
-        doc (showString "STRUCTURE")
+        prt 0 metadata
+      , doc (showString "STRUCTURE")
       , prt 0 recname.name
       , doc (showString "{")
       , prt 0 rowtypedecls
       , doc (showString "}")
-      , prt 0 metadata])
+      ])
     RecordDecl (recname:rowtypedecls) parents metadata ->
       prPrec i 0 (concatD [
-        doc (showString "STRUCTURE")
+        prt 0 metadata
+      , doc (showString "STRUCTURE")
       , prt 0 recname.name
       , doc (showString "SPECIALIZES")
       , prt 0 parents
       , doc (showString "{")
       , prt 0 rowtypedecls
       , doc (showString "}")
-      , prt 0 metadata])
+      ])
 
 instance Print Expr where
   prt i = \case
