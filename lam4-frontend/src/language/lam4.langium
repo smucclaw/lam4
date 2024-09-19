@@ -324,7 +324,7 @@ InfixPredicateApplication infers Expr:
 ;
 
 InfixActionApplication infers Expr:
-    ListCons
+    Cons
     (
         {infer InfixActionApplication.left = current}
         ("DOES" | "DO")
@@ -332,14 +332,14 @@ InfixActionApplication infers Expr:
         // TODO: Might want to just overload the surface syntax for action/predicate application and use type annotations / inference to distinguish them?
         // Also, may want to add an infix fun app and then use Langium actions to desugar this to an infix fun app?
         action=[ActionDecl:IDOrBackTickedID]
-        right=ListCons?
+        right=Cons?
     )*
 ;
 
-ListCons infers Expr:
+Cons infers Expr:
     PostfixPredicateApplication
-    ({infer ListCons.first=current}
-     'FOLLOWED_BY_ITEMS_IN'
+    ({infer Cons.first=current}
+     'followed_by_items_in'
      rest=PostfixPredicateApplication
     )*
 ;
@@ -619,12 +619,13 @@ Relation:
 // Not expecting non-programmers to understand the more complicated type annotations in the textual form
 // This would be visualized / rendered in more accessible ways for non-programmers
 TypeAnnot:
-    // `=>` is right-associative (c.f. https://www.typefox.io/blog/parsing-expressions-with-xtext/)
+    // Note the quantity operator and the self-reference at the end. (If left-associative, would be `*` instead of `?`).
+    // This is because`=>` is right-associative (c.f. https://www.typefox.io/blog/parsing-expressions-with-xtext/)
     PrimitiveTypeAnnot ({infer TypeAnnot.left=current} '=>' right=TypeAnnot)?
 ;
 
-PrimitiveTypeAnnot:
-    CustomTypeDef | BuiltinType | '(' TypeAnnot ')'
+PrimitiveTypeAnnot infers TypeAnnot:
+    CustomTypeDef | 'LIST_OF' TypeAnnot | BuiltinType | '(' TypeAnnot ')'
 ;
 
 CustomTypeDef:
