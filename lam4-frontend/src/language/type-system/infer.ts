@@ -572,29 +572,3 @@ export const getRecordAncestors = (record: RecordDecl) => getAncestors(record) a
 
 //     return seenArr;
 // }
-
-
-/*============= Error ================================ */
-// class TCError {
-//     readonly tag = "TCError";
-//     readonly node: AstNode;
-//     readonly message: string;
-
-//     constructor(node: AstNode, message: string) {
-//         this.node = node;
-//         this.message = message;
-//     }
-
-// }
-// type CheckResult = Either<TCError, TypeTag>;
-
-// TODO: This is hacky -- figure out what a better way of handling type errors is, after the first draft
-// function tcErrorToTypeTag(tcError: TCError): TypeTag {
-//     return new ErrorTypeTag(tcError.astNode, tcError.message);
-// }
-
-// const unwrapResult = (either: Either<TCError, TypeTag>): TypeTag =>
-//      match(either)
-//         .with({tag: "failure"}, (either) => tcErrorToTypeTag(either.value))
-//         .with({tag: "success"}, (either) => either.value)
-//         .exhaustive();
