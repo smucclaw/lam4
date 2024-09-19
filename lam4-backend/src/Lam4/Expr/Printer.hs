@@ -238,6 +238,7 @@ instance Print DataDecl where
      -/
   -}
   prt i = \case
+    decl@(RecordDecl [] _ _) -> error [I.i|Trying to print DataDecl without a name: #{decl}|]
     RecordDecl (recname:rowtypedecls) []      metadata ->
       prPrec i 0 (concatD [
         prt 0 metadata
@@ -282,6 +283,7 @@ instance Print Expr where
     Let decl expr -> prPrec i 0 (concatD [doc (showString "LET"), doc (showString "{"), prt 0 decl, doc (showString "}"), doc (showString "IN"), doc (showString "{"), prt 0 expr, doc (showString "}")])
     StatementBlock (st :| sts) -> prPrec i 0 (concatD [prt 0 (st:sts)])
     NormIsInfringed name -> prPrec i 0 (concatD [prt 0 name, doc (showString "IS_INFRINGED")])
+    p@(Predicate _mdata [] _expr) -> error [I.i|Trying to print Predicate without a name: #{p}|]
     Predicate metadata [funname] expr ->
       prPrec i 0 (concatD [
           prt 0 metadata
@@ -313,7 +315,6 @@ instance Print Expr where
         , prt 0 right
         ])
     PredApp f args -> prPrec i 0 (concatD [prt 0 f, prt 0 args])
-    List exprs -> prt i exprs
     Sig{} -> error "not yet implemented: Sig"
     Relation{} -> error "not yet implemented: Relation"
 
@@ -385,6 +386,7 @@ instance Print TypeExpr where
   prt i = \case
     TyCustom name -> prPrec i 0 (concatD [prt 0 name])
     TyBuiltin builtintype -> prPrec i 0 (concatD [prt 0 builtintype])
+    TyFun arg ret -> prPrec i 0 (concatD [prt 0 arg, doc (showString "=>"), prt 0 ret])
 
 instance Print TyBuiltin where
   prt i = \case
