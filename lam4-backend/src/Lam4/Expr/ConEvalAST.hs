@@ -51,7 +51,7 @@ data ConEvalExpr
     What follows is
     EXPERIMENTAL or VERY WIP
   ============================-}
-  | Atom        [Name]                                   -- Atom parents relations. This is what a ONE SIG with no relations will get translated to.
+  | Atom        [Name]                                   -- Atom parents (TODO: May not make sense to add parents). This is what a ONE SIG with no relations will get translated to.
   deriving stock (Eq, Show, Generic)
 
 makeLenses ''ConEvalExpr
