@@ -119,6 +119,8 @@ compileExpr = \case
   Fun ruleMetadata params body -> SM.Fun (compileTransparency ruleMetadata.transparency) (map lam4ToSimalaName params) (compileExpr body)
   Let decl body                -> SM.Let (compileDecl decl) (compileExpr body)
   Atom{}                        -> error "Should already have translated a ONE CONCEPT / SIG with no Relations to a Simala Atom when compiling decls"
+  Foldr combine nil xs         -> SM.Builtin SM.Foldr [compileExpr combine, compileExpr nil, compileExpr xs]
+  Foldl update initial xs      -> SM.Builtin SM.Foldl [compileExpr update, compileExpr initial, compileExpr xs]
 
 -------------------------
 

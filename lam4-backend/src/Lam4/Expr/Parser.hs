@@ -239,6 +239,9 @@ parseExpr node = do
     "List"           -> parseList           node
     "Cons"           -> parseCons           node
 
+    "Foldr"          -> parseFoldr          node
+    "Foldl"          -> parseFoldl          node
+
     {-
     * Join: Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
     * Sig: May want to remove Sigs as well.
@@ -438,6 +441,25 @@ parseCons consNode = do
   first <- parseExpr =<< consNode .: "first"
   rest  <- parseExpr =<< consNode .: "rest"
   pure $ Cons first rest
+
+{------------------------
+    Builtin ListOps
+-------------------------}
+
+parseFoldr :: A.Object -> Parser Expr
+parseFoldr foldrNode = do
+  func <- parseExpr =<< foldrNode .: "combine"
+  initVal <- parseExpr =<< foldrNode .: "nil"
+  list <- parseExpr =<< foldrNode .: "collection"
+  pure $ Foldr func initVal list
+
+parseFoldl :: A.Object -> Parser Expr
+parseFoldl foldlNode = do
+  func <- parseExpr =<< foldlNode .: "update"
+  initVal <- parseExpr =<< foldlNode .: "initial"
+  list <- parseExpr =<< foldlNode .: "collection"
+  pure $ Foldl func initVal list
+
 
 {------------------------
     Let

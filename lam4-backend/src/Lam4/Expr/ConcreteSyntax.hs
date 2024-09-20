@@ -79,6 +79,8 @@ data Expr
   | Project    Expr Name                           -- record projection
   | Fun        RuleMetadata [Name] Expr            -- Function
   | Let        Decl Expr
+  | Foldr      Expr Expr Expr                      -- Foldr combine nil     collection
+  | Foldl      Expr Expr Expr                      -- Foldl update  initial collection
   | StatementBlock  (NonEmpty Statement)
 
   {-===========================

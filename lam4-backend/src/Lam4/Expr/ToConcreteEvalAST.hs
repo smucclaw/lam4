@@ -51,6 +51,9 @@ toConEvalExpr expression =
         CST.Fun ruleMetadata params body -> AST.Fun ruleMetadata params (swapConstructors body)
         CST.Let decl body                -> AST.Let (toConEvalDecl decl) (swapConstructors body)
 
+        CST.Foldr combine nil xs         -> AST.Foldr (swapConstructors combine) (swapConstructors nil) (swapConstructors xs)
+        CST.Foldl update initial xs      -> AST.Foldl (swapConstructors update) (swapConstructors initial) (swapConstructors xs)
+
         CST.Predicate{}                  -> error "CST.Predicate should have been desugared"
         CST.PredApp{}                    -> error "CST.PredApp should have been desugared"
 
