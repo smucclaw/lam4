@@ -32,7 +32,7 @@ import           Lam4.Expr.Name           (Name (..))
 import           Data.Bifunctor           (bimap)
 import qualified Simala.Expr.Evaluator    as SM (doEvalDeclsTracing)
 import qualified Simala.Expr.Render       as SM
-import qualified Simala.Expr.Type         as SM 
+import qualified Simala.Expr.Type         as SM
 
 
 defaultTransparency :: SM.Transparency
@@ -108,6 +108,7 @@ compileExpr = \case
   Var name                     -> SM.Var $ lam4ToSimalaName name
   Lit (CST.IntLit i)           -> SM.Lit $ SM.IntLit i
   Lit (CST.BoolLit b)          -> SM.Lit $ SM.BoolLit b
+  Lit (CST.StringLit s)        -> SM.Lit $ SM.StringLit s
   Cons first rest              -> SM.Cons (compileExpr first) (compileExpr rest)
   List xs                      -> SM.List (map compileExpr xs)
   Unary op expr                -> SM.Builtin (compileUnaryOp op) [compileExpr expr]
@@ -119,6 +120,8 @@ compileExpr = \case
   Fun ruleMetadata params body -> SM.Fun (compileTransparency ruleMetadata.transparency) (map lam4ToSimalaName params) (compileExpr body)
   Let decl body                -> SM.Let (compileDecl decl) (compileExpr body)
   Atom{}                        -> error "Should already have translated a ONE CONCEPT / SIG with no Relations to a Simala Atom when compiling decls"
+  Foldr combine nil xs         -> SM.Builtin SM.Foldr [compileExpr combine, compileExpr nil, compileExpr xs]
+  Foldl update initial xs      -> SM.Builtin SM.Foldl [compileExpr update, compileExpr initial, compileExpr xs]
 
 -------------------------
 

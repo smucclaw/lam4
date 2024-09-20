@@ -79,6 +79,8 @@ data Expr
   | Project    Expr Name                           -- record projection
   | Fun        RuleMetadata [Name] Expr            -- Function
   | Let        Decl Expr
+  | Foldr      Expr Expr Expr                      -- Foldr combine nil     collection
+  | Foldl      Expr Expr Expr                      -- Foldl update  initial collection
   | StatementBlock  (NonEmpty Statement)
 
   {-===========================
@@ -111,7 +113,7 @@ data Expr
 data Lit
   = IntLit Int
   | BoolLit Bool
-  -- | StringLit Text -- TODO: not clear that we need this
+  | StringLit Text
   deriving stock (Eq, Show, Ord)
 
 

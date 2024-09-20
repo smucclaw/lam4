@@ -427,7 +427,7 @@ fragment ListOps: Foldr | Foldl | MaximumOf | MinimumOf | SumOf;
 
 PrimitiveExpr infers Expr:
     '(' Expr ')' | AnonFunction | List | ListOps
-    | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
+    | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral | StringLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 

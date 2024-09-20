@@ -218,7 +218,7 @@ parseExpr node = do
 
     -- literals
     "IntegerLiteral" -> parseIntegerLiteral node
-    -- "StringLiteral"  -> parseLiteral StringLit node
+    "StringLiteral"  -> parseStringLiteral node
     "BooleanLiteral" -> parseBooleanLiteral node
 
     "LetExpr"        -> parseLet            node
@@ -238,6 +238,9 @@ parseExpr node = do
 
     "List"           -> parseList           node
     "Cons"           -> parseCons           node
+
+    "Foldr"          -> parseFoldr          node
+    "Foldl"          -> parseFoldl          node
 
     {-
     * Join: Join is currently disabled / deprecated, but may return if we want to do certain kinds of symbolic analysis
@@ -430,14 +433,33 @@ parseIfThenElse obj = do
 
 parseList :: A.Object -> Parser Expr
 parseList listNode = do
-  elements <- traverse parseExpr (listNode `getObjectsAtField` "elements")
-  pure $ List elements
+  elts <- traverse parseExpr (listNode `getObjectsAtField` "elts")
+  pure $ List elts
 
 parseCons :: A.Object -> Parser Expr
 parseCons consNode = do
   first <- parseExpr =<< consNode .: "first"
   rest  <- parseExpr =<< consNode .: "rest"
   pure $ Cons first rest
+
+{------------------------
+    Builtin ListOps
+-------------------------}
+
+parseFoldr :: A.Object -> Parser Expr
+parseFoldr foldrNode = do
+  func <- parseExpr =<< foldrNode .: "combine"
+  initVal <- parseExpr =<< foldrNode .: "nil"
+  list <- parseExpr =<< foldrNode .: "collection"
+  pure $ Foldr func initVal list
+
+parseFoldl :: A.Object -> Parser Expr
+parseFoldl foldlNode = do
+  func <- parseExpr =<< foldlNode .: "update"
+  initVal <- parseExpr =<< foldlNode .: "initial"
+  list <- parseExpr =<< foldlNode .: "collection"
+  pure $ Foldl func initVal list
+
 
 {------------------------
     Let
@@ -589,6 +611,13 @@ parseFunApp funApp = do
 {----------------------
     Literals
 -----------------------}
+
+parseStringLiteral :: A.Object -> Parser Expr
+parseStringLiteral literalNode = do
+    let literalVal = literalNode ^? ix "value" % _String
+    case literalVal of
+      Just litVal -> pure . Lit $ StringLit litVal
+      Nothing -> throwError $ "Failed to parse string value. Node: " <> ppShow literalNode
 
 parseIntegerLiteral :: A.Object -> Parser Expr
 parseIntegerLiteral literalNode = do

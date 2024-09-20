@@ -42,6 +42,9 @@ data ConEvalExpr
   | Project    ConEvalExpr Name                           -- record projection
   | Fun        RuleMetadata [Name] ConEvalExpr            -- Function
   | Let        ConEvalDecl ConEvalExpr
+  | Foldl      ConEvalExpr ConEvalExpr ConEvalExpr        -- Foldl update  initial collection
+  | Foldr      ConEvalExpr ConEvalExpr ConEvalExpr        -- Foldr combine nil     collection
+
   -- | StatementBlock  (NonEmpty Statement)
 
   {-===========================
