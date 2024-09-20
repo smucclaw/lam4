@@ -9,7 +9,6 @@ IF True
 GIVEN (x IS_A Person 
        y IS_A Person 
        z IS_A Person)
-DECIDE pred2 IF x `s` age
+DECIDE pred2 IF x's age > 10 AND y's age > 10 AND z's age > 10
 
-GIVEN ()
 DECIDE no_givens_pred IF True

@@ -300,7 +300,7 @@ Mult infers Expr:
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 */
 Project infers Expr:
-    InfixPredicateApplication ({infer Project.left=current} '`s`' right=Ref)*
+    InfixPredicateApplication ({infer Project.left=current} GENITIVE right=Ref)*
     // Right can't be [NamedElement:ID]
     // because we want the scoper to visit `left` first,
     // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
@@ -682,7 +682,7 @@ BooleanLiteral:
 /* =======================================
         TERMINALS
 ========================================== */
-
+terminal GENITIVE: "'s "; 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
 terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;

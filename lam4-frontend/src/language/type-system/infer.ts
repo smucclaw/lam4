@@ -274,7 +274,7 @@ function synthProject(env: TypeEnv, term: Project): TypeTag {
 
     const rightRefName = term.right.value.$refText;
     
-    // With the type of the left sibling, we can infer what the type of `left `s` right` is
+    // With the type of the left sibling, we can infer what the type of `left 's right` is
     if (isRecordTTag(typeOfLeft)) {
         const recordTag = typeOfLeft;
 
@@ -295,7 +295,7 @@ function synthProject(env: TypeEnv, term: Project): TypeTag {
 /*
 Sep 3: The old Sig/Relations version (now currently just using Project without Join)
 --------------------------------------------------------------------------------------
-    // With the type of the left sibling, we can infer what the type of `left `s` right` is
+    // With the type of the left sibling, we can infer what the type of `left 's right` is
     if (isSigTTag(typeOfLeft)) {
         const sig = typeOfLeft.getSig();
         const matchingRelation: Relation | undefined = sig.relations.find(relNode => relNode.name === rightRefName);

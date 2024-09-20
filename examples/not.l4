@@ -3,11 +3,11 @@ STRUCTURE Applicant {
 }
 
 Applicant => Integer
-numberOfPublications(applicant) = applicant`s` publications
+numberOfPublications(applicant) = applicant's publications
 
 GIVEN (x IS_A Applicant)
 DECIDE `is eligible for grant`
-IF NOT x`s` publications < 2
+IF NOT x's publications < 2
 
 GIVEN (x IS_A Applicant)
 DECIDE `happy`

@@ -224,8 +224,8 @@ Or:
 
 @
 ACTION TransferMoolah = DO {
-  Buyer`s`  money decreases_by 50
-  Seller`s` money increases_by 50
+  Buyer's  money decreases_by 50
+  Seller's money increases_by 50
 }
 @
 
