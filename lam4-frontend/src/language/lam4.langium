@@ -190,12 +190,12 @@ FunDecl:
 
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
+    'FUNCTION' // An explicit kw might be helpful for non-programmers
     funType=TypeAnnot
-
-    'FUNCTION'? // An explicit kw might be helpful for non-programmers
     name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
     ( '=' | 'equals')
     body=Expr
+    'END'
 ;
 
 // When doing concrete (as opposed to symbolic) execution,
@@ -489,13 +489,13 @@ ActionDecl:
     ('=' PrimActionBlock)?
 ;
 
-fragment PrimActionBlock: 'DO' '{'
+fragment PrimActionBlock: 'DO'
     actions+=PrimAction ('then' actions+=PrimAction)*
-'}';
+'END';
 
-fragment StatementBlock: 'DO' '{'
+fragment StatementBlock: 'DO'
     statements+=Statement+
-'}';
+'END';
 
 Norm:
     originalRuleRef=OriginalRuleRef?
@@ -524,9 +524,9 @@ RecordDecl:
 
     'STRUCTURE'
     name=ID
-    ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )? '{'
+    ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )?
         rowTypes+=RowType*
-    '}'
+    'END'
 ;
 
 
@@ -577,9 +577,9 @@ SigDecl:
 
     multiplicity=SigMultOne? 'CONCEPT'
     name=ID
-    ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )? '{'
+    ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )?
         relations+=Relation*
-    '}'
+    'END'
 ;
 
 SigMultOne: {infer SigMultOne} 'ONE';

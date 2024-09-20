@@ -1,12 +1,11 @@
-STRUCTURE Accident { // placeholder
-}
+STRUCTURE Accident END // placeholder
 
-STRUCTURE LifeAssured {}
+STRUCTURE LifeAssured END
 
 -- Calculates how much the life assured can get for their claim
-LifeAssured => Accident => Integer
+FUNCTION LifeAssured => Accident => Integer
 payout(life_assured, accident) = 0
-  
+END  
 
 -- Checks if the life assured is eligible for a payout.
 GIVEN (x: LifeAssured)
