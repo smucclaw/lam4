@@ -1,6 +1,3 @@
-// TODO: The translation of names of ONE CONCEPT / atoms needs to be fixed
-// ScopeError "Unknown_1"
-
 ONE CONCEPT Unknown END
 
 DEFINE list = LIST_OF 1, 2, Unknown, 3, 4
