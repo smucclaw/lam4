@@ -433,7 +433,7 @@ parseIfThenElse obj = do
 
 parseList :: A.Object -> Parser Expr
 parseList listNode = do
-  elts <- traverse parseExpr (listNode `getObjectsAtField` "elts")
+  elts <- traverse parseExpr (listNode `getObjectsAtField` "elements")
   pure $ List elts
 
 parseCons :: A.Object -> Parser Expr
