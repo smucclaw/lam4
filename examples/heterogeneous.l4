@@ -1,0 +1,17 @@
+// TODO: The translation of names of ONE CONCEPT / atoms needs to be fixed
+// ScopeError "Unknown_1"
+
+ONE CONCEPT Unknown END
+
+DEFINE list = LIST_OF 1, 2, Unknown, 3, 4
+
+FUNCTION (Integer => Integer) => LIST_OF Integer
+map(f, xs) = 
+  FOLD_RIGHT 
+    using         (\x acc => f(x) followed_by_items_in acc)
+    starting_with EMPTY_LIST
+    over          xs
+END
+
+@REPORT map(\x => x EQUALS Unknown, list)
+@REPORT map(\x => x EQUALS 2,       list)

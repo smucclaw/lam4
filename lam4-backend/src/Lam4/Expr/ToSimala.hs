@@ -69,7 +69,8 @@ compileBinOp = \case
   Le     -> SM.Le
   Ge     -> SM.Ge
   Ne     -> SM.Ne
-  Eq     -> SM.Eq
+  Eq     -> SM.HEq 
+  -- TODO: in the future, could pass along type info and use that to determine if we should use HEq or Eq
   Modulo -> SM.Modulo
   StrAppend -> SM.Append
 
