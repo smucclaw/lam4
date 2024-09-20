@@ -8,4 +8,4 @@ STRUCTURE G {
 }
 
 F => Integer
-f(x) = x`s` c`s` b
+f(x) = x's c's b

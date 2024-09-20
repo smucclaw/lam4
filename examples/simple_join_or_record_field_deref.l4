@@ -5,11 +5,11 @@ STRUCTURE Applicant {
 DEFINE someApplicant: Applicant = {| publications = 1000 |}
 
 Applicant => Integer
-numberOfPublications(applicant) = applicant`s` publications
+numberOfPublications(applicant) = applicant's publications
 
 GIVEN (x IS_A Applicant)
 DECIDE `is eligible for grant`
-IF x`s` publications > 10
+IF x's publications > 10
 
 GIVEN (x IS_A Applicant)
 DECIDE `happy`
