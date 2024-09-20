@@ -125,6 +125,6 @@ test-suite lam4-backend-test
         hspec-golden,
         pretty-simple,
         filepath,
+        directory,
         text,
-        bytestring,
-        raw-strings-qq
+        bytestring

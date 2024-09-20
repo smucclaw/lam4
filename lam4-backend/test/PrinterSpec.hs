@@ -4,19 +4,19 @@ module PrinterSpec (spec) where
 
 import           Test.Hspec
 import           Test.Hspec.Golden
-import           Lam4.Expr.CommonSyntax
-import           Lam4.Expr.ConcreteSyntax
+import           Lam4.Expr.ConcreteSyntax (Decl)
 import           Lam4.Expr.Printer       (printTree)
 import           Lam4.Expr.Parser        (parseProgramByteStr)
 import           Lam4.Parser.Monad       (evalParserFromScratch)
-import qualified Data.ByteString.Char8 as BS (pack)
+import           Control.Monad           (forM_)
+import           Data.List               (intercalate)
+import qualified Data.ByteString.Char8 as BS (readFile)
 import qualified Base.ByteString       as BL (fromStrict)
-import qualified Data.Text             as T
 import qualified Data.Text.Lazy        as TL
 import qualified Data.Text.Lazy.IO     as TL
-import           System.FilePath          ((<.>), (</>))
+import           System.FilePath          ((<.>), (</>), takeBaseName)
+import           System.Directory         (listDirectory)
 import           Text.Pretty.Simple    as Pretty (pShowNoColor)
-import           Text.RawString.QQ        (r)
 
 goldenGeneric :: Show a => String -> a -> Golden TL.Text
 goldenGeneric name output_ = Golden
@@ -33,25 +33,22 @@ goldenGeneric name output_ = Golden
 
 spec :: Spec
 spec = do
-  test "predicate, no givens" predNoGivens "pred-no-givens"
+  files <- runIO $ listDirectory "../examples"
+  forM_ files $ \file -> do
+    let fpath = "../examples/" <> file
+    decls <- runIO $ parseProgramFile fpath
+    let fname = takeBaseName file
+        descr = "Testing " <> fname
+        printedDecls = intercalate "\n" $ fmap printTree decls
+    testGolden descr fname printedDecls
 
-  where
-    test :: String -> String -> String -> Spec
-    test desc declStr fname = do
-      let decls :: [Decl] = parseCSTString declStr
-          printedDecls = printTree <$> decls
-      it desc $ goldenGeneric fname printedDecls
+testGolden :: String -> String -> String -> Spec
+testGolden desc fname expected = it desc $ goldenGeneric fname expected
 
-
-predNoGivens :: String
-predNoGivens = [r|
-  DECIDE `pred blah blah`
-  // use the backtick syntax when you want an identifier with spaces
-  IF True|]
-
-
-parseCSTString :: String -> [Decl]
-parseCSTString str =
-  case evalParserFromScratch . parseProgramByteStr . BL.fromStrict . BS.pack $ str of
+parseProgramFile :: FilePath -> IO [Decl]
+parseProgramFile file = do
+  bs <- BS.readFile file
+  case evalParserFromScratch . parseProgramByteStr . BL.fromStrict $ bs of
     Left err       -> error ("Parse error:\n" <> show err)
-    Right cstDecls -> cstDecls
+    Right cstDecls -> pure cstDecls
+
