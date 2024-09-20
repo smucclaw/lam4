@@ -1,0 +1,21 @@
+STRUCTURE Publication END
+
+STRUCTURE Applicant
+    publications: Publication
+END
+
+FUNCTION Publication => Integer
+increment(_, acc) = acc + 1
+END
+
+FUNCTION Applicant => Integer
+numberOfPublications(applicant) =
+  FOLD_RIGHT 
+     using         increment
+     starting_with 0 
+     over          applicant's publications
+END
+
+GIVEN (applicant IS_A Applicant)
+DECIDE applicant `is eligible for grant`
+IF numberOfPublications(applicant) >= 3

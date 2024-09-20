@@ -1,9 +1,10 @@
-STRUCTURE Applicant {
+STRUCTURE Applicant
     publications: Integer
-}
+END
 
-Applicant => Integer
+FUNCTION Applicant => Integer
 numberOfPublications(applicant) = applicant's publications
+END
 
 GIVEN (x IS_A Applicant)
 DECIDE `is eligible for grant`

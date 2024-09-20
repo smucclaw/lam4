@@ -3,7 +3,7 @@
 /- 
 About: "A Person is pretty much what you would expect"
 -/
-STRUCTURE Person {}
+STRUCTURE Person END
 
 // 'infix' predicate definition. The use of the params past the `DECIDE` is purely cosmetic. 
 GIVEN (some_person: Person 

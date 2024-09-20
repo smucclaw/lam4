@@ -2,11 +2,11 @@
 DEFINE debt: Integer = 20
 
 
-ACTION `Borrower makes one loan installment` = DO {
+ACTION `Borrower makes one loan installment` = DO
     debt decreases_by 10
-}
+END
 
-ACTION `pay off debt` = DO {
+ACTION `pay off debt` = DO
     `Borrower makes one loan installment`
     then `Borrower makes one loan installment`
-}
+END

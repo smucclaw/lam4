@@ -1,6 +1,6 @@
-ONE CONCEPT Buyer {}
-ONE CONCEPT Seller {}
-ONE CONCEPT Courier {}
+ONE CONCEPT Buyer END
+ONE CONCEPT Seller END
+ONE CONCEPT Courier END
 
 ACTION `pay for bike`
 ACTION `transfer bike to Courier within two days`

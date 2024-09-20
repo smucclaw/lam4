@@ -1,11 +1,12 @@
-STRUCTURE F {
-    a: Integer
-    c: G
-}
+STRUCTURE F
+    a IS_A Integer
+    c IS_A G
+END
 
-STRUCTURE G {
-    b: Integer
-}
+STRUCTURE G
+    b IS_A Integer
+END
 
-F => Integer
+FUNCTION F => Integer
 f(x) = x's c's b
+END

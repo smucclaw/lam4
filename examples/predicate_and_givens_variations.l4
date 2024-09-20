@@ -1,6 +1,6 @@
-STRUCTURE Person {
+STRUCTURE Person
     age: Integer
-}
+END
 
 DECIDE `pred blah blah`
 // use the backtick syntax when you want an identifier with spaces

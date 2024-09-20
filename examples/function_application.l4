@@ -1,6 +1,7 @@
 // placeholder function for illustration
-Integer => Integer
+FUNCTION Integer => Integer
 sumIntegers(x, y) = x + y
+END
 
 DECIDE `some predicate`
 IF sumIntegers(1, 2) > 2

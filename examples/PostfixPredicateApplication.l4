@@ -3,10 +3,13 @@
 /- 
 About: "A Person is pretty much what you would expect"
 -/
-STRUCTURE Person { some_number IS_A Integer }
+STRUCTURE Person 
+  some_number IS_A Integer 
+END
 
-Integer => Integer
+FUNCTION Integer => Integer
 f(x) = 2
+END
 
 DECIDE `some fact`
 IF True
