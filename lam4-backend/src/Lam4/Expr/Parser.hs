@@ -526,13 +526,65 @@ extractOriginalRuleRef node = parseOriginalRuleRef (node ^? ix "originalRuleRef"
 parseParam :: A.Object -> Parser Name
 parseParam = getName
 
+{- | Example of an AnonFunction node
+
+  @REPORT (\a b => 1 + a + b)
+
+  parses to
+
+  @
+  {
+        "$type": "AnonFunction",
+        "params": [
+            {
+                "$type": "Param",
+                "name": "a",
+                "nodePath": "#/elements@0/value/params@0"
+            },
+            {
+                "$type": "Param",
+                "name": "b",
+                "nodePath": "#/elements@0/value/params@1"
+            }
+        ],
+        "body": {
+            "$type": "BinExpr",
+            "left": {
+                "$type": "BinExpr",
+                "left": {
+                    "$type": "IntegerLiteral",
+                    "value": "1"
+                },
+                "op": {
+                    "$type": "OpPlus"
+                },
+                "right": {
+                    "$type": "Ref",
+                    "value": {
+                        "$ref": "#/elements@0/value/params@0",
+                        "$refText": "a"
+                    }
+                }
+            },
+            "op": {
+                "$type": "OpPlus"
+            },
+            "right": {
+                "$type": "Ref",
+                "value": {
+                    "$ref": "#/elements@0/value/params@1",
+                    "$refText": "b"
+                }
+            }
+        }
+    }  
+  @
+-}
 parseAnonFun :: A.Object -> Parser Expr
 parseAnonFun anonFun = do
-  paramNames <- traverse parseParam anonFunParams
+  paramNames   <- traverse parseParam (anonFun `getObjectsAtField` "params")
   body       <- parseExpr =<< anonFun .: "body"
   pure $ Fun emptyRuleMetadata paramNames body
-    where
-      anonFunParams = anonFun ^.. ix "params" % values % cosmos % ix "param" % _Object
 
 parseFunE :: A.Object -> Parser Expr
 parseFunE fun = do
