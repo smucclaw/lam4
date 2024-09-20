@@ -71,6 +71,7 @@ compileBinOp = \case
   Ne     -> SM.Ne
   Eq     -> SM.Eq
   Modulo -> SM.Modulo
+  StrAppend -> SM.Append
 
 
 compile  :: [AST.ConEvalDecl] -> SimalaProgram

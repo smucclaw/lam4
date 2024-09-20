@@ -77,9 +77,10 @@ data BinOp
   | Lt
   | Le
   | Gt
-  | Ge      -- ^ greater-than-or-equal
-  | Eq      -- ^ equality (of Booleans, numbers or atoms)
-  | Ne      -- ^ inequality (of Booleans, numbers or atoms)
+  | Ge        -- ^ greater-than-or-equal
+  | Eq        -- ^ equality (of Booleans, numbers or atoms)
+  | Ne        -- ^ inequality (of Booleans, numbers or atoms)
+  | StrAppend -- ^ Append two strings, arity 2
    deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default BinOp)
 
