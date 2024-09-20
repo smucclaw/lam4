@@ -385,6 +385,10 @@ AnonFunction:
     body=Expr
 ;
 
+/* ============================
+    List and ListOps
+=============================== */
+
 List:
     EmptyList | NonEmptyList
 ;
@@ -395,12 +399,34 @@ EmptyList:
 ;
 
 NonEmptyList infers List:
-    'LIST_OF' elements+=Expr (',' elements+=Expr)* '.'
+    'LIST_OF' elements+=Expr (',' elements+=Expr)* ('.')?
 ;
 
+// TODO: Think more about what kind of surface syntax would be intuitive for foldr and foldl
+Foldr:
+    'FOLD_RIGHT' 'using' combine=Expr 'starting_with' nil=Expr 'over' collection=Expr
+;
+
+Foldl:
+    'FOLD_LEFT' 'using' update=Expr 'starting_with' initial=Expr 'over' collection=Expr
+;
+
+MaximumOf:
+    'MAXIMUM_OF' collection=Expr
+;
+
+MinimumOf:
+    'MINIMUM_OF' collection=Expr
+;
+
+SumOf:
+    'SUM_OF' collection=Expr
+;
+
+fragment ListOps: Foldr | Foldl | MaximumOf | MinimumOf | SumOf;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | List
+    '(' Expr ')' | AnonFunction | List | ListOps
     | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
