@@ -182,6 +182,15 @@ OriginalRuleRef:
     ('SECTION' | '§') section=INTEGER
 ;
 
+fragment FunParams:
+    '(' ( params+=Param (',' params+=Param)* )? ')'
+;
+
+fragment AnonFunParams:
+    ( params+=Param ( params+=Param)* ) | '(' ')'
+;
+
+
 // a terse FunDecl
 FunDecl:
     description=SINGLELINE_METADATA_ANNOTATION?
@@ -192,7 +201,8 @@ FunDecl:
     // Require annotations for top level func decl, since required for bidir type checking
     'FUNCTION' // An explicit kw might be helpful for non-programmers
     funType=TypeAnnot
-    name=ID '(' ( params+=Param (',' params+=Param)* )? ')'
+    name=ID 
+    FunParams
     ( '=' | 'equals')
     body=Expr
     'END'
@@ -380,7 +390,7 @@ NormIsInfringed:
 // it's not something I'm expecting ordinary, non-programmer users to use or understand
 AnonFunction:
     '\\'
-    ( ('(' ')') | (params+=(ParamTypePair | Param) (params+=(ParamTypePair | Param))*) )
+    AnonFunParams
     '=>'
     body=Expr
 ;
