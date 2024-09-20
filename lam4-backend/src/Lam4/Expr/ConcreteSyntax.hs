@@ -71,9 +71,6 @@ data Expr
   | Unary      UnaryOp Expr
   | BinExpr    BinOp Expr Expr
   | IfThenElse Expr Expr Expr
-  -- TODO: Not Yet Implemented / need to think more about what collection types to support
-  -- TODO: Add Cons after have wired up to an evaluator
-  -- | ListExpr   ListOp [Expr]
   | FunApp     Expr [Expr]
   | Record     (Row Expr)                          -- record construction
   | Project    Expr Name                           -- record projection
@@ -260,6 +257,8 @@ exprSubexprsVL f = \case
   -- Exprs with sub-exprs
   Cons first rest                    -> Cons <$> f first <*> f rest
   List xs                            -> List <$> traverse f xs
+  Foldr combine nil xs               -> Foldr <$> f combine <*> f nil <*> f xs
+  Foldl update initial xs            -> Foldl <$> f update <*> f initial <*> f xs
   Unary op expr                      -> Unary op <$> f expr
   BinExpr op left right              -> BinExpr op <$> f left <*> f right
   IfThenElse cond thn els            -> IfThenElse <$> f cond <*> f thn <*> f els
