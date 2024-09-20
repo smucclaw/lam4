@@ -96,23 +96,35 @@ library
 --         bytestring,
 --         lam4-backend
 
--- test-suite lam4-backend-test
---     import:           defaults
---     default-language: GHC2021
+test-suite lam4-backend-test
+    import:           defaults
+    default-language: GHC2021
 
---     -- Modules included in this executable, other than Main.
---     -- other-modules:
+    -- Modules included in this executable, other than Main.
+    other-modules:
+        PrinterSpec
 
---     -- The interface type and version of the test suite.
---     type:             exitcode-stdio-1.0
+    -- The interface type and version of the test suite.
+    type:
+        exitcode-stdio-1.0
 
---     -- Directories containing source files.
---     hs-source-dirs:   test
+    -- Directories containing source files.
+    hs-source-dirs:
+      test
+    build-tool-depends:
+        hspec-discover:hspec-discover
+    -- The entrypoint to the test suite.
+    main-is:
+        Spec.hs
 
---     -- The entrypoint to the test suite.
---     main-is:          Main.hs
-
---     -- Test dependencies.
---     build-depends:
---         base ^>=4.18.2.0,
---         lam4-backend
+    -- Test dependencies.
+    build-depends:
+        lam4-backend,
+        base,
+        hspec,
+        hspec-golden,
+        pretty-simple,
+        filepath,
+        text,
+        bytestring,
+        raw-strings-qq
