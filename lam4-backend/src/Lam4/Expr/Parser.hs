@@ -218,7 +218,7 @@ parseExpr node = do
 
     -- literals
     "IntegerLiteral" -> parseIntegerLiteral node
-    -- "StringLiteral"  -> parseLiteral StringLit node
+    "StringLiteral"  -> parseStringLiteral node
     "BooleanLiteral" -> parseBooleanLiteral node
 
     "LetExpr"        -> parseLet            node
@@ -433,8 +433,8 @@ parseIfThenElse obj = do
 
 parseList :: A.Object -> Parser Expr
 parseList listNode = do
-  elements <- traverse parseExpr (listNode `getObjectsAtField` "elements")
-  pure $ List elements
+  elts <- traverse parseExpr (listNode `getObjectsAtField` "elts")
+  pure $ List elts
 
 parseCons :: A.Object -> Parser Expr
 parseCons consNode = do
@@ -611,6 +611,13 @@ parseFunApp funApp = do
 {----------------------
     Literals
 -----------------------}
+
+parseStringLiteral :: A.Object -> Parser Expr
+parseStringLiteral literalNode = do
+    let literalVal = literalNode ^? ix "value" % _String
+    case literalVal of
+      Just litVal -> pure . Lit $ StringLit litVal
+      Nothing -> throwError $ "Failed to parse string value. Node: " <> ppShow literalNode
 
 parseIntegerLiteral :: A.Object -> Parser Expr
 parseIntegerLiteral literalNode = do

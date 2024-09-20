@@ -113,7 +113,7 @@ data Expr
 data Lit
   = IntLit Int
   | BoolLit Bool
-  -- | StringLit Text -- TODO: not clear that we need this
+  | StringLit Text
   deriving stock (Eq, Show, Ord)
 
 
