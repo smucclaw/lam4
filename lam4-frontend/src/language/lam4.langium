@@ -201,7 +201,7 @@ FunDecl:
     // Require annotations for top level func decl, since required for bidir type checking
     'FUNCTION' // An explicit kw might be helpful for non-programmers
     funType=TypeAnnot
-    name=ID 
+    name=IDOrBackTickedID 
     FunParams
     ( '=' | 'equals')
     body=Expr
@@ -642,7 +642,7 @@ Relation:
     // WithSpecificMetadataBlock?
     description=SINGLELINE_METADATA_ANNOTATION?
 
-    name=ID
+    name=IDOrBackTickedID
     // optional?='?'?
     (':' | 'IS_A')
     relatum=TypeAnnot // TODO: Support plural relata
