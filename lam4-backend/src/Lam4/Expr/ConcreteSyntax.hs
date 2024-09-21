@@ -211,10 +211,10 @@ This is also a common pattern / idiom in formal modelling in general.)
 But for certain modelling purposes, we may want richer structure; e.g.
 
 @
-DO {
+DO
   x increases_by 1
   y increases_by 1
-}
+END
 @
 
 where @x@ and @y@ are global variables.
@@ -222,10 +222,10 @@ where @x@ and @y@ are global variables.
 Or:
 
 @
-ACTION TransferMoolah = DO {
+ACTION TransferMoolah = DO
   Buyer's  money decreases_by 50
   Seller's money increases_by 50
-}
+END
 @
 
 ------------------
