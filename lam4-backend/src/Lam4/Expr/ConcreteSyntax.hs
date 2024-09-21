@@ -211,10 +211,10 @@ This is also a common pattern / idiom in formal modelling in general.)
 But for certain modelling purposes, we may want richer structure; e.g.
 
 @
-DO {
+DO
   x increases_by 1
   y increases_by 1
-}
+END
 @
 
 where @x@ and @y@ are global variables.
@@ -222,10 +222,10 @@ where @x@ and @y@ are global variables.
 Or:
 
 @
-ACTION TransferMoolah = DO {
+ACTION TransferMoolah = DO
   Buyer's  money decreases_by 50
   Seller's money increases_by 50
-}
+END
 @
 
 ------------------
@@ -270,11 +270,13 @@ exprSubexprsVL f = \case
   Predicate ruleMetadata params body -> Predicate ruleMetadata params <$> f body
   PredApp predicate args             -> PredApp <$> f predicate <*> traverse f args
   Sig parents relations              -> Sig parents <$> traverse f relations
+  -- TODO: May need to add a traversal for type exprs
+  Relation relName relParentSigName relatum description -> Relation <$> pure relName <*> pure relParentSigName <*> pure relatum <*> pure description
+  StatementBlock _                   -> undefined -- TODO
 
-  StatementBlock statements          -> undefined -- TODO
-
-  -- Exprs w/o sub-exprs: Var, Lit, NormIsInfringed, Relation
-  x                                  -> pure x
+  Var name                           -> pure $ Var name
+  Lit lit                            -> pure $ Lit lit
+  NormIsInfringed name               -> pure $ NormIsInfringed name
 
 exprSubexprs :: Traversal' Expr Expr
 exprSubexprs = traversalVL exprSubexprsVL
