@@ -270,11 +270,13 @@ exprSubexprsVL f = \case
   Predicate ruleMetadata params body -> Predicate ruleMetadata params <$> f body
   PredApp predicate args             -> PredApp <$> f predicate <*> traverse f args
   Sig parents relations              -> Sig parents <$> traverse f relations
+  -- TODO: May need to add a traversal for type exprs
+  Relation relName relParentSigName relatum description -> Relation <$> pure relName <*> pure relParentSigName <*> pure relatum <*> pure description
+  StatementBlock _                   -> undefined -- TODO
 
-  StatementBlock statements          -> undefined -- TODO
-
-  -- Exprs w/o sub-exprs: Var, Lit, NormIsInfringed, Relation
-  x                                  -> pure x
+  Var name                           -> pure $ Var name
+  Lit lit                            -> pure $ Lit lit
+  NormIsInfringed name               -> pure $ NormIsInfringed name
 
 exprSubexprs :: Traversal' Expr Expr
 exprSubexprs = traversalVL exprSubexprsVL
