@@ -559,8 +559,8 @@ RecordDecl:
     WithSpecificMetadataBlock?
 
     'STRUCTURE'
-    name=ID
-    ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )?
+    name=IDOrBackTickedID
+    ( 'SPECIALIZES' parents+=[RecordDecl:IDOrBackTickedID] ( ',' parents+=[RecordDecl:IDOrBackTickedID] )* )?
         rowTypes+=RowType*
     'END'
 ;
@@ -612,8 +612,8 @@ SigDecl:
     WithSpecificMetadataBlock?
 
     multiplicity=SigMultOne? 'CONCEPT'
-    name=ID
-    ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )?
+    name=IDOrBackTickedID
+    ( 'SPECIALIZES' parents+=[SigDecl:IDOrBackTickedID] ( ',' parents+=[SigDecl:IDOrBackTickedID] )* )?
         relations+=Relation*
     'END'
 ;
