@@ -201,7 +201,7 @@ FunDecl:
     // Require annotations for top level func decl, since required for bidir type checking
     'FUNCTION' // An explicit kw might be helpful for non-programmers
     funType=TypeAnnot
-    name=ID 
+    name=IDOrBackTickedID 
     FunParams
     ( '=' | 'equals')
     body=Expr
@@ -559,8 +559,8 @@ RecordDecl:
     WithSpecificMetadataBlock?
 
     'STRUCTURE'
-    name=ID
-    ( 'SPECIALIZES' parents+=[RecordDecl:ID] ( ',' parents+=[RecordDecl:ID] )* )?
+    name=IDOrBackTickedID
+    ( 'SPECIALIZES' parents+=[RecordDecl:IDOrBackTickedID] ( ',' parents+=[RecordDecl:IDOrBackTickedID] )* )?
         rowTypes+=RowType*
     'END'
 ;
@@ -612,8 +612,8 @@ SigDecl:
     WithSpecificMetadataBlock?
 
     multiplicity=SigMultOne? 'CONCEPT'
-    name=ID
-    ( 'SPECIALIZES' parents+=[SigDecl:ID] ( ',' parents+=[SigDecl:ID] )* )?
+    name=IDOrBackTickedID
+    ( 'SPECIALIZES' parents+=[SigDecl:IDOrBackTickedID] ( ',' parents+=[SigDecl:IDOrBackTickedID] )* )?
         relations+=Relation*
     'END'
 ;
@@ -642,7 +642,7 @@ Relation:
     // WithSpecificMetadataBlock?
     description=SINGLELINE_METADATA_ANNOTATION?
 
-    name=ID
+    name=IDOrBackTickedID
     // optional?='?'?
     (':' | 'IS_A')
     relatum=TypeAnnot // TODO: Support plural relata
