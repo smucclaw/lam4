@@ -261,8 +261,9 @@ AndExpr infers Expr:
 ;
 
 // TODO: Not sure if VarDecl the best thing to use for the inner stuff
+// TODO: Will switch from braces to indentation when time permits
 LetExpr:
-    'LET' '{' (vars+=VarBinding)+ '}' 'IN' '{' body=OrExpr '}'
+    'LET' '{' vars+=VarBinding (',' vars+=VarBinding )* '}' 'IN' '{' body=OrExpr '}'
 ;
 
 Row:

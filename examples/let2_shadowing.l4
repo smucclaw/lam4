@@ -1,0 +1,7 @@
+@REPORT 
+LET { 
+    x = 1,
+    y = LET { x = 10 } IN { x } } 
+IN { 
+  x + y * y 
+}
