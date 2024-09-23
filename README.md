@@ -84,7 +84,7 @@ To remove a VSCode extension at the command line: `code --list-extensions` to li
 
 When things update...
 
-* You can update your VSCode extension from the command line using the commands mentioned earlier. Yongming has a personal script for this that can be adapted (`yongminghan` is the publisher):
+* You can update your VSCode extension from the command line using the commands mentioned earlier. Yongming has a personal script for this that can be adapted (`yongminghan` is the publisher). If the changes don't show up, try restarting the extension host from VSCode:
 
 ```bash
 code --uninstall-extension yongminghan.lam4; 
