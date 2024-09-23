@@ -31,11 +31,15 @@ render d = rend 0 False (map ($ "") $ d []) ""
     -> [String]
     -> ShowS
   rend i p = \case
+      "STRUCTURE":t:"END":ts -> showString [I.i|STRUCTURE #{t} END|] . new 0 ts
+      "END"    :ts -> onNewLine (i-1) p . showString "END" . rend 0 False ts
       "["      :ts -> char '[' . rend i False ts
       "("      :ts -> char '(' . rend i False ts
+      "{": "}" :ts -> showString "{}" . rend i False ts
       "{"      :ts -> onNewLine i     p . showChar   '{'  . new (i+1) ts
       "}" : ";":ts -> onNewLine (i-1) p . showString "};" . new (i-1) ts
       "}"      :ts -> onNewLine (i-1) p . showChar   '}'  . new (i-1) ts
+      "--" : t :ts -> onNewLine i     p . showString "-- " . showString t . new i ts
       "/-"     :ts -> onNewLine i     p . showString "/-" . new (i+1) ts
       "-/"     :ts -> onNewLine (i-1) p . showString "-/" . new (i-1) ts
       "FOLD_LEFT" : ts -> onNewLine (i+1) p . showString "FOLD_LEFT" . new (i+2) ts
@@ -198,13 +202,20 @@ instance Print (Name, Expr) where
 
 instance Print Decl where
   prt i = \case
+    NonRec name r@(Record _) -> prPrec i 0 (concatD [
+        doc (showString "DEFINE")
+      , prt 0 name
+      , doc (showString ":")
+      , prt 0 r])
     NonRec name expr -> prPrec i 0 (concatD [prt 0 name, prt 0 expr])
 
     -- Name is actually part of the Predicate.
     -- doing this quick hack to move it to where it belongs.
     Rec name (Predicate md vars expr) -> prPrec i 0 (concatD [prt 0 (Predicate md (name:vars) expr)])
 
-    -- if Expr is not Predicate, render Name here
+    Rec name (Fun md vars expr) -> prPrec i 0 (concatD [prt 0 (Fun md (name:vars) expr)])
+
+    -- if Expr is not Predicate or Fun, render Name here
     Rec name expr -> prPrec i 0 (concatD [prt 0 name, prt 0 expr])
 
     -- Name is actually part of the RecordDecl.
@@ -223,7 +234,7 @@ instance Print RuleMetadata where
   prt i md =
     case md.description of
       Nothing -> id
-      Just descr -> prPrec i 0 (concatD [doc (showString "/-"), doc (showString "About:"), prt 0 (T.unpack descr), doc (showString "-/")])
+      Just descr -> prPrec i 0 (concatD [doc (showString "--"), prt 0 (T.unpack descr)])
 
 instance Print RecordDeclMetadata where
   prt i md =
@@ -236,10 +247,8 @@ instance Print RowMetadata where
     case md.description of
       Nothing -> id
       Just descr -> prPrec i 0 (concatD [
-          doc (showString "/-")
-        , doc (showString "About:")
+          doc (showString "--")
         , prt 0 (T.unpack descr)
-        , doc (showString "-/")
         ])
 
 instance Print DataDecl where
@@ -255,9 +264,8 @@ instance Print DataDecl where
         prt 0 metadata
       , doc (showString "STRUCTURE")
       , prt 0 recname.name
-      , doc (showString "{")
       , prt 0 rowtypedecls
-      , doc (showString "}")
+      , doc (showString "END")
       ])
     RecordDecl (recname:rowtypedecls) parents metadata ->
       prPrec i 0 (concatD [
@@ -266,9 +274,8 @@ instance Print DataDecl where
       , prt 0 recname.name
       , doc (showString "SPECIALIZES")
       , prt 0 parents
-      , doc (showString "{")
       , prt 0 rowtypedecls
-      , doc (showString "}")
+      , doc (showString "END")
       ])
 
 instance Print Expr where
@@ -283,12 +290,16 @@ instance Print Expr where
     FunApp expr exprs -> prPrec i 0 (concatD [prt 0 expr, parenth (prt 0 exprs)])
     Record rows -> prPrec i 0 (concatD [doc (showString "{|"), prt 0 rows, doc (showString "|}")])
     Project expr name -> prPrec i 0 (concatD [prt 0 expr, doc (showString "'s"), prt 0 name])
-    Fun metadata names expr ->
+    f@(Fun _mdata [] _expr) -> error [I.i|Trying to print Fun without a name: #{f}|]
+    Fun metadata (name:names) expr ->
       prPrec i 0 (concatD [
           prt 0 metadata
+        , doc (showString "FUNCTION")
+        , prt 0 name
         , parenth (prt 0 names)
         , doc (showString "=")
-        , prt 0 expr])
+        , prt 0 expr
+        , doc (showString "END")])
     Let decl expr -> prPrec i 0 (concatD [doc (showString "LET"), doc (showString "{"), prt 0 decl, doc (showString "}"), doc (showString "IN"), doc (showString "{"), prt 0 expr, doc (showString "}")])
     StatementBlock (st :| sts) -> prPrec i 0 (concatD [prt 0 (st:sts)])
     NormIsInfringed name -> prPrec i 0 (concatD [prt 0 name, doc (showString "IS_INFRINGED")])
@@ -352,6 +363,7 @@ instance Print Lit where
     IntLit n -> prPrec i 0 (concatD [prt 0 n])
     BoolLit bool -> prPrec i 0 (concatD [prt 0 bool])
     StringLit str -> prPrec i 0 (concatD [prt 0 str])
+    FracLit frac  -> prPrec i 0 (concatD [prt 0 frac])
 
 instance Print Statement where
   prt i = \case
@@ -383,6 +395,10 @@ instance Print UnaryOp where
   prt i = \case
     Not -> prPrec i 0 (concatD [doc (showString "NOT")])
     UnaryMinus -> prPrec i 0 (concatD [doc (showString "-")])
+    Floor -> prPrec i 0 (concatD [doc (showString "floor")])
+    Ceiling -> prPrec i 0 (concatD [doc (showString "ceiling")])
+    IntegerToFraction -> prPrec i 0 (concatD [doc (showString "integer_to_fraction")])
+
 
 instance Print BinOp where
   prt i = \case
