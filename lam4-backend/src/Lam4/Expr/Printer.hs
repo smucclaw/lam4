@@ -38,6 +38,13 @@ render d = rend 0 False (map ($ "") $ d []) ""
       "}"      :ts -> onNewLine (i-1) p . showChar   '}'  . new (i-1) ts
       "/-"     :ts -> onNewLine i     p . showString "/-" . new (i+1) ts
       "-/"     :ts -> onNewLine (i-1) p . showString "-/" . new (i-1) ts
+      "FOLD_LEFT" : ts -> onNewLine (i+1) p . showString "FOLD_LEFT" . new (i+2) ts
+      "FOLD_RIGHT" : ts -> onNewLine (i+1) p . showString "FOLD_RIGHT" . new (i+2) ts
+      "using"         :t:ts -> pending . showString "using"         . spaces 10 . showString t . new i ts
+      "starting_with" :t:ts -> pending . showString "starting_with" . spaces 2 . showString t . new i ts
+      "over"          :t:"'s":u:ts -> pending . showString "over"   . spaces 11 . showString [I.i|#{t}'s #{u}|] . new i ts
+      "over"          :t:ts -> pending . showString "over"          . spaces 11 . showString t . new i ts
+
       [";"]        -> char ';'
       ";"      :ts -> char ';' . new i ts
       t  : ts@(s:_) | closingOrPunctuation s
@@ -56,6 +63,10 @@ render d = rend 0 False (map ($ "") $ d []) ""
   -- Indentation (spaces) for given indentation level.
   indent :: Int -> ShowS
   indent i = replicateS (2*i) (showChar ' ')
+
+  spaces :: Int -> ShowS
+  spaces i = replicateS i (showChar ' ')
+
 
   -- Continue rendering in new line with new indentation.
   new :: Int -> [String] -> ShowS
@@ -269,15 +280,13 @@ instance Print Expr where
     Unary unaryop expr -> prPrec i 0 (concatD [prt 0 unaryop, prt 0 expr])
     BinExpr binop expr1 expr2 -> prPrec i 0 (concatD [prt 0 expr1, prt 0 binop, prt 0 expr2])
     IfThenElse expr1 expr2 expr3 -> prPrec i 0 (concatD [doc (showString "IF"), prt 0 expr1, doc (showString "THEN"), prt 0 expr2, doc (showString "ELSE"), prt 0 expr3])
-    FunApp expr exprs -> prPrec i 0 (concatD [prt 0 expr, doc (showString "("), prt 0 exprs, doc (showString ")")])
+    FunApp expr exprs -> prPrec i 0 (concatD [prt 0 expr, parenth (prt 0 exprs)])
     Record rows -> prPrec i 0 (concatD [doc (showString "{|"), prt 0 rows, doc (showString "|}")])
-    Project expr name -> prPrec i 0 (concatD [prt 0 expr, doc (showString "`s`"), prt 0 name])
+    Project expr name -> prPrec i 0 (concatD [prt 0 expr, doc (showString "'s"), prt 0 name])
     Fun metadata names expr ->
       prPrec i 0 (concatD [
           prt 0 metadata
-        , doc (showString "(")
-        , prt 0 names
-        , doc (showString ")")
+        , parenth (prt 0 names)
         , doc (showString "=")
         , prt 0 expr])
     Let decl expr -> prPrec i 0 (concatD [doc (showString "LET"), doc (showString "{"), prt 0 decl, doc (showString "}"), doc (showString "IN"), doc (showString "{"), prt 0 expr, doc (showString "}")])
@@ -296,9 +305,7 @@ instance Print Expr where
       prPrec i 0 (concatD [
           prt 0 metadata
         , doc (showString "GIVEN")
-        , doc (showString "(")
-        , prt 0 (fmap (\a -> mkFunArg a.name) args) -- custom newtype to print args in a specific way
-        , doc (showString ")")
+        , parenth $ prt 0 (fmap (\a -> mkFunArg a.name) args) -- custom newtype to print args in a specific way
         , doc (showString "\nDECIDE")
         , prt 0 funname
         , doc (showString "\nIF")
@@ -315,6 +322,24 @@ instance Print Expr where
         , prt 0 right
         ])
     PredApp f args -> prPrec i 0 (concatD [prt 0 f, prt 0 args])
+    Foldr using starting over -> prPrec i 0 (concatD [
+        doc (showString "FOLD_RIGHT")
+      , doc (showString "using")
+      , prt 0 using
+      , doc (showString "starting_with")
+      , prt 0 starting
+      , doc (showString "over")
+      , prt 0 over
+      ])
+    Foldl using starting over -> prPrec i 0 (concatD [
+        doc (showString "FOLD_LEFT")
+      , doc (showString "using")
+      , prt 0 using
+      , doc (showString "starting_with")
+      , prt 0 starting
+      , doc (showString "over")
+      , prt 0 over
+      ])
     Sig{} -> error "not yet implemented: Sig"
     Relation{} -> error "not yet implemented: Relation"
 
@@ -326,6 +351,7 @@ instance Print Lit where
   prt i = \case
     IntLit n -> prPrec i 0 (concatD [prt 0 n])
     BoolLit bool -> prPrec i 0 (concatD [prt 0 bool])
+    StringLit str -> prPrec i 0 (concatD [prt 0 str])
 
 instance Print Statement where
   prt i = \case
@@ -373,7 +399,7 @@ instance Print BinOp where
     Ge -> prPrec i 0 (concatD [doc (showString ">=")])
     Eq -> prPrec i 0 (concatD [doc (showString "==")])
     Ne -> prPrec i 0 (concatD [doc (showString "!=")])
-
+    StrAppend -> prPrec i 0 (concatD [doc (showString "++")]) -- is this even in the Langium grammar yet?
 instance Print Bool where
   prt i = \case
     True -> prPrec i 0 (concatD [doc (showString "True")])
