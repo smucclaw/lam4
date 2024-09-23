@@ -4,14 +4,10 @@ module PrinterSpec (spec) where
 
 import           Test.Hspec
 import           Test.Hspec.Golden
-import           Lam4.Expr.ConcreteSyntax (Decl)
+import           Lam4.Main               (getCSTJsonFromFrontendNoFail, parseCSTByteString, FrontendConfig(..))
 import           Lam4.Expr.Printer       (printTree)
-import           Lam4.Expr.Parser        (parseProgramByteStr)
-import           Lam4.Parser.Monad       (evalParserFromScratch)
 import           Control.Monad           (forM_)
 import           Data.List               (intercalate)
-import qualified Data.ByteString.Char8 as BS (readFile)
-import qualified Base.ByteString       as BL (fromStrict)
 import qualified Data.Text.Lazy        as TL
 import qualified Data.Text.Lazy.IO     as TL
 import           System.FilePath          ((<.>), (</>), takeBaseName)
@@ -33,22 +29,27 @@ goldenGeneric name output_ = Golden
 
 spec :: Spec
 spec = do
-  files <- runIO $ listDirectory "../examples"
+  files <- runIO $ listDirectory examplesDir
   forM_ files $ \file -> do
-    let fpath = "../examples/" <> file
-    decls <- runIO $ parseProgramFile fpath
-    let fname = takeBaseName file
+    frontendCSTJsons <- runIO $ getCSTJsonFromFrontendNoFail frontendConfig [examplesDir </> file]
+    let decls = concatMap parseCSTByteString frontendCSTJsons
+        fname = takeBaseName file
         descr = "Testing " <> fname
-        printedDecls = intercalate "\n" $ fmap printTree decls
+        printedDecls = if null decls
+          then show frontendCSTJsons
+          else intercalate "\n\n" $ fmap printTree decls
     testGolden descr fname printedDecls
+  where
+    examplesDir = "../examples"
 
 testGolden :: String -> String -> String -> Spec
 testGolden desc fname expected = it desc $ goldenGeneric fname expected
 
-parseProgramFile :: FilePath -> IO [Decl]
-parseProgramFile file = do
-  bs <- BS.readFile file
-  case evalParserFromScratch . parseProgramByteStr . BL.fromStrict $ bs of
-    Left err       -> error ("Parse error:\n" <> show err)
-    Right cstDecls -> pure cstDecls
+lam4_frontend_dir :: FilePath
+lam4_frontend_dir = "../lam4-frontend"
+
+frontendConfig :: FrontendConfig
+frontendConfig = MkFrontendConfig { runner      = "node"
+                                  , frontendDir = lam4_frontend_dir
+                                  , args        = [lam4_frontend_dir </> "bin" </> "cli", "toMinimalAst"] }
 
