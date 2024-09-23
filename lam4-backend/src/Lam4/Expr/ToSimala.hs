@@ -109,6 +109,7 @@ compileExpr :: AST.ConEvalExpr -> SM.Expr
 compileExpr = \case
   Var name                     -> SM.Var $ lam4ToSimalaName name
   Lit (CST.IntLit i)           -> SM.Lit $ SM.IntLit i
+  Lit (CST.FracLit fractional) -> SM.Lit $ SM.FracLit fractional
   Lit (CST.BoolLit b)          -> SM.Lit $ SM.BoolLit b
   Lit (CST.StringLit s)        -> SM.Lit $ SM.StringLit s
   Cons first rest              -> SM.Cons (compileExpr first) (compileExpr rest)

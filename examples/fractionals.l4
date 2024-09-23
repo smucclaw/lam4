@@ -1,0 +1,11 @@
+DEFINE fractional = 0.5 * 0.5
+DEFINE negative = -0.3
+DEFINE squared = negative * negative
+
+@REPORT fractional
+// for next PR
+// @REPORT floor(fractional);
+// @REPORT ceiling(fractional);
+// @REPORT fractional * fromInt(2);
+@REPORT negative
+// @REPORT squared;

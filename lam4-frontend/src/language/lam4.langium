@@ -443,7 +443,7 @@ fragment ListOps: Foldr | Foldl | MaximumOf | MinimumOf | SumOf;
 
 PrimitiveExpr infers Expr:
     '(' Expr ')' | AnonFunction | List | ListOps | LetExpr
-    | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral | StringLiteral
+    | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | DecimalLiteral | BooleanLiteral | StringLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
 
@@ -709,6 +709,10 @@ IntegerLiteral:
     value=INTEGER
 ;
 
+DecimalLiteral:
+    value=DECIMAL
+;
+
 StringLiteral:
     value=STRING
 ;
@@ -717,17 +721,22 @@ BooleanLiteral:
     value=('True' | 'False')
 ;
 
-// Decimal returns string:
-//     INT ('.' INT)?;
-
 
 /* =======================================
         TERMINALS
 ========================================== */
+
+// Note: The order of the terminals matters: the lexer will always return the first match
+// See https://langium.org/docs/grammar-language/#terminal-rules
+
 terminal GENITIVE: "'s "; 
 hidden terminal WS: /\s+/;
 terminal ID: /[_a-zA-Z][\w_]*/;
-terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;
+
+terminal DECIMAL returns string: INTEGER '.' INTEGER;
+terminal INTEGER returns string: /[0-9]+/;
+// terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;
+
 // terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
 // terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
 // terminal UNSIGNED_NUMBER returns string: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;

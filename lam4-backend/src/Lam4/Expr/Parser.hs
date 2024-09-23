@@ -220,6 +220,7 @@ parseExpr node = do
 
     -- literals
     "IntegerLiteral" -> parseIntegerLiteral node
+    "DecimalLiteral" -> parseDecimalLiteral node
     "StringLiteral"  -> parseStringLiteral node
     "BooleanLiteral" -> parseBooleanLiteral node
 
@@ -679,6 +680,25 @@ parseIntegerLiteral literalNode = do
     case literalVal of
       Just litVal -> pure . Lit $ IntLit litVal
       Nothing -> throwError $ "Failed to parse integer value. Node: " <> ppShow literalNode
+
+{- | Example of DecimalLiteral node:
+
+@
+  {
+    "$type": "DecimalLiteral",
+    "value": "1.333"
+  }
+@
+-}
+parseDecimalLiteral :: A.Object -> Parser Expr
+parseDecimalLiteral literalNode = do
+    let literalVal = literalNode ^? ix "value" % _String
+    case literalVal of
+      Just litVal ->
+        case T.rational litVal of
+          Right (litVal', _) -> pure . Lit $ FracLit litVal'
+          Left err -> throwError $ "Failed to parse decimal literal. " <> err <>  "Node: " <> ppShow literalNode 
+      Nothing -> throwError $ "Failed to parse decimal literal. Node: " <> ppShow literalNode
 
 parseBooleanLiteral :: A.Object -> Parser Expr
 parseBooleanLiteral literalNode = do
