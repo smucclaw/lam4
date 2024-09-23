@@ -38,6 +38,11 @@ import qualified Simala.Expr.Type         as SM
 defaultTransparency :: SM.Transparency
 defaultTransparency = SM.Opaque
 
+simalaNegativeOneInt :: SM.Expr
+simalaNegativeOneInt = SM.Lit $ SM.IntLit (-1)
+
+simalaNegativeOneFrac :: SM.Expr
+simalaNegativeOneFrac = SM.Lit $ SM.FracLit (-1.0)
 
 type SimalaDecl = SM.Decl
 type SimalaProgram = [SM.Decl]
@@ -69,7 +74,7 @@ compileBinOp = \case
   Le     -> SM.Le
   Ge     -> SM.Ge
   Ne     -> SM.Ne
-  Eq     -> SM.HEq 
+  Eq     -> SM.HEq
   -- TODO: in the future, could pass along type info and use that to determine if we should use HEq or Eq
   Modulo -> SM.Modulo
   StrAppend -> SM.Append
@@ -109,10 +114,16 @@ compileExpr :: AST.ConEvalExpr -> SM.Expr
 compileExpr = \case
   Var name                     -> SM.Var $ lam4ToSimalaName name
   Lit (CST.IntLit i)           -> SM.Lit $ SM.IntLit i
+  Lit (CST.FracLit fractional) -> SM.Lit $ SM.FracLit fractional
   Lit (CST.BoolLit b)          -> SM.Lit $ SM.BoolLit b
   Lit (CST.StringLit s)        -> SM.Lit $ SM.StringLit s
   Cons first rest              -> SM.Cons (compileExpr first) (compileExpr rest)
   List xs                      -> SM.List (map compileExpr xs)
+
+  -- translate unary minus x to @-1 * x@, accounting for Int vs Frac literals
+  -- This obviously won't be enough for applications of UnaryMinus to a non-literal (since can't tell if it's an Int or Frac)
+  Unary UnaryMinus lit@(Lit (CST.IntLit _)) -> SM.Builtin SM.Product [simalaNegativeOneInt, compileExpr lit]
+  Unary UnaryMinus lit@(Lit (CST.FracLit _)) -> SM.Builtin SM.Product [simalaNegativeOneFrac, compileExpr lit]
   Unary op expr                -> SM.Builtin (compileUnaryOp op) [compileExpr expr]
   BinExpr op left right        -> SM.Builtin (compileBinOp op) [compileExpr left, compileExpr right]
   IfThenElse cond thn els      -> SM.Builtin SM.IfThenElse [compileExpr cond, compileExpr thn, compileExpr els]

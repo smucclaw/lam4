@@ -1,0 +1,17 @@
+@REPORT 1.333
+// TODO: would be good to figure out a better way of doing the following
+@REPORT 1333.0 / 1000.0
+// edge case to think about for future
+@REPORT 1.0 / 1000.0 + 333.0 / 1000.0
+
+@REPORT 1.0
+@REPORT 1
+
+@REPORT 0.00
+@REPORT 0
+
+@REPORT 1.0 + 0.333
+
+// Sep 23: FYI, things that do NOT parse:
+// @REPORT .0
+// @REPORT 0.

@@ -1,0 +1,20 @@
+DEFINE negativeIntegerLiteralZero = -0
+DEFINE negativeInteger = -3
+DEFINE squared = negativeInteger * negativeInteger
+
+DEFINE subtracted = 0 - 3 + 0 + 1 - 1
+
+@REPORT negativeIntegerLiteralZero
+@REPORT negativeIntegerLiteralZero EQUALS 0
+@REPORT negativeInteger
+@REPORT negativeInteger EQUALS -3
+
+@REPORT squared
+
+@REPORT subtracted
+@REPORT subtracted * subtracted EQUALS squared
+
+// The following does NOT work -- will need to use an explicit negate function
+// since will be disconnecting type checker and can't tell if it's an Int or Frac without the types
+// DEFINE negatedSubtracted = -subtracted
+// @REPORT negatedSubtracted

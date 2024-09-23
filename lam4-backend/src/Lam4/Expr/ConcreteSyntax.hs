@@ -108,8 +108,9 @@ data Expr
 
 -- TODO: tweak the grammar to distinguish between integers and non-integers
 data Lit
-  = IntLit Int
-  | BoolLit Bool
+  = IntLit    Int
+  | FracLit   Double
+  | BoolLit   Bool
   | StringLit Text
   deriving stock (Eq, Show, Ord)
 
