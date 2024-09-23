@@ -750,10 +750,9 @@ terminal DECIMAL returns string: INTEGER '.' INTEGER;
 terminal INTEGER returns string: /[0-9]+/;
 // terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;
 
-// terminal NUMBER returns number: /[0-9]+(\.[0-9]+)?/;
-// terminal SIGNED_NUMBER returns number: /-\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
-// terminal UNSIGNED_NUMBER returns string: /\d+((\.\d+)?([eE][\-+]?\d+)?)?/;
-terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+// terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
+// Don't allow single quotes as delimiters for strings
+terminal STRING: /"(\\.|[^"\\])*"/;
 terminal BACK_TICKED_ID:
     '`' -> '`'
 ;
