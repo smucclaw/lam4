@@ -12,6 +12,6 @@
 
 @REPORT 1.0 + 0.333
 
-// Sep 23: FYI, things that do NOT parse:
+// Sep 23: FYI, things that do NOT parse (not clear if they should)
 // @REPORT .0
 // @REPORT 0.
