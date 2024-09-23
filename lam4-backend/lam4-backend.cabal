@@ -43,6 +43,7 @@ library
         Base.Aeson
         Base.ByteString
         Base.Grisette
+        Lam4.Main
         Lam4.Expr.Name
         Lam4.Expr.ConcreteSyntax
         Lam4.Expr.CommonSyntax
@@ -61,6 +62,7 @@ library
         base,
         containers,
         foldable1-classes-compat,
+        lens-regex-pcre,
         lens,
         -- just for Control.Lens.Plated
         optics,
@@ -71,6 +73,9 @@ library
         aeson,
         aeson-optics,
         bytestring,
+        cradle,
+        optparse-applicative,
+        filepath,
         string-interpolate,
         either,
         pretty-show,
@@ -98,6 +103,7 @@ library
 
 test-suite lam4-backend-test
     import:           defaults
+    ghc-options:      -threaded
     default-language: GHC2021
 
     -- Modules included in this executable, other than Main.
