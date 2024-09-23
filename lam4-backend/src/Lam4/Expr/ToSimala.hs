@@ -48,7 +48,7 @@ type SimalaDecl = SM.Decl
 type SimalaProgram = [SM.Decl]
 
 lam4ToSimalaName :: Name -> SM.Name
-lam4ToSimalaName (MkName name unique) = 
+lam4ToSimalaName (MkName name unique) =
   if unique == uniqueForNamesThatShouldNotHaveUniqueAppended
   then name
   else name <> "_" <> T.pack (show unique)
@@ -99,7 +99,7 @@ compileDecl = \case
   ------------------------------------
   NonRec name Atom {} ->
     let smName = lam4ToSimalaName name
-    in SM.NonRec defaultTransparency smName (SM.Atom smName)
+    in SM.NonRec defaultTransparency smName (SM.Atom $ SM.MkAtom smName)
   -- TODO: May not want to translate ONE SIG with no relations this way
   -- TODO: Not sure if naming is ok
 
@@ -146,4 +146,4 @@ compileExpr = \case
 
 -- | Copied from https://github.com/smucclaw/dsl/blob/e77def08949cac1af094dfdb828c35833c36b8b7/lib/haskell/natural4/src/LS/XPile/Simala/Transpile.hs
 render :: [SM.Decl] -> Text
-render = T.unlines . fmap SM.render
+render = T.unlines . fmap ((<> " ;") . SM.render)
