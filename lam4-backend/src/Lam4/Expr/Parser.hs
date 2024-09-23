@@ -254,7 +254,7 @@ parseExpr node = do
 
     -}
     "SigDecl"        -> parseSigE           node
-    "RecordExpr"     -> parseRecordExpr     node
+    "RecordExpr"     -> parseRecordExprForDemo     node
     "Project"        -> parseProject        node
 
     typestr          -> throwError $ T.unpack typestr <> " not yet implemented"
@@ -317,6 +317,19 @@ parseBinExpr node = do
   left  <- parseExpr  =<< node .: "left"
   right <- parseExpr  =<< node .: "right"
   pure $ BinExpr op left right
+
+parseRecordExprForDemo :: A.Object -> Parser Expr
+parseRecordExprForDemo node = do
+  rows <- traverse mkBinding (node `getObjectsAtField` "rows")
+  pure $ Record rows
+  where
+    mkBinding :: A.Object -> Parser (Name, Expr)
+    mkBinding row = do
+      labelName <- row .: "label"
+      let name = MkName labelName uniqueForNamesThatShouldNotHaveUniqueAppended
+      expr <- parseExpr =<< row .: "value"
+      pure (name, expr)
+
 
 {- | Key invariant for the parsing:
   Record expressions have to be constructed / parsed in such a way that:
