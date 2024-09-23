@@ -146,4 +146,4 @@ compileExpr = \case
 
 -- | Copied from https://github.com/smucclaw/dsl/blob/e77def08949cac1af094dfdb828c35833c36b8b7/lib/haskell/natural4/src/LS/XPile/Simala/Transpile.hs
 render :: [SM.Decl] -> Text
-render = T.unlines . fmap SM.render
+render = T.unlines . fmap ((<> " ;") . SM.render)
