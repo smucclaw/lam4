@@ -61,7 +61,7 @@ import           Lam4.Parser.Type
 -- | The Langium-parser ASTNode `$type`s that correspond to recursive exprs
 recursiveTypes :: Set Text
 recursiveTypes = Set.fromList ["LetExpr", "FunDecl", "PredicateDecl"]
--- TODO: Check how to handle Let vs Let rec in translation to Simala!
+-- TODO: Improve translation of LetExpr when it comes to LetRec vs Let (if necessary)
 
 
 {----------------------
