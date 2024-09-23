@@ -8,4 +8,4 @@ DEFINE squared = negative * negative
 // @REPORT ceiling(fractional);
 // @REPORT fractional * fromInt(2);
 @REPORT negative
-// @REPORT squared;
+@REPORT squared
