@@ -2,15 +2,11 @@
 // TODO: This is more of a test than an example. Will move into tests in the future.
 // ---------------------------------------------------------------------------------
 
-STRUCTURE F
-    a IS_A Integer
-    c IS_A G
-END
-
-STRUCTURE G
-    b IS_A Integer
-END
-
-FUNCTION F => Integer
-f(x) = x's c's b
-END
+// Test shadowing and scoping of LET expressions
+@REPORT 
+LET { 
+    x = 1,
+    y = LET { x = 10 } IN { x } } 
+IN { 
+  x + y 
+}

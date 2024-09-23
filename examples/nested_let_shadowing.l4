@@ -2,15 +2,11 @@
 // TODO: This is more of a test than an example. Will move into tests in the future.
 // ---------------------------------------------------------------------------------
 
-STRUCTURE F
-    a IS_A Integer
-    c IS_A G
-END
-
-STRUCTURE G
-    b IS_A Integer
-END
-
-FUNCTION F => Integer
-f(x) = x's c's b
-END
+// Test nested let x scoping / shadowing
+@REPORT 
+LET {  
+    z = 2,
+    x = 1
+} IN { 
+    LET { x = 100} IN { x }
+}

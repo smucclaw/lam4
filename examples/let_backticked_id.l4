@@ -1,0 +1,10 @@
+DEFINE `something something` = 100
+
+@REPORT 
+LET { 
+    x                is 1,
+    `blah blah`      is `something something` - 1,
+    `something else` is 1 - `blah blah` + 2} 
+IN { 
+    x + `blah blah`
+}
