@@ -1,15 +1,34 @@
 import type {LangiumCoreServices} from "langium";
-import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, DefaultScopeProvider, EMPTY_SCOPE, ReferenceInfo, Scope } from "langium";
+import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, DefaultScopeProvider, ReferenceInfo, Reference, Scope, AstNodeDescription, EMPTY_STREAM, Stream } from "langium";
 import { Logger } from "tslog";
-import { RecordDecl, Project } from "./generated/ast.js";
+import { RecordDecl, SigDecl, Project } from "./generated/ast.js";
 import {isProjectExpr} from "./lam4-lang-utils.js";
-import { getRecordAncestors, inferType, TypeEnv } from "./type-system/infer.js";
-import { isRecordTTag } from "./type-system/type-tags.js";
+// import { getRecordAncestors, inferType, TypeEnv } from "./type-system/infer.js";
+// import { isRecordTTag } from "./type-system/type-tags.js";
 
 const scopeLogger = new Logger({ 
   name: "scoper",
   prettyLogTemplate: "{{name}}  ", });
 
+/** https://github.com/eclipse-langium/langium/discussions/856
+ * > you can return some special scope object for those inferred elements, something like ANY_SCOPE, which gets special handling in the Linker implementation. 
+ * > Instead of creating a referencing error, it will just create an undefined ref value. 
+ * > That effectively simulates the `any` behavior in TypeScript.
+ */
+export class ANY_SCOPE implements Scope {
+  scopeType = "ANY_SCOPE";
+
+  constructor() {
+  }
+
+  getElement(): AstNodeDescription | undefined {
+      return undefined;
+  }
+
+  getAllElements(): Stream<AstNodeDescription> {
+    return EMPTY_STREAM;
+  }
+}
 
 export class Lam4ScopeComputation extends DefaultScopeComputation {
   constructor(services: LangiumCoreServices) {
@@ -57,11 +76,17 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
     const isRightChildOfProject = parent && isProjectExpr(parent) && self === parent.right;
     if (isRightChildOfProject) {
       const parentProject = parent as Project;
+      
       // getScope will have been called on parent.left before this
       // so if the left child is a Ref that can be resolved by the default linker, the Ref's reference will have been resolved
       scopeLogger.trace(`(Scope-if) ${context.reference.$refText}`);
       scopeLogger.trace(`left sib: ${parentProject.left.$type}`)      
 
+      // Sep 23 2024: Enable ANY_SCOPE for demo; disable 'type-safe record access'
+      const returnScope = new ANY_SCOPE();
+      return returnScope;
+      
+      /* Sep 23 2024: Disabling for demo 
       // Return the members in scope in `left` iff `left` is a record
       // (If the target of the project is not a record, 
       // it's a primitive type or type resolution error)
@@ -70,6 +95,7 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
       const returnScope = isRecordTTag(typeOfLeft) ? 
                           this.scopeRecordMembers(typeOfLeft.getRecord()) : EMPTY_SCOPE
       return returnScope;
+      */
     }
 
     scopeLogger.trace("Not rt child of Project");
@@ -84,9 +110,39 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
   // } 
 
   private scopeRecordMembers(record: RecordDecl): Scope {
+
     const allRowTypes = getRecordAncestors(record).flatMap((record: RecordDecl) => record.rowTypes);
     scopeLogger.debug(`rowtypes: ${allRowTypes.map(r => r.name)}`);
     return this.createScopeForNodes(allRowTypes);
   }
 }
 
+
+// Utils copied from old infer.ts
+
+type SigOrRecordDecl = SigDecl | RecordDecl;
+
+function getAncestors(sigOrRecord: SigOrRecordDecl): SigOrRecordDecl[] {
+  const seen = new Set<SigOrRecordDecl>();
+  const toVisit: SigOrRecordDecl[] = [sigOrRecord];
+
+  while (toVisit.length > 0) {
+      const next: SigOrRecordDecl | undefined = toVisit.pop();
+      if (!next) break; // TODO: temp hack cos TS can't narrow based on length out of box
+
+      if (!seen.has(next)) {
+          seen.add(next);
+          next.parents.forEach((parent: Reference<SigOrRecordDecl>) => { 
+              if (parent.ref) toVisit.push(parent.ref) 
+          });
+      }
+  }
+
+  // Sets preserve insertion order
+  const seenArr = Array.from(seen);
+  return seenArr;
+
+}
+
+export const getSigAncestors = (sig: SigDecl) => getAncestors(sig) as SigDecl[];
+export const getRecordAncestors = (record: RecordDecl) => getAncestors(record) as RecordDecl[];

@@ -6,7 +6,7 @@ import { Lam4ValueConverter } from "./lam4-value-converter.js"
 import { Lam4ScopeProvider, Lam4ScopeComputation } from './lam4-scope.js';
 import { Lam4HoverProvider } from './lsp/lam4-hover-provider.js';
 import {WithNamedEltRefPathJsonSerializer} from "./lam4-json-serializer.js";
-
+import {Lam4Linker} from "./lam4-linker.js";
 /**
  * Declaration of custom services - add your own service classes here.
  */
@@ -36,7 +36,8 @@ export const Lam4Module: Module<Lam4Services, PartialLangiumServices & Lam4Added
     },
     references: {
         ScopeComputation: (services) => new Lam4ScopeComputation(services),
-        ScopeProvider: (services) => new Lam4ScopeProvider(services)
+        ScopeProvider: (services) => new Lam4ScopeProvider(services),
+        Linker: (services) => new Lam4Linker(services)
     },
     lsp: {
         HoverProvider: (services) => new Lam4HoverProvider(services)
