@@ -6,7 +6,6 @@ A legal DSL that is, at its core, a functional expression language, but that als
 
 * offer a 'low-code', intuitive GUI with an AI (+ PL / program synthesis / formal methods methods)-powered Copilot (on the long-term roadmap)
 
-
 ## How to build
 
 This will be simpler soon enough, once I've set up a Nix environment etc. But in the meantime:
@@ -50,23 +49,62 @@ If you don't need to use record field access or predicate declarations, you can 
 
 ### To build / generate the Langium frontend parser
 
-If you do need either of those:
+First install the dependencies.
 
 ```bash
+cd lam4-frontend
 npm install
+```
+
+Then build the frontend, again from the `lam4-frontend` dir:
+
+```bash
 npm run langium:generate
 npm run build
 ```
 
-### Working with it
+You must re-build the frontend whenever the Langium grammar or lam4-frontend code changes.
+
+You can also
+
+* Run `npm run watch` to have the TypeScript compiler run automatically after every change of the source files.
+
+* Run `npm run langium:watch` to have the Langium generator run automatically after every change of the grammar declaration.
+
+
+### To build the VSCode extension
+
+To **generate and install a VSCode extension**:
+
+* at the command line (after removing previously-generated ones), from `lam4-frontend`: `rm lam4-*.vsix; vsce package; code --install-extension lam4-*.vsix`
+
+* You can also try pressing `F5` from within VSCode
+
+To remove a VSCode extension at the command line: `code --list-extensions` to list extensions and get the name of the lam4 extension, then `code --uninstall-extension <name of the lam4 extension>`
+
+When things update...
+
+* You can update your VSCode extension from the command line using the commands mentioned earlier. Yongming has a personal script for this that can be adapted (`yongminghan` is the publisher):
+
+```bash
+code --uninstall-extension yongminghan.lam4; 
+rm lam4-0.0.1.vsix; 
+vsce package; 
+code --install-extension lam4*.vsix
+```
+
+* You can relaunch the extension from the debug toolbar.
+
+* You can also reload (`Ctrl+R` or `Cmd+R` on Mac) the VS Code window with your extension to load your changes.
+
+
+### Working with the Langium grammar
 
 After building:
 
 * To see what the surface Langium grammar looks like, you can **generate a railroad diagram from VSCode**, using the Langium VSCode extension.
 * To print to std out and save to disk a **human-readable version of the surface Langium grammar syntax** (i.e., a version without the metadata): from `lam4-frontend`, do `node ./bin/cli toMinimalAst <lam4program filename>.l4`
 * To do that for a version that includes source text metadata: `node ./bin/cli toAstWithSrcMetadata <lam4program filename>.l4`.
-* To **generate and install a VSCode extension** at the command line (after removing previously-generated ones): `rm lam4-*.vsix; vsce package; code --install-extension lam4-*.vsix`
-* To remove a VSCode extension at the command line: `code --list-extensions` to list extensions and get the name of the lam4 extension, then `code --uninstall-extension <name of the lam4 extension>`
 
 ## Noteworthy TODOs
 
@@ -83,27 +121,6 @@ I also want to have some kind of JSON RPC going with the Haskell backend, so tha
 
 1. Try cutting down on symbols like braces if this is something that would confuse non-technical users
 
-Right now the data modelling sublanguage uses braces to disambiguate scope.
-
-```mini-l4
-GENERAL_METADATA_FOR_TYPES {
-  description: "A reasonably simple example of a (mini-)L4 data model"
-
-  nestedMetadata: {
-    nestedKey: true
-  }
-}
-```
-
-When time permits -- e.g., shortly after the first end-to-end system is done --- we should try cutting down on symbols like braces if that will confuse non-professional programmers. EG, we could instead go for something that uses indentation:
-
-```mini-l4
-GENERAL_METADATA_FOR_TYPES:
-  description: "A reasonably simple example of a (mini-)L4 data model"
-
-  nestedMetadata:
-    nestedKey: true
-```
+When time permits -- e.g., shortly after the first end-to-end system is done --- we should try cutting down on symbols like braces if that will confuse non-professional programmers. EG, we could instead go for something that uses indentation.
 
 This is already possible with Langium; I just haven't done it because it requires a bit more effort and would complicate the codebase more than I would like at this stage.
-
