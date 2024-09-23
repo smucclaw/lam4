@@ -74,9 +74,9 @@ You can also
 
 ### To build the VSCode extension
 
-To **generate and install a VSCode extension**:
+To **generate and install a VSCode extension**, after you have `npm install`-ed:
 
-* at the command line (after removing previously-generated ones), from `lam4-frontend`: `rm lam4-*.vsix; vsce package; code --install-extension lam4-*.vsix`
+* at the command line (the first `rm` instruction tries to remove previously-generated Lam4 extensions), from `lam4-frontend`: `rm lam4-*.vsix; npx vsce package; code --install-extension lam4-*.vsix`
 
 * You can also try pressing `F5` from within VSCode
 
