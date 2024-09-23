@@ -1,0 +1,7 @@
+// ---------------------------------------------------------------------------------
+// TODO: This is more of a test than an example. Will move into tests in the future.
+// ---------------------------------------------------------------------------------
+
+// In the future, can add a standard library / prelude with functions like `integer_to_fraction` that wrap over  `integer_to_fraction` (so that can use function call syntax)
+@REPORT (integer_to_fraction 2) + (integer_to_fraction 1) + 0.0
+@REPORT 2.0 - integer_to_fraction (2 - 0 + 0) 

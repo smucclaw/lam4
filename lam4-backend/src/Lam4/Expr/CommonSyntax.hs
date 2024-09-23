@@ -61,7 +61,7 @@ makeFieldLabelsNoPrefix ''RuleMetadata
 emptyRuleMetadata :: RuleMetadata
 emptyRuleMetadata = RuleMetadata Nothing Transparent Nothing
 
-data UnaryOp = Not | UnaryMinus
+data UnaryOp = Not | UnaryMinus | Floor | Ceiling | IntegerToFraction
   deriving stock (Eq, Show, Ord, Generic)
   deriving (Mergeable, ExtractSym, EvalSym) via (Default UnaryOp)
 

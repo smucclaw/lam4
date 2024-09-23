@@ -418,9 +418,12 @@ parseUnaryExpr node = do
     let op = node ^?! ix "op" ^?! ix "$type" % _String
     value <- parseExpr $ getValueFieldOfNode node
     case op of
-        "OpMinus" -> pure $ Unary UnaryMinus value
-        "OpNot"   -> pure $ Unary Not value
-        _         -> throwError $ "Unknown unary operator: " <> T.unpack op
+        "OpMinus"             -> pure $ Unary UnaryMinus value
+        "OpNot"               -> pure $ Unary Not value
+        "OpFloor"             -> pure $ Unary Floor value
+        "OpCeiling"           -> pure $ Unary Ceiling value
+        "OpIntegerToFraction" -> pure $ Unary IntegerToFraction value
+        _                     -> throwError $ "Unknown unary operator: " <> T.unpack op
 
 parseIfThenElse :: A.Object -> Parser Expr
 parseIfThenElse obj = do
@@ -580,7 +583,7 @@ parseParam = getName
                 }
             }
         }
-    }  
+    }
   @
 -}
 parseAnonFun :: A.Object -> Parser Expr
@@ -697,7 +700,7 @@ parseDecimalLiteral literalNode = do
       Just litVal ->
         case T.rational litVal of
           Right (litVal', _) -> pure . Lit $ FracLit litVal'
-          Left err -> throwError $ "Failed to parse decimal literal. " <> err <>  "Node: " <> ppShow literalNode 
+          Left err -> throwError $ "Failed to parse decimal literal. " <> err <>  "Node: " <> ppShow literalNode
       Nothing -> throwError $ "Failed to parse decimal literal. Node: " <> ppShow literalNode
 
 parseBooleanLiteral :: A.Object -> Parser Expr

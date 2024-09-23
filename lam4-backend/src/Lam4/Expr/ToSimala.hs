@@ -57,26 +57,29 @@ compileTransparency = \case
 
 compileUnaryOp :: UnaryOp -> SM.Builtin
 compileUnaryOp = \case
-  UnaryMinus -> SM.Minus
-  Not        -> SM.Not
+  UnaryMinus        -> SM.Minus
+  Not               -> SM.Not
+  Floor             -> SM.Floor
+  Ceiling           -> SM.Ceiling
+  IntegerToFraction -> SM.FromInt
 
 -- TODO: May want to change Plus and Mult to Sum and Product
 compileBinOp :: BinOp -> SM.Builtin
 compileBinOp = \case
-  Plus   -> SM.Sum
-  Minus  -> SM.Minus
-  And    -> SM.And
-  Or     -> SM.Or
-  Mult   -> SM.Product
-  Divide -> SM.Divide
-  Lt     -> SM.Lt
-  Gt     -> SM.Gt
-  Le     -> SM.Le
-  Ge     -> SM.Ge
-  Ne     -> SM.Ne
-  Eq     -> SM.HEq
+  Plus      -> SM.Sum
+  Minus     -> SM.Minus
+  And       -> SM.And
+  Or        -> SM.Or
+  Mult      -> SM.Product
+  Divide    -> SM.Divide
+  Lt        -> SM.Lt
+  Gt        -> SM.Gt
+  Le        -> SM.Le
+  Ge        -> SM.Ge
+  Ne        -> SM.Ne
+  Eq        -> SM.HEq
   -- TODO: in the future, could pass along type info and use that to determine if we should use HEq or Eq
-  Modulo -> SM.Modulo
+  Modulo    -> SM.Modulo
   StrAppend -> SM.Append
 
 

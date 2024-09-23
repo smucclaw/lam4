@@ -450,8 +450,21 @@ PrimitiveExpr infers Expr:
 Ref:
     value=[NamedElement:IDOrBackTickedID];
 
+// Fractional related operators
+OpFloor:   {infer OpFloor}                        'floor';
+OpCeiling: {infer OpCeiling}                     ('ceiling' | 'round_up_to_nearest_integer');
+OpIntegerToFraction: {infer OpIntegerToFraction}  'integer_to_fraction';
+
+UnaryOp: 
+      OpMinus 
+    | OpNot 
+    | OpIntegerToFraction // Convert an integer to a fractional
+    | OpFloor             // Round down a fractional to the nearest integer
+    | OpCeiling           // Round up   a fractional to the nearest integer
+;
+
 UnaryExpr:
-    op=(OpMinus | OpNot) value=Expr
+    op=UnaryOp value=Expr
 ;
 
 // Denotes entrypoint / what to evaluate. Basically Simala's #eval
