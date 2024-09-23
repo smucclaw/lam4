@@ -53,7 +53,7 @@ import           Lam4.Expr.CommonSyntax   (RecordDeclMetadata (..),
                                            RowMetadata (..), RuleMetadata (..),
                                            Transparency (..), emptyRuleMetadata)
 import           Lam4.Expr.ConcreteSyntax
-import           Lam4.Expr.Name           (Name (..))
+import           Lam4.Expr.Name           (Name (..), uniqueForNamesThatShouldNotHaveUniqueAppended)
 import           Lam4.Parser.Monad
 import           Lam4.Parser.Type
 
@@ -391,8 +391,14 @@ parseRecordExpr node = do
 parseProject ::  A.Object -> Parser Expr
 parseProject node = do
   left <- parseExpr =<< node .: "left"
-  recordLabelName <- relabelRef $ coerce $ node `objAtKey` "right"
+  recordLabelName <- relabelRefForDemo $ coerce $ node `objAtKey` "right"
   pure $ Project left recordLabelName
+
+relabelRefForDemo :: WrappedRef -> Parser Name
+relabelRefForDemo node = pure $ MkName (fromJust refText) uniqueForNamesThatShouldNotHaveUniqueAppended
+  where
+    coercedNode :: A.Object = coerce node
+    refText = coercedNode ^? ix "value" % ix "$refText" % _String
 
 parseBinOp :: A.Object -> Parser BinOp
 parseBinOp opObj = do

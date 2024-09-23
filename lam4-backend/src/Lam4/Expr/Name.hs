@@ -8,14 +8,17 @@
 The treatment of names is adapted from http://blog.vmchale.com/article/intern-identifiers
 -}
 
-module Lam4.Expr.Name (Name(..), Unique) where
+module Lam4.Expr.Name (Name(..), Unique, uniqueForNamesThatShouldNotHaveUniqueAppended) where
 
 import           Base          (Generic, makeFieldLabelsNoPrefix)
 import           Base.Grisette
 import qualified Base.Text     as T
 
+-- | Hack for demo: reserve -1 for names that shouldn't have the Unique appended to them. 
 type Unique = Int
 
+uniqueForNamesThatShouldNotHaveUniqueAppended :: Unique
+uniqueForNamesThatShouldNotHaveUniqueAppended = -1
 data Name = MkName
   { name   :: T.Text
   , unique :: !Unique

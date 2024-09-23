@@ -27,7 +27,7 @@ import           Lam4.Expr.CommonSyntax   (BinOp (..), RuleMetadata (..),
                                            Transparency (..), UnaryOp (..))
 import           Lam4.Expr.ConcreteSyntax as CST (Lit (..))
 import           Lam4.Expr.ConEvalAST     as AST
-import           Lam4.Expr.Name           (Name (..))
+import           Lam4.Expr.Name           (Name (..), uniqueForNamesThatShouldNotHaveUniqueAppended)
 -- import qualified Simala.Expr.Parser       as SM
 import           Data.Bifunctor           (bimap)
 import qualified Simala.Expr.Evaluator    as SM (doEvalDeclsTracing)
@@ -48,7 +48,10 @@ type SimalaDecl = SM.Decl
 type SimalaProgram = [SM.Decl]
 
 lam4ToSimalaName :: Name -> SM.Name
-lam4ToSimalaName (MkName name unique) = name <> "_" <> T.pack (show unique)
+lam4ToSimalaName (MkName name unique) = 
+  if unique == uniqueForNamesThatShouldNotHaveUniqueAppended
+  then name
+  else name <> "_" <> T.pack (show unique)
 
 compileTransparency :: Transparency -> SM.Transparency
 compileTransparency = \case
