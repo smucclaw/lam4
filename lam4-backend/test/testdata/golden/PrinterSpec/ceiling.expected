@@ -1,0 +1,5 @@
+DEFINE ceilinged = ceiling 0.5
+
+DEFINE ceilinged2 = ceiling 0.5
+
+@REPORT ceilinged EQUALS ceilinged2

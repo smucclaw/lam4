@@ -3,8 +3,6 @@ STRUCTURE Applicant
 END
 
 
-DEFINE someApplicant = {| publications = 1000 |}
-
 
 FUNCTION //eventual type signature
 numberOfPublications (applicant) = applicant 's publications
@@ -13,8 +11,13 @@ END
 
 GIVEN (x)
 DECIDE `is eligible for grant`
-IF x 's publications > 10
+IF NOT x 's publications < 2
 
 GIVEN (x)
 DECIDE happy
 IF x `is eligible for grant`
+AND NOT NOT x `is eligible for grant`
+
+DEFINE x = {| publications = 3 |}
+
+@REPORT x `is eligible for grant`

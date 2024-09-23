@@ -48,9 +48,9 @@ render d = rend 0 False (map ($ "") $ d []) ""
       "FOLD_RIGHT" : ts -> onNewLine (i+1) p . showString "FOLD_RIGHT" . new (i+2) ts
       "using"         :t:ts -> pending . showString "using"         . spaces 10 . showString t . new i ts
       "starting_with" :t:ts -> pending . showString "starting_with" . spaces 2 . showString t . new i ts
-      "over"          :t:"'s":u:ts -> pending . showString "over"   . spaces 11 . showString [I.i|#{t}'s #{u}|] . new i ts
-      "over"          :t:ts -> pending . showString "over"          . spaces 11 . showString t . new i ts
-
+      "over"          :t:"'s":u:ts -> pending . showString "over"   . spaces 11 . showString [I.i|#{t}'s #{u}|] . new (i-1) ts
+      "over"          :t:ts -> pending . showString "over"          . spaces 11 . showString t . new (i-1) ts
+      "FUNCTION" : ts -> onNewLine i p . showString "FUNCTION //eventual type signature" . new i ts
       [";"]        -> char ';'
       ";"      :ts -> char ';' . new i ts
       t  : ts@(s:_) | closingOrPunctuation s
@@ -156,8 +156,12 @@ instance Print Double where
 -- Function arguments are separated by newlines
 newtype FunArg = FunArg {unFunArg :: String}
 
+-- Anonymous functions have a special empty list
+newtype AnonFunArg = AnonFunArg {unAnonFunArg :: Name}
+
 mkFunArg :: T.Text -> FunArg
-mkFunArg t = FunArg [I.i|#{backtickIfSpaces t} : TypeMissing|]
+mkFunArg t = FunArg [I.i|#{backtickIfSpaces t}|]
+-- mkFunArg t = FunArg [I.i|#{backtickIfSpaces t} : TypeMissing|] -- TODO: add type information
 
 instance Print FunArg where
   prt _ x = doc (showString (unFunArg x))
@@ -166,6 +170,14 @@ instance Print [FunArg] where
   prt _ [] = concatD []
   prt _ [x] = concatD [prt 0 x]
   prt _ (x:xs) = concatD [prt 0 x, doc (showChar '\n'), prt 0 xs]
+
+instance Print AnonFunArg where
+  prt i x = prt i (unAnonFunArg x)
+
+instance Print [AnonFunArg] where
+  prt _ [] = doc (showString "()")
+  prt _ [x] = concatD [prt 0 x]
+  prt _ (x:xs) = concatD [prt 0 x, doc (showChar ' '), prt 0 xs]
 
 instance Print [Expr] where
   prt _ [] = concatD []
@@ -204,14 +216,9 @@ instance Print (Name, Expr) where
 
 instance Print Decl where
   prt i = \case
-    NonRec name r@(Record []) -> prPrec i 0 (concatD [
-        doc (showString "DEFINE")
-      , prt 0 name
-      , doc (showString ":")
-      , prt 0 r])
     NonRec name expr -> prPrec i 0 (concatD [
       doc (showString "DEFINE")
-      , prt 0 name
+      , prt 0 (mkFunArg name.name)
       , doc (showString "=")
       , prt 0 expr])
 
@@ -230,7 +237,14 @@ instance Print Decl where
       let newDecl = RecordDecl (dummyRowTypeDecl name:rowtypedecls) parents descr
       in prPrec i 0 (concatD [prt 0 newDecl])
 
---    Eval (PredApp expr []) -> prPrec i 0 (concatD [doc (showString "@REPORT"), prt 0 expr, doc (showString "HOLDS?")])
+    Eval (FunApp (Fun _md args body) xs) -> prPrec i 0 (concatD [
+        doc (showString "@REPORT (\\")
+      , prt 0 (fmap AnonFunArg args)
+      , doc (showString "=>")
+      , prt 0 body
+      , doc (showString ")")
+      , parenth (prt 0 xs)
+      ])
     Eval expr -> prPrec i 0 (concatD [doc (showString "@REPORT"), prt 0 expr])
 
 dummyRowTypeDecl :: Name -> RowTypeDecl
@@ -284,19 +298,30 @@ instance Print Expr where
     Var name -> prPrec i 0 (concatD [prt 0 name])
     Lit lit -> prPrec i 0 (concatD [prt 0 lit])
     Cons expr1 expr2 -> prPrec i 0 (concatD [prt 0 expr1, doc (showString "followed_by_items_in"), prt 0 expr2])
-    List exprs -> prPrec i 0 (concatD [doc (showString "LIST_OF"), prt 0 exprs])
+    List exprs -> prPrec i 0 (concatD [doc (showString "LIST_OF"), prt 0 exprs, doc (showString ".")])
+    -- TODO: prPrec is actually supposed to do something smart with the numbers, but whatever, this will be thrown away anyway
+    Unary IntegerToFraction expr@(BinExpr{}) -> prPrec i 0 (concatD [prt 0 IntegerToFraction, parenth (prt 0 expr)])
+    Unary IntegerToFraction expr@(Lit{}) -> parenth (prPrec i 0 (concatD [prt 0 IntegerToFraction, prt 0 expr]))
     Unary unaryop expr -> prPrec i 0 (concatD [prt 0 unaryop, prt 0 expr])
     BinExpr binop expr1 expr2 -> prPrec i 0 (concatD [prt 0 expr1, prt 0 binop, prt 0 expr2])
     IfThenElse expr1 expr2 expr3 -> prPrec i 0 (concatD [doc (showString "IF"), prt 0 expr1, doc (showString "THEN"), prt 0 expr2, doc (showString "ELSE"), prt 0 expr3])
     FunApp expr exprs -> prPrec i 0 (concatD [prt 0 expr, parenth (prt 0 exprs)])
     Record rows -> prPrec i 0 (concatD [doc (showString "{|"), prt 0 rows, doc (showString "|}")])
     Project expr name -> prPrec i 0 (concatD [prt 0 expr, doc (showString "'s"), prt 0 name])
-    f@(Fun _mdata [] _expr) -> error [I.i|Trying to print Fun without a name: #{f}|]
+   -- f@(Fun _mdata [] _expr) -> error [I.i|Trying to print Fun without a name: #{f}|]
     Fun metadata (name:names) expr ->
       prPrec i 0 (concatD [
           prt 0 metadata
         , doc (showString "FUNCTION")
         , prt 0 name
+        , parenth (prt 0 names)
+        , doc (showString "=")
+        , prt 0 expr
+        , doc (showString "END")])
+    Fun metadata names expr ->
+      prPrec i 0 (concatD [
+          prt 0 metadata
+        , doc (showString "FUNCTION")
         , parenth (prt 0 names)
         , doc (showString "=")
         , prt 0 expr

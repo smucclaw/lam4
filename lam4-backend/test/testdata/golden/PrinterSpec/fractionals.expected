@@ -1,0 +1,17 @@
+DEFINE fractional = 0.5 * 0.5
+
+DEFINE negative = - 0.3
+
+DEFINE squared = negative * negative
+
+@REPORT fractional
+
+@REPORT floor fractional
+
+@REPORT ceiling fractional
+
+@REPORT fractional * (integer_to_fraction 2)
+
+@REPORT negative
+
+@REPORT squared

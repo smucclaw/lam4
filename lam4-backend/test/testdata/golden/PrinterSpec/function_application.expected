@@ -1,0 +1,11 @@
+
+FUNCTION //eventual type signature
+sumIntegers (x, y) = x + y
+END
+
+
+
+DECIDE `some predicate`
+IF sumIntegers (1, 2) > 2
+
+@REPORT `some predicate` HOLDS?

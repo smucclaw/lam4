@@ -1,0 +1,3 @@
+DEFINE floored = floor 0.5
+
+@REPORT 1 + floored

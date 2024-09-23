@@ -1,0 +1,3 @@
+@REPORT (integer_to_fraction 2) + (integer_to_fraction 1) + 0.0
+
+@REPORT 2.0 - integer_to_fraction (2 - 0 + 0)

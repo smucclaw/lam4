@@ -7,7 +7,9 @@ STRUCTURE Person
 END
 
 
-FUNCTION f (x) = 2
+
+FUNCTION //eventual type signature
+f (x) = 2
 END
 
 
@@ -15,7 +17,7 @@ END
 DECIDE `some fact`
 IF True
 
-GIVEN (person : TypeMissing)
+GIVEN (person)
 DECIDE `is eligible`
 IF `some fact` HOLDS?
 AND f (1) + person 's some_number EQUALS 2
