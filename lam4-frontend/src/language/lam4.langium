@@ -267,7 +267,7 @@ LetExpr:
         '{' 
             vars+=VarBinding (',' vars+=VarBinding )* 
         '}' 'IN' '{' 
-            body=ComparisonExpr 
+            body=Expr 
         '}'
 ;
 
