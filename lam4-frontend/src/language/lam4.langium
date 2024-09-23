@@ -245,7 +245,7 @@ IDOrBackTickedID returns string:
 =============================== */
 
 Expr:
-    OrExpr | LetExpr | RecordExpr
+    OrExpr | RecordExpr
     // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
 ;
 
@@ -263,7 +263,12 @@ AndExpr infers Expr:
 // TODO: Not sure if VarDecl the best thing to use for the inner stuff
 // TODO: Will switch from braces to indentation when time permits
 LetExpr:
-    'LET' '{' vars+=VarBinding (',' vars+=VarBinding )* '}' 'IN' '{' body=OrExpr '}'
+    'LET' 
+        '{' 
+            vars+=VarBinding (',' vars+=VarBinding )* 
+        '}' 'IN' '{' 
+            body=ComparisonExpr 
+        '}'
 ;
 
 Row:
@@ -437,7 +442,7 @@ SumOf:
 fragment ListOps: Foldr | Foldl | MaximumOf | MinimumOf | SumOf;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | List | ListOps
+    '(' Expr ')' | AnonFunction | List | ListOps | LetExpr
     | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | BooleanLiteral | StringLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
