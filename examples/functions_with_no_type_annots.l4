@@ -1,0 +1,10 @@
+// ---------------------------------------------------------------------------------
+// TODO: This is more of a test than an example. Will move into tests in the future.
+// ---------------------------------------------------------------------------------
+FUNCTION
+f(x) = x's c's b
+END
+
+FUNCTION
+g(x) = 1 - x's a + 2 
+END
