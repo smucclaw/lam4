@@ -1,7 +1,9 @@
 // ---------------------------------------------------------------------------------
 // TODO: This is more of a test than an example. Will move into tests in the future.
 // ---------------------------------------------------------------------------------
-
+/- 
+    About: "a description could go here"
+-/
 STRUCTURE F
     a IS_A Integer
     c IS_A G
@@ -13,4 +15,10 @@ END
 
 FUNCTION F => Integer
 f(x) = x's c's b
+END
+
+@REPORT "test syntax highlighting"
+
+FUNCTION F => Integer
+f(x) = x's a + 2 
 END
