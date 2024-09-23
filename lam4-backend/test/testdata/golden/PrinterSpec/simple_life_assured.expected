@@ -1,0 +1,11 @@
+
+/-
+  About: "Information about the life assured for this policy."
+-/
+STRUCTURE LifeAssured
+  -- "whether policy active  "
+  policy_active : Boolean
+
+  -- "how old the life assured is"
+  age : Integer
+END

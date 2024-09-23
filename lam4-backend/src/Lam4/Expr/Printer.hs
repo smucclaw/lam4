@@ -31,8 +31,9 @@ render d = rend 0 False (map ($ "") $ d []) ""
     -> [String]
     -> ShowS
   rend i p = \case
-      "STRUCTURE":t:"END":ts -> showString [I.i|STRUCTURE #{t} END|] . new 0 ts
-      "END"    :ts -> onNewLine (i-1) p . showString "END" . rend 0 False ts
+      "STRUCTURE":t:"END":ts -> showString [I.i|STRUCTURE #{t} END|] . new i ts
+      "STRUCTURE":t      :ts -> showString [I.i|STRUCTURE #{t}|] . new (i+1) ts
+      "END"    :ts -> onNewLine (i-1) p . showString "END" . new (i-1) ts
       "["      :ts -> char '[' . rend i False ts
       "("      :ts -> char '(' . rend i False ts
       "{": "}" :ts -> showString "{}" . rend i False ts
@@ -42,6 +43,7 @@ render d = rend 0 False (map ($ "") $ d []) ""
       "--" : t :ts -> onNewLine i     p . showString "-- " . showString t . new i ts
       "/-"     :ts -> onNewLine i     p . showString "/-" . new (i+1) ts
       "-/"     :ts -> onNewLine (i-1) p . showString "-/" . new (i-1) ts
+      "AND"    :ts -> onNewLine i     p . showString "AND" . spaces 1 . rend i False ts
       "FOLD_LEFT" : ts -> onNewLine (i+1) p . showString "FOLD_LEFT" . new (i+2) ts
       "FOLD_RIGHT" : ts -> onNewLine (i+1) p . showString "FOLD_RIGHT" . new (i+2) ts
       "using"         :t:ts -> pending . showString "using"         . spaces 10 . showString t . new i ts
@@ -202,12 +204,16 @@ instance Print (Name, Expr) where
 
 instance Print Decl where
   prt i = \case
-    NonRec name r@(Record _) -> prPrec i 0 (concatD [
+    NonRec name r@(Record []) -> prPrec i 0 (concatD [
         doc (showString "DEFINE")
       , prt 0 name
       , doc (showString ":")
       , prt 0 r])
-    NonRec name expr -> prPrec i 0 (concatD [prt 0 name, prt 0 expr])
+    NonRec name expr -> prPrec i 0 (concatD [
+      doc (showString "DEFINE")
+      , prt 0 name
+      , doc (showString "=")
+      , prt 0 expr])
 
     -- Name is actually part of the Predicate.
     -- doing this quick hack to move it to where it belongs.
@@ -224,7 +230,7 @@ instance Print Decl where
       let newDecl = RecordDecl (dummyRowTypeDecl name:rowtypedecls) parents descr
       in prPrec i 0 (concatD [prt 0 newDecl])
 
-    Eval (PredApp expr []) -> prPrec i 0 (concatD [doc (showString "@REPORT"), prt 0 expr, doc (showString "HOLDS?")])
+--    Eval (PredApp expr []) -> prPrec i 0 (concatD [doc (showString "@REPORT"), prt 0 expr, doc (showString "HOLDS?")])
     Eval expr -> prPrec i 0 (concatD [doc (showString "@REPORT"), prt 0 expr])
 
 dummyRowTypeDecl :: Name -> RowTypeDecl
@@ -252,11 +258,6 @@ instance Print RowMetadata where
         ])
 
 instance Print DataDecl where
-  {- TODO: description is something like
-    /-
-     description: "how much can be won from the jackpot."
-     -/
-  -}
   prt i = \case
     decl@(RecordDecl [] _ _) -> error [I.i|Trying to print DataDecl without a name: #{decl}|]
     RecordDecl (recname:rowtypedecls) []      metadata ->
@@ -321,6 +322,11 @@ instance Print Expr where
         , prt 0 funname
         , doc (showString "\nIF")
         , prt 0 expr])
+    PredApp f [] ->
+      prPrec i 0 (concatD [
+        prt 0 f
+      , doc (showString "HOLDS?")
+      ])
     PredApp f [arg] ->
       prPrec i 0 (concatD [
         prt 0 arg
@@ -413,7 +419,7 @@ instance Print BinOp where
     Le -> prPrec i 0 (concatD [doc (showString "<=")])
     Gt -> prPrec i 0 (concatD [doc (showString ">")])
     Ge -> prPrec i 0 (concatD [doc (showString ">=")])
-    Eq -> prPrec i 0 (concatD [doc (showString "==")])
+    Eq -> prPrec i 0 (concatD [doc (showString "EQUALS")])
     Ne -> prPrec i 0 (concatD [doc (showString "!=")])
     StrAppend -> prPrec i 0 (concatD [doc (showString "++")]) -- is this even in the Langium grammar yet?
 instance Print Bool where

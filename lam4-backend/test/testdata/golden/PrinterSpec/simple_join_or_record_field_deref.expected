@@ -1,0 +1,18 @@
+STRUCTURE Applicant
+  publications : Integer
+END
+
+
+DEFINE someApplicant = {| publications = 1000 |}
+
+FUNCTION numberOfPublications (applicant) = applicant 's publications
+END
+
+
+GIVEN (x : TypeMissing)
+DECIDE `is eligible for grant`
+IF x 's publications > 10
+
+GIVEN (x : TypeMissing)
+DECIDE happy
+IF x `is eligible for grant`

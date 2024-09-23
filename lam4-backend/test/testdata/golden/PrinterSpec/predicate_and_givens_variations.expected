@@ -1,0 +1,18 @@
+STRUCTURE Person
+  age : Integer
+END
+
+
+
+DECIDE `pred blah blah`
+IF True
+
+GIVEN (x : TypeMissing
+y : TypeMissing
+z : TypeMissing)
+DECIDE pred2
+IF x 's age > 10 AND y 's age > 10 AND z 's age > 10
+
+
+DECIDE no_givens_pred
+IF True

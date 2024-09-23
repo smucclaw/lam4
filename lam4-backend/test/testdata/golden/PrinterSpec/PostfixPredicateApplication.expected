@@ -1,0 +1,25 @@
+
+/-
+  About: "A Person is pretty much what you would expect"
+-/
+STRUCTURE Person
+  some_number : Integer
+END
+
+
+FUNCTION f (x) = 2
+END
+
+
+
+DECIDE `some fact`
+IF True
+
+GIVEN (person : TypeMissing)
+DECIDE `is eligible`
+IF `some fact` HOLDS?
+AND f (1) + person 's some_number EQUALS 2
+
+DEFINE x = {| some_number = 1 |}
+
+@REPORT x `is eligible`
