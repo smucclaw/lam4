@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------------
+// TODO: This is more of a test than an example. Will move into tests in the future.
+// ---------------------------------------------------------------------------------
+
+// Test shadowing and scoping of LET expressions
 @REPORT 
 LET { 
     x = 1,
