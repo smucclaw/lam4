@@ -164,7 +164,7 @@ Param:
     name=IDOrBackTickedID;
 
 ParamTypePair:
-    param=Param (':' | 'IS_A') type=TypeAnnot
+    param=Param (':' | 'IS_A') type=TypeAnnot?
 ;
 
 // ------- PredicateDecl, FunDecl -------
@@ -200,7 +200,7 @@ FunDecl:
     // No GIVENs for this species of FunDecl -- having both the GIVEN syntax and the Typescripty params in parens syntax is too confusing
     // Require annotations for top level func decl, since required for bidir type checking
     'FUNCTION' // An explicit kw might be helpful for non-programmers
-    funType=TypeAnnot
+    funType=TypeAnnot?
     name=IDOrBackTickedID 
     FunParams
     ( '=' | 'equals')
