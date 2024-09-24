@@ -12,11 +12,10 @@ import qualified Data.Text.Lazy        as TL
 import qualified Data.Text.Lazy.IO     as TL
 import           System.FilePath          ((<.>), (</>), takeBaseName)
 import           System.Directory         (listDirectory)
-import           Text.Pretty.Simple    as Pretty (pShowNoColor)
 
-goldenGeneric :: Show a => String -> a -> Golden TL.Text
+goldenGeneric :: String -> String -> Golden TL.Text
 goldenGeneric name output_ = Golden
-  { output = Pretty.pShowNoColor output_
+  { output = TL.pack output_
   , encodePretty = TL.unpack
   , writeToFile = TL.writeFile
   , readFromFile = TL.readFile

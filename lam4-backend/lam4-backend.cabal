@@ -129,7 +129,6 @@ test-suite lam4-backend-test
         base,
         hspec,
         hspec-golden,
-        pretty-simple,
         filepath,
         directory,
         text,
