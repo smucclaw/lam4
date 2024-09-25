@@ -1,5 +1,5 @@
-import { type Module, inject } from 'langium';
-import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type PartialLangiumServices } from 'langium/lsp';
+import { type Module, inject, type DeepPartial } from 'langium';
+import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type LangiumSharedLSPServices, type PartialLangiumServices } from 'langium/lsp';
 import { Lam4GeneratedModule, Lam4GeneratedSharedModule } from './generated/module.js';
 import { Lam4Validator, registerValidationChecks } from './lam4-validator.js';
 import { Lam4ValueConverter } from "./lam4-value-converter.js"
@@ -7,6 +7,8 @@ import { Lam4ScopeProvider, Lam4ScopeComputation } from './lam4-scope.js';
 import { Lam4HoverProvider } from './lsp/lam4-hover-provider.js';
 import {WithNamedEltRefPathJsonSerializer} from "./lam4-json-serializer.js";
 import {Lam4Linker} from "./lam4-linker.js";
+import {Lam4DocumentUpdateHandler} from "./lsp/lam4-document-update-handler.js";
+
 /**
  * Declaration of custom services - add your own service classes here.
  */
@@ -20,7 +22,11 @@ export type Lam4AddedServices = {
  * Union of Langium default services and your custom services - use this as constructor parameter
  * of custom service classes.
  */
-export type Lam4Services = LangiumServices & Lam4AddedServices
+export type Lam4Services = LangiumServices & Lam4AddedServices;
+export type Lam4SharedServices = LangiumSharedServices;
+
+// export type Lam4SharedLSPServices = LangiumSharedLSPServices & Lam4AddedSharedLSPServices;
+
 
 /**
  * Dependency injection module that overrides Langium default services and contributes the
@@ -47,6 +53,12 @@ export const Lam4Module: Module<Lam4Services, PartialLangiumServices & Lam4Added
     }
 };
 
+export const Lam4SharedModule: Module<Lam4SharedServices, DeepPartial<Lam4SharedServices>> = {
+    lsp: {
+        DocumentUpdateHandler: (services) => new Lam4DocumentUpdateHandler(services)
+    }
+};
+
 /**
  * Create the full set of services required by Langium.
  *
@@ -68,7 +80,8 @@ export function createLam4Services(context: DefaultSharedModuleContext): {
 } {
     const shared = inject(
         createDefaultSharedModule(context),
-        Lam4GeneratedSharedModule
+        Lam4GeneratedSharedModule,
+        Lam4SharedModule
     );
     const lam4Services = inject(
         createDefaultModule({ shared }),
