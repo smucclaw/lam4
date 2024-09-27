@@ -1,5 +1,7 @@
 import { type Module, inject, type DeepPartial } from 'langium';
-import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, type LangiumSharedLSPServices, type PartialLangiumServices } from 'langium/lsp';
+import { createDefaultModule, createDefaultSharedModule, type DefaultSharedModuleContext, type LangiumServices, type LangiumSharedServices, 
+    // type LangiumSharedLSPServices, 
+    type PartialLangiumServices } from 'langium/lsp';
 import { Lam4GeneratedModule, Lam4GeneratedSharedModule } from './generated/module.js';
 import { Lam4Validator, registerValidationChecks } from './lam4-validator.js';
 import { Lam4ValueConverter } from "./lam4-value-converter.js"

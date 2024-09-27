@@ -51,3 +51,8 @@ export const Failure = <T>(value: T): Failure<T> => {
     value,
   };
 };
+
+
+export function getCurrentTimestamp(): number {
+  return new Date().getTime();
+}

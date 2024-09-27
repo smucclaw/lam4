@@ -1,7 +1,9 @@
 import type {LangiumCoreServices} from "langium";
 import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, DefaultScopeProvider, ReferenceInfo, Reference, Scope, AstNodeDescription, EMPTY_STREAM, Stream } from "langium";
 import { Logger } from "tslog";
-import { RecordDecl, SigDecl, Project } from "./generated/ast.js";
+import { RecordDecl, SigDecl, 
+  // Project 
+} from "./generated/ast.js";
 import {isProjectExpr} from "./lam4-lang-utils.js";
 // import { getRecordAncestors, inferType, TypeEnv } from "./type-system/infer.js";
 // import { isRecordTTag } from "./type-system/type-tags.js";

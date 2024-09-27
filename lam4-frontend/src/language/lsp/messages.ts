@@ -1,0 +1,2 @@
+export const DOCUMENTS_VALIDATED_NOTIFICATION = 'documentsValidated';
+export const UPDATE_REMOTE_DECISION_SERVICE_PROGRAM_REQUEST = 'updateRemoteDecisionServiceProgram';
