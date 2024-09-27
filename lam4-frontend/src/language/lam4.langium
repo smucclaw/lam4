@@ -467,10 +467,14 @@ UnaryExpr:
     op=UnaryOp value=Expr
 ;
 
-// Denotes entrypoint / what to evaluate. Basically Simala's #eval
+// Denotes what to evaluate. Basically Simala's #eval
 // TODO: Not sure about the 'Report' surface syntax
 ReportDecl:
     "@REPORT" value=Expr
+;
+
+Entrypoint:
+    "@FOR_Q&A" value=Expr
 ;
 
 /* ============================
