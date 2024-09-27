@@ -10,6 +10,7 @@ import           Control.Lens.Regex.ByteString (groups, regex)
 import           Data.ByteString               as BS hiding (concat, concatMap,
                                                       map, null, putStr)
 import qualified Data.Text                     as T
+import qualified Data.Text.IO                  as T
 
 import           Cradle
 import qualified Lam4.Expr.ConcreteSyntax      as CST (Decl)
@@ -20,6 +21,7 @@ import qualified Lam4.Expr.ToSimala            as ToSimala
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
 import           System.FilePath               ((</>))
+import           System.Directory
 
 data FrontendConfig =
   MkFrontendConfig { frontendDir :: FilePath
@@ -76,6 +78,8 @@ main = do
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"
+      createDirectoryIfMissing True "generated"
+      T.writeFile ("generated" </> "output.simala") (ToSimala.render smDecls)
       putStr $ T.unpack $ ToSimala.render smDecls
       print "-------------------------------"
       -- TODO: What to do if no explicit Eval?

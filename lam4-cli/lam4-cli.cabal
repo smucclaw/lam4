@@ -29,14 +29,15 @@ executable lam4-cli
     ghc-options:      -threaded
     main-is:          Main.hs
     other-modules:
-          Base 
+          Base
     -- other-extensions:
-    build-depends:    
+    build-depends:
           base
         , containers
         , text
         , shake
         , cradle
+        , directory
         , optparse-applicative
         , pretty-show
         , optics
