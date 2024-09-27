@@ -1,15 +1,14 @@
 import type {LangiumCoreServices} from "langium";
 import { DefaultScopeComputation, AstNode, LangiumDocument, PrecomputedScopes, DefaultScopeProvider, ReferenceInfo, Reference, Scope, AstNodeDescription, EMPTY_STREAM, Stream } from "langium";
 import { Logger } from "tslog";
-import { RecordDecl, SigDecl, 
-  // Project 
-} from "./generated/ast.js";
+import { RecordDecl, SigDecl, Project } from "./generated/ast.js";
 import {isProjectExpr} from "./lam4-lang-utils.js";
 // import { getRecordAncestors, inferType, TypeEnv } from "./type-system/infer.js";
 // import { isRecordTTag } from "./type-system/type-tags.js";
 
 const scopeLogger = new Logger({ 
   name: "scoper",
+  minLevel: 3,
   prettyLogTemplate: "{{name}}  ", });
 
 /** https://github.com/eclipse-langium/langium/discussions/856
@@ -48,7 +47,7 @@ export class Lam4ScopeComputation extends DefaultScopeComputation {
     const nodeIsParamEmbeddedInParamTypePair = parent && grandparent && node.$type === "Param" && parent.$type === "ParamTypePair"
     if (nodeIsParamEmbeddedInParamTypePair) {
       const nodeName = this.nameProvider.getName(node);
-      // scopeLogger.debug(`scope compn ${nodeName} ${this.nameProvider.getName(parent)}`);
+      scopeLogger.debug(`scope compn ${nodeName} ${this.nameProvider.getName(parent)}`);
       scopes.add(grandparent, this.descriptions.createDescription(node, nodeName, document));
     } else {
       return super.processNode(node, document, scopes);
@@ -69,20 +68,20 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
    * - "The default implementation of the ScopeComputation service attaches the AstNodeDescription of every symbol to its direct container. This means that the container holds information about which named nodes are nested inside of it. You can override this default behavior to change the position where a symbol is reachable, or to change the name by which it can be referenced"
    */
   override getScope(context: ReferenceInfo): Scope {
-    // scopeLogger.trace(`(getScope) ctx property: ${context.property}; ctx reftxt: ${context.reference.$refText}`);
-    // scopeLogger.trace(`           self: ${context.container.$type}; parent: ${context.container.$container?.$type}`);
+    scopeLogger.trace(`(getScope) ctx property: ${context.property}; ctx reftxt: ${context.reference.$refText}`);
+    scopeLogger.trace(`           self: ${context.container.$type}; parent: ${context.container.$container?.$type}`);
 
     const self = context.container;
     const parent = self.$container;
 
     const isRightChildOfProject = parent && isProjectExpr(parent) && self === parent.right;
     if (isRightChildOfProject) {
-      // const parentProject = parent as Project;
+      const parentProject = parent as Project;
       
       // getScope will have been called on parent.left before this
       // so if the left child is a Ref that can be resolved by the default linker, the Ref's reference will have been resolved
-      // scopeLogger.trace(`(Scope-if) ${context.reference.$refText}`);
-      // scopeLogger.trace(`left sib: ${parentProject.left.$type}`)      
+      scopeLogger.trace(`(Scope-if) ${context.reference.$refText}`);
+      scopeLogger.trace(`left sib: ${parentProject.left.$type}`)      
 
       // Sep 23 2024: Enable ANY_SCOPE for demo; disable 'type-safe record access'
       const returnScope = new ANY_SCOPE();
