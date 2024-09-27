@@ -107,7 +107,11 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | SigDecl | PredicateDecl | FunDecl | ToplevelStatement | ReportDecl
+    RecordDecl | SigDecl | PredOrFunDecl | ToplevelStatement | ReportDecl | Entrypoint
+;
+
+PredOrFunDecl:
+    PredicateDecl | FunDecl
 ;
 
 /* ========================================
@@ -245,8 +249,7 @@ IDOrBackTickedID returns string:
 =============================== */
 
 Expr:
-    OrExpr | RecordExpr
-    // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
+    OrExpr
 ;
 
 OpOr: {infer OpOr} 'OR';
@@ -442,7 +445,7 @@ SumOf:
 fragment ListOps: Foldr | Foldl | MaximumOf | MinimumOf | SumOf;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | List | ListOps | LetExpr
+    '(' Expr ')' | AnonFunction | List | ListOps | LetExpr | RecordExpr
     | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | DecimalLiteral | BooleanLiteral | StringLiteral
     // Not sure if we want to allow for string literals as expressions
 ;

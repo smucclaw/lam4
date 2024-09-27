@@ -3,7 +3,6 @@ import {
 } from 'langium';
 // import type { TextDocumentChangeEvent } from 'vscode-languageserver';
 import type { LangiumSharedServices } from 'langium/lsp';
-// import type { Logger } from "tslog";
 // import makeClient from '../remote-decision-service-api/api.js';
 // import { paths } from '../remote-decision-service-api/api.js';
 import {config} from "./config.js";
@@ -55,7 +54,7 @@ export async function updateRemoteDecisionServiceProgramViaCLI(services: Langium
  */
 async function unsafeUpdateRemoteDecisionServiceProgram(uri: Uri) {
   // TODO: In the future, I want to have a daemon Lam4 HS-backend server and just send a request to it to compile things and get a Simala program back
-  logger.info("unsafeUpdateRemoteDecisionServiceProgram called with !", uri.fsPath);
+  logger.info("unsafeUpdateRemoteDecisionServiceProgram called with ", uri.fsPath);
 
   try {
     runLam4CLI(uri);
