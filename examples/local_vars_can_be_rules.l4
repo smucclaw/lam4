@@ -1,0 +1,17 @@
+STRUCTURE Applicant
+    publications: Integer
+END
+
+@FOR_Q&A 
+FUNCTION Applicant => Integer
+numberOfPublications(applicant) = applicant's publications
+END
+
+DEFINE x =  -- Determines whether the applicant is eligible for the grant
+            GIVEN (x IS_A Applicant)
+            DECIDE `is eligible for grant`
+            IF NOT numberOfPublications(x) < 2
+
+DEFINE y = FUNCTION f(meh) = 2 END
+
+@REPORT y(3)

@@ -107,11 +107,11 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | SigDecl | PredOrFunDecl | ToplevelStatement | ReportDecl
+    RecordDecl | SigDecl | NonDataDecl
 ;
 
-PredOrFunDecl:
-    PredicateDecl | FunDecl
+NonDataDecl: 
+    PredicateDecl | FunDecl | ReportDecl | ToplevelStatement
 ;
 
 /* ========================================
@@ -199,8 +199,8 @@ fragment IsEntrypoint:
 ;
 // a terse FunDecl
 FunDecl:
-    description=SINGLELINE_METADATA_ANNOTATION?
     IsEntrypoint?
+    description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
 
@@ -219,8 +219,8 @@ FunDecl:
 // a predicate amounts to a special case of a function;
 // namely, a function whose return type is Boolean
 PredicateDecl:
-    description=SINGLELINE_METADATA_ANNOTATION?
     IsEntrypoint?
+    description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
 
@@ -235,7 +235,7 @@ PredicateDecl:
 ;
 
 fragment Var:
-    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=Expr
+    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=(NonDataDecl | Expr)
 ;
 
 VarBinding returns NamedElement:
