@@ -53,10 +53,9 @@ import           Lam4.Expr.CommonSyntax   (RecordDeclMetadata (..),
                                            RowMetadata (..), RuleMetadata (..),
                                            Transparency (..), emptyRuleMetadata)
 import           Lam4.Expr.ConcreteSyntax
-import           Lam4.Expr.Name           (Name (..), uniqueForNamesThatShouldNotHaveUniqueAppended)
+import           Lam4.Expr.Name
 import           Lam4.Parser.Monad
 import           Lam4.Parser.Type
-
 
 -- | The Langium-parser ASTNode `$type`s that correspond to recursive exprs
 recursiveTypes :: Set Text
@@ -129,8 +128,7 @@ relabelRefHelper getRefPath getRefText (MkRef node) = do
       refText = getRefText node
   case (refPath, refText) of
     (Just refPath', Just refText') -> do
-      refUnique <- refPathToUnique refPath'
-      pure $ MkName refText' refUnique
+      makeNameHelper refText' refPath'
     _ -> throwError $ "[relabelRefHelper]\n" <> ppShow node <> " impossible"
 
 {----------------------
@@ -148,20 +146,34 @@ parseProgram program = do
   let
       elementValues = program ^.. ix "elements" % values
       elementObjects = elementValues ^.. folded % _Object
-      -- list of JSON paths for every NamedElement in the program
-      nodePaths = elementValues ^.. folded % cosmos % ix "nodePath" % _String
 
-  initializeEnvs nodePaths elementValues
+      objectsWithNodePaths = elementValues ^.. folded % cosmos % filtered (has (ix "nodePath"))
+  _ <- initializeEnvs objectsWithNodePaths elementValues
   parseDecls elementObjects
 
-initializeEnvs :: [RefPath] -> [A.Value] -> Parser ()
-initializeEnvs nodePaths programElementValues = do
+initializeEnvs ::  [A.Value] -> [A.Value] -> Parser ()
+initializeEnvs objectsWithNodePaths programElementValues = do
+  let
+    -- list of JSON paths for every NamedElement in the program
+    nodePaths :: [RefPath] = objectsWithNodePaths ^.. folded % ix "nodePath" % _String
+    nodePathsOfEntrypointNodes :: Set RefPath = Set.fromList $ objectsWithNodePaths ^.. folded % filtered (has (ix "isEntrypoint")) % ix "nodePath" % _String
+    nodeNameStatuses :: [ReferentStatus] = map (\nodePath ->
+                                                  if nodePath `Set.member` nodePathsOfEntrypointNodes then IsEntrypoint
+                                                  else NotEntrypoint)
+                                            nodePaths
+
   {- Make Env of nodePaths (aka RefPaths) => Uniques
     All that's needed, for now, is *some* canonical order on the Uniques
   -}
-  setEnv (zip nodePaths [1 .. ])
+  setEnv                $ zip nodePaths [1 .. ]
+  setNodeNameStatusEnv  $ zip [1 ..] nodeNameStatuses
 
-  {- Then make a map of record labels => Names,
+  {-
+    ----------------------------------------------------------------
+    TODO end Sep 2024: The recordLabelMap stuff was disabled for demo
+    ----------------------------------------------------------------
+
+    Then make a map of record labels => Names,
      to be used when introducing record exprs or destructuring them with record projections.
      This is what guarantees that the names used in projection will be in sync with those used when introducing the record exprs.
 
@@ -199,16 +211,26 @@ parseDecl obj = do
   eltType <- obj .: "$type"
   case eltType of
     -- non-expr, non-statement decls
-    "VarDeclStmt" -> parseVarDecl obj
-    "RecordDecl"  -> parseRecordDecl obj
-    "ReportDecl"  -> Eval <$> parseExpr (getValueFieldOfNode obj)
+    "VarDeclStmt"   -> parseVarDecl obj
+    "RecordDecl"    -> parseRecordDecl obj
+    "ReportDecl"    -> Eval <$> parseExpr (getValueFieldOfNode obj)
+    "FunDecl"       -> parseEntrypointDecl obj 
+    "PredicateDecl" -> parseEntrypointDecl obj
 
-    -- exprs
+    -- non-fun non-pred exprs
     _ ->  do
       expr <- parseExpr obj
       name <- getName obj
       pure $ mkNonEvalDecl eltType name expr
 
+-- the postprocessing / normalization of the Entrypoint function/predicate's name will happen later, in a post-processing step
+parseEntrypointDecl :: A.Object -> Parser Decl
+parseEntrypointDecl decl = do
+  name <- getName decl
+  eltType <- decl .: "$type"
+  expr <- parseExpr decl
+  pure $ mkNonEvalDecl eltType name expr
+  
 {----------------------
     parseExpr
 -----------------------}
@@ -217,7 +239,6 @@ parseExpr :: A.Object -> Parser Expr
 parseExpr node = do
   (node .: "$type" :: Parser Text) >>= \case
     "Ref"            -> parseRefToVar            (coerce node)
-
 
     -- literals
     "IntegerLiteral" -> parseIntegerLiteral node
@@ -326,8 +347,8 @@ parseRecordExprForDemo node = do
   where
     mkBinding :: A.Object -> Parser (Name, Expr)
     mkBinding row = do
-      labelName <- row .: "label"
-      let name = MkName labelName uniqueForNamesThatShouldNotHaveUniqueAppended
+      labelName        <- row .: "label"
+      let name = MkName labelName Nothing NotEntrypoint
       expr <- parseExpr =<< row .: "value"
       pure (name, expr)
 
@@ -409,7 +430,7 @@ parseProject node = do
   pure $ Project left recordLabelName
 
 relabelRefForDemo :: WrappedRef -> Parser Name
-relabelRefForDemo node = pure $ MkName (fromJust refText) uniqueForNamesThatShouldNotHaveUniqueAppended
+relabelRefForDemo node = pure $ MkName (fromJust refText) Nothing NotEntrypoint
   where
     coercedNode :: A.Object = coerce node
     refText = coercedNode ^? ix "value" % ix "$refText" % _String
@@ -612,6 +633,7 @@ parseAnonFun anonFun = do
   body       <- parseExpr =<< anonFun .: "body"
   pure $ Fun emptyRuleMetadata paramNames body
 
+
 parseFunE :: A.Object -> Parser Expr
 parseFunE fun = do
   paramNames   <- traverse parseParam (fun `getObjectsAtField` "params")
@@ -756,6 +778,7 @@ parseRuleMetadata node = do
   transparency     <- tryParseTransparency node
   pure $ RuleMetadata{originalRuleRef, transparency, description}
 
+
 {- | Gets/Makes the Name of an NamedElement node
       that has both a `name` and `nodePath` key.
     Assumes that the node's refPath has already been stashed in the environment
@@ -764,8 +787,14 @@ getName :: A.Object -> Parser Name
 getName node = do
   name :: Text <- node .: "name"
   nodePath :: Text <- node .: "nodePath"
-  unique <- refPathToUnique nodePath
-  pure $ MkName name unique
+  makeNameHelper name nodePath
+
+makeNameHelper :: Text -> RefPath -> Parser Name
+makeNameHelper nameText nodePath = do
+  unique                 <- refPathToUnique nodePath
+  referentStatus <- lookupReferentNodeStatus unique
+  pure $ MkName nameText (Just unique) referentStatus
+
 
 getValueFieldOfNode :: (JoinKinds (IxKind s) A_Prism k, Is k An_AffineFold, Ixed s,  A.AsValue (IxValue s), IsString (Index s)) => s -> A.Object
 getValueFieldOfNode node = node `objAtKey` "value"

@@ -11,6 +11,8 @@ module Lam4.Parser.Type (
   -- * RefPath, Env
   RefPath,
   Env,
+  -- * ReferentStatus
+  ReferentStatusEnv,
   -- * RecordLabel related
   RecordLabel,
   RecordLabelEnv,
@@ -18,8 +20,8 @@ module Lam4.Parser.Type (
 
 import           Base
 import qualified Base.Aeson             as A
-import           Lam4.Expr.Name         (Unique, Name(..))
 import           Lam4.Expr.CommonSyntax (RecordLabel)
+import           Lam4.Expr.Name
 
 import           Control.Monad.Base
 import           Control.Monad.Except   ()
@@ -44,6 +46,8 @@ type RefPath = Text
 -- | Environment for Parser: map from RefPaths to Uniques/Ints
 type Env = Map RefPath Unique
 
+type ReferentStatusEnv = Map Unique ReferentStatus
+
 {- | See relevant discussion in Parser.hs -}
 type RecordLabelEnv = Map RecordLabel Name
 
@@ -53,10 +57,11 @@ type RecordLabelEnv = Map RecordLabel Name
 
 -- | State for our Parser monad. Does NOT include the input object / value
 data ParserState = MkParserState
-  { refPathEnv     :: !Env
-  , maxUnique      :: !Unique 
+  { refPathEnv        :: !Env
+  , maxUnique         :: !Unique
     -- ^ maxUnique in @refPathEnv@. TODO: may not need this; we'll see
-  , recordLabelEnv :: !RecordLabelEnv
+  , recordLabelEnv    :: !RecordLabelEnv
+  , referentStatusEnv :: !ReferentStatusEnv
   }
   deriving stock (Show, Generic)
 

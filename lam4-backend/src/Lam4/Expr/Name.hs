@@ -8,7 +8,7 @@
 The treatment of names is adapted from http://blog.vmchale.com/article/intern-identifiers
 -}
 
-module Lam4.Expr.Name (Name(..), Unique, NodeNameStatus(..)) where
+module Lam4.Expr.Name (Name(..), Unique, ReferentStatus(..)) where
 
 import           Base          (Generic, makeFieldLabelsNoPrefix)
 import           Base.Grisette
@@ -17,14 +17,14 @@ import qualified Base.Text     as T
 type Unique = Int
 
 -- | For, e.g., downstream post-processing of names
-data NodeNameStatus = IsEntrypoint | NotEntrypoint
+data ReferentStatus = IsEntrypoint | NotEntrypoint
   deriving stock (Eq, Ord, Show, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default NodeNameStatus    )
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default ReferentStatus    )
 
 data Name = MkName
   { name               :: T.Text
   , unique             :: !(Maybe Unique)
-  , referentNodeStatus :: !NodeNameStatus
+  , referentNodeStatus :: !ReferentStatus
   -- TODO: Might be better to stash entrypoint info elsewhere
   }
   deriving stock Generic

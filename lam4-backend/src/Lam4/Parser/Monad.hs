@@ -26,6 +26,12 @@ module Lam4.Parser.Monad
   , setEnv
   , emptyEnv
   , lookupInEnv
+
+  -- * NodeNameStatusEnv related
+  , getNodeNameStatusEnv
+  , lookupReferentNodeStatus
+  , setNodeNameStatusEnv
+
   -- * RecordLabelEnv related
   , emptyRecordLabelEnv
   , setRecordLabelEnv
@@ -56,9 +62,9 @@ evalParserFromScratch parser = evalParser parser defaultInitialParserState
 
 
 defaultInitialParserState :: ParserState
-defaultInitialParserState = MkParserState emptyEnv 0 emptyRecordLabelEnv
+defaultInitialParserState = MkParserState emptyEnv 0 emptyRecordLabelEnv emptyLangiumNodeNameStatusEnv
 
-{-| This is the unsafe @error@. 
+{-| This is the unsafe @error@.
 But that's OK, because any errors here are programmer errors,
 since user errors would already have been caught by the upstream
 parser, validator, scoper in the Langium framework.
@@ -120,13 +126,32 @@ setEnv assocList = do
   assign' #refPathEnv newEnv
   assign' #maxUnique (length assocList)
 
+-- | An empty Env.
+emptyEnv :: Env
+emptyEnv = M.empty
 
 lookupInEnv :: RefPath -> Env -> Maybe Unique
 lookupInEnv = M.lookup
 
--- | An empty Env.
-emptyEnv :: Env
-emptyEnv = M.empty
+{-----------------------------------
+    NodeNameStatusEnv Operations
+------------------------------------}
+
+getNodeNameStatusEnv :: Parser ReferentStatusEnv
+getNodeNameStatusEnv = use #referentStatusEnv
+
+setNodeNameStatusEnv :: [(Unique, ReferentStatus)] -> Parser ()
+setNodeNameStatusEnv assocList = assign' #referentStatusEnv (M.fromList assocList)
+
+lookupReferentNodeStatus :: Unique -> Parser ReferentStatus
+lookupReferentNodeStatus unique = do
+  env <- getNodeNameStatusEnv
+  case M.lookup unique env of
+    Nothing             -> throwError "Every unique in the program should have had its node name status registered!"
+    Just nodeNameStatus -> pure nodeNameStatus
+
+emptyLangiumNodeNameStatusEnv :: ReferentStatusEnv
+emptyLangiumNodeNameStatusEnv = M.empty
 
 {-------------------------------
     RecordLabelEnv Operations
