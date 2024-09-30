@@ -107,7 +107,7 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | SigDecl | PredOrFunDecl | ToplevelStatement | ReportDecl | Entrypoint
+    RecordDecl | SigDecl | PredOrFunDecl | ToplevelStatement | ReportDecl
 ;
 
 PredOrFunDecl:
@@ -194,10 +194,13 @@ fragment AnonFunParams:
     ( params+=Param ( params+=Param)* ) | '(' ')'
 ;
 
-
+fragment IsEntrypoint: 
+    isEntrypoint="@FOR_Q&A"
+;
 // a terse FunDecl
 FunDecl:
     description=SINGLELINE_METADATA_ANNOTATION?
+    IsEntrypoint?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
 
@@ -217,6 +220,7 @@ FunDecl:
 // namely, a function whose return type is Boolean
 PredicateDecl:
     description=SINGLELINE_METADATA_ANNOTATION?
+    IsEntrypoint?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
 
@@ -476,9 +480,9 @@ ReportDecl:
     "@REPORT" value=Expr
 ;
 
-Entrypoint:
-    "@FOR_Q&A" value=Expr
-;
+// Entrypoint:
+//     "@FOR_Q&A" value=PredOrFunDecl
+// ;
 
 /* ============================
     Statements
