@@ -38,7 +38,7 @@ import           Base.Aeson         (_Array, _Object)
 import qualified Base.Aeson         as A
 import           Base.Map           as M
 import           Control.Monad.Base
-import           Lam4.Expr.Name     (Unique, Name(..))
+import           Lam4.Expr.Name
 import           Lam4.Parser.Type
 
 -- | Entrypoint

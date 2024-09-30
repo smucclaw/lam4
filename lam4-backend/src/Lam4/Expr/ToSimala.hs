@@ -48,10 +48,9 @@ type SimalaDecl = SM.Decl
 type SimalaProgram = [SM.Decl]
 
 lam4ToSimalaName :: Name -> SM.Name
-lam4ToSimalaName (MkName name unique) =
-  if unique == uniqueForNamesThatShouldNotHaveUniqueAppended
-  then name
-  else name <> "_" <> T.pack (show unique)
+lam4ToSimalaName (MkName name (Just _)     IsEntrypoint)   = name
+lam4ToSimalaName (MkName name Nothing       _)             = name
+lam4ToSimalaName (MkName name (Just unique) NotEntrypoint) = name <> "_" <> T.pack (show unique)
 
 compileTransparency :: Transparency -> SM.Transparency
 compileTransparency = \case
