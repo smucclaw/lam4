@@ -31,3 +31,4 @@ lam4-frontend/generated/
 *.vsix
 lam4-backend/src/Lam4/Expr/notes
 lam4-backend/src/Lam4/Expr/scratchpad
+.env
