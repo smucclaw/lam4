@@ -149,7 +149,7 @@ parseProgram program = do
 
       objectsWithNodePaths = elementValues ^.. folded % cosmos % filtered (has (ix "nodePath"))
   _ <- initializeEnvs objectsWithNodePaths elementValues
-  parseDecls elementObjects
+  parseToplevelDecls elementObjects
 
 initializeEnvs ::  [A.Value] -> [A.Value] -> Parser ()
 initializeEnvs objectsWithNodePaths programElementValues = do
@@ -203,33 +203,25 @@ mkNonEvalDecl typeOfNode name expr
   | typeOfNode `elem` recursiveTypes = Rec name expr
   | otherwise = NonRec name expr
 
-parseDecls :: [A.Object] -> Parser [Decl]
-parseDecls = traverse parseDecl
+parseToplevelDecls :: [A.Object] -> Parser [Decl]
+parseToplevelDecls = traverse parseToplevelDecl
 
-parseDecl :: A.Object -> Parser Decl
-parseDecl obj = do
+parseToplevelDecl :: A.Object -> Parser Decl
+parseToplevelDecl obj = do
   eltType <- obj .: "$type"
   case eltType of
     -- non-expr, non-statement decls
     "VarDeclStmt"   -> parseVarDecl obj
     "RecordDecl"    -> parseRecordDecl obj
     "ReportDecl"    -> Eval <$> parseExpr (getValueFieldOfNode obj)
-    "FunDecl"       -> parseEntrypointDecl obj 
-    "PredicateDecl" -> parseEntrypointDecl obj
-
-    -- non-fun non-pred exprs
+    
+    -- the postprocessing / normalization of the Entrypoint function/predicate's name will happen later, in a post-processing step
+    -- expr decls (including FunDecl, PredicateDecl)
     _ ->  do
       expr <- parseExpr obj
       name <- getName obj
       pure $ mkNonEvalDecl eltType name expr
 
--- the postprocessing / normalization of the Entrypoint function/predicate's name will happen later, in a post-processing step
-parseEntrypointDecl :: A.Object -> Parser Decl
-parseEntrypointDecl decl = do
-  name <- getName decl
-  eltType <- decl .: "$type"
-  expr <- parseExpr decl
-  pure $ mkNonEvalDecl eltType name expr
   
 {----------------------
     parseExpr
