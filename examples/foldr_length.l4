@@ -17,5 +17,5 @@ numberOfPublications(applicant) =
 END
 
 GIVEN (applicant IS_A Applicant)
-DECIDE applicant `is eligible for grant`
+DECIDE { applicant } `is eligible for grant`
 IF numberOfPublications(applicant) >= 3
