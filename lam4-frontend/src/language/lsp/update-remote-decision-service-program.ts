@@ -12,6 +12,8 @@ import { DiagnosticSeverity } from 'vscode-languageserver';
 // import {UPDATE_REMOTE_DECISION_SERVICE_PROGRAM_REQUEST} from './messages.js';
 import { Uri } from 'vscode';
 
+const CMD_RUN_LAM4_CLI = "cabal run lam4-cli -- ";
+
 // type DocumentUri = string;
 // const MEDIA_TYPE = "application/json";
 // const routes = {"all_rules": "/functions/",
@@ -64,7 +66,7 @@ async function unsafeUpdateRemoteDecisionServiceProgram(uri: Uri) {
 }
 
 export function runLam4CLI(uri: Uri) {
-  const runLam4CLI = "cabal run lam4-cli -- " + uri.fsPath;
+  const runLam4CLI = CMD_RUN_LAM4_CLI + uri.fsPath;
   exec(runLam4CLI, (error, stdout) => {
     if (error) {
       console.error("Error when transpiling Lam4 to Simala: ", error);
