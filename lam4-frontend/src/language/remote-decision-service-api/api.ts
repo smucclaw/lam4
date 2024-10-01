@@ -5,7 +5,7 @@ import type {LSPConfig} from "../lsp/config.js";
 export type { paths};
 export default function makeClient(config: LSPConfig) {
   const client = createClient<paths>({
-    baseUrl: config.get_remote_decision_service_url()
+    baseUrl: config.getDecisionServiceUrl()
   });
   return client;
 }

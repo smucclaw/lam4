@@ -19,6 +19,8 @@ const lspLogger = new Logger({
 const configSchema = z.object({
   REMOTE_DECISION_SERVICE_URL: z.string(),
   UPDATE_REMOTE_DECISION_SERVICE_ON_SAVE_STATUS: z.enum(['update', 'no_update']),
+  DECISION_SERVICE_REQUEST_MAKER_CMD: z.string(),
+  DEMO_OIA_DATA_MODEL_XML_PATH: z.string()
 });
 
 
@@ -27,26 +29,42 @@ export class LSPConfig {
   #docLastChangedTimestamp: Map<string, number>;
   #docTranspiledTimestamp: Map<string, number>;
 
-  #remote_decision_service_url: string;
-  #update_remote_decision_service_on_save_status: 'update' | 'no_update';
+  #decisionServiceUrl: string;
+  #updateDecisionServiceOnSaveStatus: 'update' | 'no_update';
+  #decisionServiceRequestMakerCmd: string;
+  #oiaDataModelPath: string;
 
   constructor(baseConfig: BaseConfig, logger: typeof lspLogger) {
-    this.#remote_decision_service_url = baseConfig.REMOTE_DECISION_SERVICE_URL;
-    this.#update_remote_decision_service_on_save_status = baseConfig.UPDATE_REMOTE_DECISION_SERVICE_ON_SAVE_STATUS;
+    this.#decisionServiceUrl = baseConfig.REMOTE_DECISION_SERVICE_URL;
+    this.#updateDecisionServiceOnSaveStatus = baseConfig.UPDATE_REMOTE_DECISION_SERVICE_ON_SAVE_STATUS;
+    this.#decisionServiceRequestMakerCmd = baseConfig.DECISION_SERVICE_REQUEST_MAKER_CMD;
+    this.#oiaDataModelPath = baseConfig.DEMO_OIA_DATA_MODEL_XML_PATH;
 
     this.#logger = logger;
 
     this.#docLastChangedTimestamp = new Map();
     this.#docTranspiledTimestamp = new Map();
   }
-  get_remote_decision_service_url() {
-    return this.#remote_decision_service_url;
+
+  // ----- Getters for constants ---------- //
+
+  getDecisionServiceUrl() {
+    return this.#decisionServiceUrl;
   }
 
   getUpdateRemoteDecisionServiceOnSave() {
-    return this.#update_remote_decision_service_on_save_status;
+    return this.#updateDecisionServiceOnSaveStatus;
   }
 
+  getRequestMakerCmd() {
+    return this.#decisionServiceRequestMakerCmd;
+  }
+
+  getDataModelXmlPath() {
+    return this.#oiaDataModelPath;
+  }
+  
+  /** Logger */
   getLogger() {
     return this.#logger;
   }
