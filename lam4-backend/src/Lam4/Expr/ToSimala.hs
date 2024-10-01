@@ -99,7 +99,7 @@ compileDecl = \case
   ------------------------------------
   NonRec name Atom {} ->
     let smName = lam4ToSimalaName name
-    in SM.NonRec defaultTransparency smName (SM.Atom $ SM.MkAtom smName)
+    in SM.NonRec defaultTransparency smName (SM.Atom smName)
   -- TODO: May not want to translate ONE SIG with no relations this way
   -- TODO: Not sure if naming is ok
 
