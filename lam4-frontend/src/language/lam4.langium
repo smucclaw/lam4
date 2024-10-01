@@ -225,7 +225,13 @@ PredicateDecl:
     // WithSpecificMetadataBlock?
 
     GivenParamBlock?
-    'DECIDE' left=[Param:IDOrBackTickedID]? name=IDOrBackTickedID right=[Param:IDOrBackTickedID]?
+    'DECIDE' 
+        // The `left` and `right` are purely cosmetic --- no semantic implications
+        // The braces for the `left` and `right` are ugly; they're there so the underlying Chevotrain parser doesn't complain about ambiguous alternatives.  
+        // There may be a nicer way to do this -- I was strapped on time and couldn't find a better way.
+        ('{' left=[Param:IDOrBackTickedID] '}')? 
+        name=IDOrBackTickedID 
+        ('{' right=[Param:IDOrBackTickedID] '}')?
     // can think of 'name' as 'head'
     'IF' body=Expr
     /* The 'IF' here is more like a 'IFF' or 'just in case', rather than a mere 'if',
