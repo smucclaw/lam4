@@ -14,7 +14,7 @@ You basically have to set up two things:
 
 1. The Langium frontend: see the detailed instructions in the "To build / generate the Langium frontend parser" section below
 
-2. The Haskell codebase: Use GHC 9.8.2 and `cabal`.
+2. The Haskell codebase: Use GHC 9.6.6 and `cabal`.
 
 When building the Haskell codebase, if the `Grisette` dependencies complains about not having Z3 on your PATH, you may need to add it to your PATH.
 
