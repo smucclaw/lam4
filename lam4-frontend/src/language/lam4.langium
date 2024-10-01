@@ -195,11 +195,13 @@ fragment AnonFunParams:
 ;
 
 fragment IsEntrypoint: 
-    isEntrypoint="@FOR_Q&A"
+    // https://langium.org/docs/reference/grammar-language/
+    // ?= is used to assign a value to a property of type boolean. The value of the property of type boolean is set to true if the right part of the assignment is consumed by the parser.
+    ( isEntrypoint?=FOR_Q_A_FLAG )?
 ;
 // a terse FunDecl
 FunDecl:
-    IsEntrypoint?
+    IsEntrypoint
     description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
@@ -219,7 +221,7 @@ FunDecl:
 // a predicate amounts to a special case of a function;
 // namely, a function whose return type is Boolean
 PredicateDecl:
-    IsEntrypoint?
+    IsEntrypoint
     description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
@@ -511,6 +513,7 @@ StatementRef:
         * LET (but without IN)
 */
 VarDeclStmt:
+    IsEntrypoint
     description=SINGLELINE_METADATA_ANNOTATION?
     'DEFINE' Var
 ;
@@ -766,6 +769,8 @@ terminal ID: /[_a-zA-Z][\w_]*/;
 terminal DECIMAL returns string: INTEGER '.' INTEGER;
 terminal INTEGER returns string: /[0-9]+/;
 // terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;
+
+terminal FOR_Q_A_FLAG: '@FOR_Q&A';
 
 // terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 // Don't allow single quotes as delimiters for strings
