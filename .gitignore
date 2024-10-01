@@ -32,3 +32,4 @@ lam4-frontend/generated/
 lam4-backend/src/Lam4/Expr/notes
 lam4-backend/src/Lam4/Expr/scratchpad
 .env
+examples/private/
