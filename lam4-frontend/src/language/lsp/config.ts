@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import 'dotenv/config';
+import * as fs from 'fs';
 import { Logger } from "tslog";
 import { getCurrentTimestamp } from '../../utils.js';
 
@@ -92,6 +93,12 @@ export class LSPConfig {
 }
 
 const baseConfig = configSchema.parse(process.env);
+
+// Other quick checks of the config / env
+if (!fs.existsSync(baseConfig.DEMO_OIA_DATA_MODEL_XML_PATH)) {
+  lspLogger.error(`The DEMO_OIA_DATA_MODEL_XML_PATH in the .env does NOT exist: ${baseConfig.DEMO_OIA_DATA_MODEL_XML_PATH}`);
+}
+
 export const config = new LSPConfig(baseConfig, lspLogger);
 
 lspLogger.debug('Env:', baseConfig);
