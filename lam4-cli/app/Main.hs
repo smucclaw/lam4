@@ -37,6 +37,13 @@ frontendConfig = MkFrontendConfig { runner      = "node"
                                   , frontendDir = lam4FrontendDir
                                   , args        = [lam4FrontendDir </> "bin" </> "cli", "toMinimalAst"] }
 
+-- | TODO: This should be put in, and read from, the .env file
+outputDir :: FilePath
+outputDir = "generated"
+
+outputSimalaProgramFilename :: FilePath
+outputSimalaProgramFilename = "output.simala"
+
 -- TODO: Think about exposing a tracing option?
 data Options =
   MkOptions
@@ -78,8 +85,8 @@ main = do
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"
-      createDirectoryIfMissing True "generated"
-      T.writeFile ("generated" </> "output.simala") (ToSimala.render smDecls)
+      createDirectoryIfMissing True outputDir
+      T.writeFile (outputDir </> outputSimalaProgramFilename) (ToSimala.render smDecls)
       putStr $ T.unpack $ ToSimala.render smDecls
       print "-------------------------------"
       -- TODO: What to do if no explicit Eval?
