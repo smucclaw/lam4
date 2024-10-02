@@ -29,13 +29,13 @@ data FrontendConfig =
                    , args        :: [String]
   }
 
-lam4_frontend_dir :: FilePath
-lam4_frontend_dir = "lam4-frontend"
+lam4FrontendDir :: FilePath
+lam4FrontendDir = "lam4-frontend"
 
 frontendConfig :: FrontendConfig
 frontendConfig = MkFrontendConfig { runner      = "node"
-                                  , frontendDir = lam4_frontend_dir
-                                  , args        = [lam4_frontend_dir </> "bin" </> "cli", "toMinimalAst"] }
+                                  , frontendDir = lam4FrontendDir
+                                  , args        = [lam4FrontendDir </> "bin" </> "cli", "toMinimalAst"] }
 
 -- TODO: Think about exposing a tracing option?
 data Options =
