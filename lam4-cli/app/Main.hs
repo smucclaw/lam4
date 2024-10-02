@@ -20,14 +20,22 @@ import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
-import           System.FilePath               ((</>))
 import           System.Directory
+import           System.FilePath               ((</>))
 
 data FrontendConfig =
   MkFrontendConfig { frontendDir :: FilePath
                    , runner      :: String
                    , args        :: [String]
   }
+
+data OutputConfig =
+  MkOutputConfig {
+    outputDir             :: FilePath
+  , outputProgramFilename :: FilePath
+  , outputProgramMetadata :: FilePath
+}
+
 
 lam4FrontendDir :: FilePath
 lam4FrontendDir = "lam4-frontend"
@@ -37,12 +45,13 @@ frontendConfig = MkFrontendConfig { runner      = "node"
                                   , frontendDir = lam4FrontendDir
                                   , args        = [lam4FrontendDir </> "bin" </> "cli", "toMinimalAst"] }
 
--- | TODO: This should be put in, and read from, the .env file
-outputDir :: FilePath
-outputDir = "generated"
+-- TODO: Most of the following should be put in, and read from, the .env file
+outputConfig :: OutputConfig
+outputConfig = MkOutputConfig {
+    outputDir = "generated" </> "simala"
+  , outputProgramFilename = "output.simala"
+  , outputProgramMetadata = "program_metadata.json" }
 
-outputSimalaProgramFilename :: FilePath
-outputSimalaProgramFilename = "output.simala"
 
 -- TODO: Think about exposing a tracing option?
 data Options =
@@ -81,12 +90,13 @@ main = do
     else do
       frontendCSTJsons <- getCSTJsonFromFrontend frontendConfig options.files
       let cstDecls = concatMap parseCSTByteString frontendCSTJsons
-          smDecls = ToSimala.compile . cstProgramToConEvalProgram $ cstDecls
+          concreteEvalAstProgram = cstProgramToConEvalProgram cstDecls
+          smDecls = ToSimala.compile concreteEvalAstProgram
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"
-      createDirectoryIfMissing True outputDir
-      T.writeFile (outputDir </> outputSimalaProgramFilename) (ToSimala.render smDecls)
+      createDirectoryIfMissing True outputConfig.outputDir
+      T.writeFile (outputConfig.outputDir </> outputConfig.outputProgramFilename) (ToSimala.render smDecls)
       putStr $ T.unpack $ ToSimala.render smDecls
       print "-------------------------------"
       -- TODO: What to do if no explicit Eval?

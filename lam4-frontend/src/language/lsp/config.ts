@@ -57,7 +57,7 @@ export class LSPConfig {
     return this.#updateDecisionServiceOnSaveStatus;
   }
 
-  getRequestMakerCmd() {
+  getUploadProgramPayloadMakerCmd() {
     return this.#decisionServiceRequestMakerCmd;
   }
 

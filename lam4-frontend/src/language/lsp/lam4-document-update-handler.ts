@@ -6,7 +6,7 @@ import type { TextDocumentChangeEvent } from 'vscode-languageserver';
 import type { LangiumSharedServices } from 'langium/lsp';
 import {config} from "./config.js";
 // import { Utils } from 'vscode-uri';
-import {updateRemoteDecisionServiceProgramViaCLI} from './update-remote-decision-service-program.js';
+import {updateDecisionServiceProgramViaCLI} from './update-decision-service-program.js';
 
 /*********************
      Logger 
@@ -34,7 +34,7 @@ export class Lam4DocumentUpdateHandler extends DefaultDocumentUpdateHandler {
     const uri = URI.parse(event.document.uri);
     logger.debug("didSaveDocument called! ", uri.fsPath);
 
-    updateRemoteDecisionServiceProgramViaCLI(this.#sharedServices, uri);
+    updateDecisionServiceProgramViaCLI(this.#sharedServices, uri);
   }
 }
 
