@@ -2,7 +2,7 @@
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-module Main where
+module Lam4.Main where
 
 import           Base
 import qualified Base.ByteString               as BL
@@ -10,7 +10,7 @@ import           Control.Lens.Regex.ByteString (groups, regex)
 import           Data.ByteString               as BS hiding (concat, concatMap,
                                                       map, null, putStr)
 import qualified Data.Text                     as T
-import qualified Data.Text.IO                  as T
+import qualified Data.String.Interpolate       as I (i)
 
 import           Cradle
 import qualified Lam4.Expr.ConcreteSyntax      as CST (Decl)
@@ -22,7 +22,6 @@ import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Lam4.Expr.Printer             (printTree)
 import           Options.Applicative           as Options
 import           System.FilePath               ((</>))
-import           System.Directory
 
 data FrontendConfig =
   MkFrontendConfig { frontendDir :: FilePath
@@ -81,8 +80,6 @@ main = do
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"
-      createDirectoryIfMissing True "generated"
-      T.writeFile ("generated" </> "output.simala") (ToSimala.render smDecls)
       putStr $ T.unpack $ ToSimala.render smDecls
       print "-------------------------------"
       -- TODO: What to do if no explicit Eval?
@@ -109,8 +106,18 @@ parseCSTByteString bs =
     Left err       -> error ("Parse error:\n" <> ppShow err)
     Right cstDecls -> cstDecls
 
-
-parseProgramFile :: FilePath -> IO [CST.Decl]
-parseProgramFile file = do
-  bsFile <- BS.readFile file
-  pure $ parseCSTByteString bsFile
+-- Version that doesn't call error, but returns the error in the [ByteString].
+-- Because I want to print out the failure in the test.
+-- TODO: nicer error logging, less copypaste
+getCSTJsonFromFrontendNoFail :: FrontendConfig -> [FilePath] -> IO [ByteString]
+getCSTJsonFromFrontendNoFail config files = do
+  let argsForFrontendCLI = config.args <> files
+  (exitCode :: ExitCode, StdoutRaw rawstdout, StderrRaw err) <- run $ cmd config.runner
+      & addArgs argsForFrontendCLI
+  case exitCode of
+    ExitFailure _ -> pure [ [I.i|trying to parse #{files}, got #{ppShow err}|] ]
+    -- TODO: Improve the error reporting
+    ExitSuccess ->
+      pure $ concat $ rawstdout ^.. cstJsonTraversal
+        where
+          cstJsonTraversal = traversalVL [regex|(?s)<ast_from_frontend>(.*?)</ast_from_frontend>|] % traversalVL groups

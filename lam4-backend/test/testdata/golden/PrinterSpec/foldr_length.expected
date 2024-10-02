@@ -1,0 +1,27 @@
+STRUCTURE Publication END
+
+
+STRUCTURE Applicant
+  publications : Publication
+END
+
+
+
+FUNCTION //eventual type signature
+increment (_, acc) = acc + 1
+END
+
+
+
+FUNCTION //eventual type signature
+numberOfPublications (applicant) =
+  FOLD_RIGHT
+    using          increment
+    starting_with  0
+    over           applicant's publications
+END
+
+
+GIVEN (applicant)
+DECIDE `is eligible for grant`
+IF numberOfPublications (applicant) >= 3

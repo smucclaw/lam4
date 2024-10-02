@@ -1,0 +1,24 @@
+
+/-
+  About: "A Person is pretty much what you would expect"
+-/
+STRUCTURE Person END
+
+
+GIVEN (some_person
+another_person)
+DECIDE `has helped`
+IF True
+
+GIVEN (some_person
+another_person)
+DECIDE `has met`
+IF some_person `has helped` another_person
+
+GIVEN (person)
+DECIDE `is fun`
+IF True
+
+GIVEN (x)
+DECIDE bleh
+IF x `is fun`

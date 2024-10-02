@@ -1,0 +1,27 @@
+
+/-
+  About: "a description could go here"
+-/
+STRUCTURE F
+  a : Integer
+  c : G
+END
+
+
+STRUCTURE G
+  b : Integer
+END
+
+
+
+FUNCTION //eventual type signature
+f (x) = x 's c 's b
+END
+
+
+@REPORT `test syntax highlighting`
+
+
+FUNCTION //eventual type signature
+f (x) = x 's a + 2
+END

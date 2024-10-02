@@ -16,3 +16,4 @@ package *
 -- Build static linked, vanilla libraries to reduce build time.
 shared: False
 executable-dynamic: False
+tests: True

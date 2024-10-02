@@ -1,0 +1,21 @@
+DEFINE negativeIntegerLiteralZero = 0
+
+DEFINE negativeInteger = -3
+
+DEFINE squared = negativeInteger * negativeInteger
+
+DEFINE subtracted = 0 - 3 + 0 + 1 - 1
+
+@REPORT negativeIntegerLiteralZero
+
+@REPORT negativeIntegerLiteralZero EQUALS 0
+
+@REPORT negativeInteger
+
+@REPORT negativeInteger EQUALS -3
+
+@REPORT squared
+
+@REPORT subtracted
+
+@REPORT subtracted * subtracted EQUALS squared

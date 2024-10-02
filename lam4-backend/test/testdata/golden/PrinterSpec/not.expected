@@ -1,0 +1,23 @@
+STRUCTURE Applicant
+  publications : Integer
+END
+
+
+
+FUNCTION //eventual type signature
+numberOfPublications (applicant) = applicant 's publications
+END
+
+
+GIVEN (x)
+DECIDE `is eligible for grant`
+IF NOT x 's publications < 2
+
+GIVEN (x)
+DECIDE happy
+IF x `is eligible for grant`
+AND NOT NOT x `is eligible for grant`
+
+DEFINE x = {| publications = 3 |}
+
+@REPORT x `is eligible for grant`

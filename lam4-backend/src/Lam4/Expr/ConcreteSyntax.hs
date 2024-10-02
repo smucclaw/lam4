@@ -28,6 +28,8 @@ module Lam4.Expr.ConcreteSyntax
   -- * Statements
   , Statement(..)
   , DeonticModal(..)
+  , Action(..)
+  , PrimAction(..)
 
   -- * Traversals
   , exprSubexprs

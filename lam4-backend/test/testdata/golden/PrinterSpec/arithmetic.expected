@@ -1,0 +1,17 @@
+
+FUNCTION //eventual type signature
+f () = 3 + 5
+END
+
+
+
+FUNCTION //eventual type signature
+g (x) = x * 2 - 1 / 3
+END
+
+
+@REPORT g (0)
+
+@REPORT g (- 1)
+
+@REPORT f ()
