@@ -42,7 +42,7 @@ module Lam4.Expr.Parser (
   where
 
 import           Base                     hiding (throwError)
-import           Base.Aeson               (FromJSON, _Integer, _Object, _String,
+import           Base.Aeson               (FromJSON, _Integer, _Object, _String, _Bool,
                                            cosmos, values)
 import qualified Base.Aeson               as A
 import           Base.ByteString          (ByteString)
@@ -135,13 +135,13 @@ relabelRefHelper getRefPath getRefText (MkRef node) = do
     Program
 -----------------------}
 
-parseProgramByteStr :: ByteString -> Parser [Decl]
+parseProgramByteStr :: ByteString -> Parser CSTProgram
 parseProgramByteStr bs =
   case bs ^? _Object of
     Just programObject -> parseProgram programObject
     Nothing            -> pure []
 
-parseProgram :: A.Object -> Parser [Decl]
+parseProgram :: A.Object -> Parser CSTProgram
 parseProgram program = do
   let
       elementValues = program ^.. ix "elements" % values
@@ -156,7 +156,10 @@ initializeEnvs objectsWithNodePaths programElementValues = do
   let
     -- list of JSON paths for every NamedElement in the program
     nodePaths :: [RefPath] = objectsWithNodePaths ^.. folded % ix "nodePath" % _String
-    nodePathsOfEntrypointNodes :: Set RefPath = Set.fromList $ objectsWithNodePaths ^.. folded % filtered (has (ix "isEntrypoint")) % ix "nodePath" % _String
+
+    -- isEntrypoint :: A.Value -> Bool
+    isEntrypoint node = has (ix "isEntrypoint") node && (node ^?! ix "isEntrypoint" % _Bool)
+    nodePathsOfEntrypointNodes :: Set RefPath = Set.fromList $ objectsWithNodePaths ^.. folded % filtered isEntrypoint % ix "nodePath" % _String
     nodeNameStatuses :: [ReferentStatus] = map (\nodePath ->
                                                   if nodePath `Set.member` nodePathsOfEntrypointNodes then IsEntrypoint
                                                   else NotEntrypoint)

@@ -18,12 +18,12 @@ import {execa} from 'execa';
 // -- TODO: These should be put in, and read from, the .env file
 const OUTPUT_DIR = "generated/simala";
 const DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME = "output.simala";
-const DEFAULT_OUTPUT_PROGRAM_METADATA_FILENAME = "program_metadata.json";
+const DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME = "program_info.json";
 
 const CMD_RUN_LAM4_CLI = "lam4-cli";
 const DEFAULT_OUTPUT_DIR = "generated/"
 const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(DEFAULT_OUTPUT_DIR, DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME); 
-const DEFAULT_OUTPUT_PROGRAM_METADATA_PATH = path.join(OUTPUT_DIR, DEFAULT_OUTPUT_PROGRAM_METADATA_FILENAME);
+const DEFAULT_OUTPUT_PROGRAM_INFO_PATH = path.join(OUTPUT_DIR, DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME);
 // In the long term, will probably have a daemon and communicate back and forth over rpc instead of via file-based IO
 
 const getPayloadMakerArgs = (simalaProgramPath?: string) => 
@@ -53,7 +53,7 @@ type ProgramInfo = LangiumDocument<AstNode>;
 
 interface CompiledOutputInfo {
   simalaProgramPath: string;
-  programMetadataPath: string;
+  programInfoPath: string;
 }
 
 
@@ -106,7 +106,7 @@ async function unsafeUpdateDecisionServiceProgram(programInfo: ProgramInfo) {
   // const basefilename = path.parse(uri.fsPath).name;
   const compiledOutputInfo: CompiledOutputInfo = {
     simalaProgramPath: DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH,
-    programMetadataPath: DEFAULT_OUTPUT_PROGRAM_METADATA_PATH
+    programInfoPath: DEFAULT_OUTPUT_PROGRAM_INFO_PATH
   }
 
   let programPayload;

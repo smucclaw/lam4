@@ -24,6 +24,7 @@ module Lam4.Expr.ConcreteSyntax
   , OriginalRuleRef(..)
   , UnaryOp(..)
   , BinOp(..)
+  , CSTProgram
 
   -- * Statements
   , Statement(..)
@@ -42,6 +43,7 @@ import           Lam4.Expr.Name         (Name (..))
 
 -- a Name can refer to an Expr or a Statement (but note that not all kinds of Statements can have names)
 
+type CSTProgram = [Decl]
 type Decl = DeclF Expr
 
 -- TODO: Think about whether to use pattern synonyms instead, re the following constructor functions

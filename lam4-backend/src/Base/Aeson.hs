@@ -4,6 +4,7 @@ module Base.Aeson (module X) where
 
 import           Base.Plated       as X (Plated, plate, cosmos)
 import           Data.Aeson        as X
+import           Data.Aeson.Encode.Pretty as X
 import           Data.Aeson.Key    as X
 import           Data.Aeson.KeyMap as X
 import           Data.Aeson.Optics as X

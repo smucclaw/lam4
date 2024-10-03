@@ -5,15 +5,17 @@
 module Main where
 
 import           Base
+import           Base.Aeson                    (encodePretty)
 import qualified Base.ByteString               as BL
+import           Base.File
 import           Control.Lens.Regex.ByteString (groups, regex)
 import           Data.ByteString               as BS hiding (concat, concatMap,
                                                       map, null, putStr)
 import qualified Data.Text                     as T
-import qualified Data.Text.IO                  as T
 
 import           Cradle
 import qualified Lam4.Expr.ConcreteSyntax      as CST (Decl)
+import           Lam4.Expr.ExtractProgramInfo
 import           Lam4.Expr.Parser              (parseProgramByteStr)
 import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
@@ -31,9 +33,9 @@ data FrontendConfig =
 
 data OutputConfig =
   MkOutputConfig {
-    outputDir             :: FilePath
-  , outputProgramFilename :: FilePath
-  , outputProgramMetadata :: FilePath
+    outputDir           :: FilePath
+  , programFilename     :: FilePath
+  , programInfoFilename :: FilePath
 }
 
 
@@ -49,8 +51,8 @@ frontendConfig = MkFrontendConfig { runner      = "node"
 outputConfig :: OutputConfig
 outputConfig = MkOutputConfig {
     outputDir = "generated" </> "simala"
-  , outputProgramFilename = "output.simala"
-  , outputProgramMetadata = "program_metadata.json" }
+  , programFilename = "output.simala"
+  , programInfoFilename = "program_info.json" }
 
 
 -- TODO: Think about exposing a tracing option?
@@ -89,18 +91,21 @@ main = do
       hPutStrLn stderr "Lam4: no input files given; use --help for help"
     else do
       frontendCSTJsons <- getCSTJsonFromFrontend frontendConfig options.files
-      let cstDecls = concatMap parseCSTByteString frontendCSTJsons
-          concreteEvalAstProgram = cstProgramToConEvalProgram cstDecls
-          smDecls = ToSimala.compile concreteEvalAstProgram
+      let cstDecls       = concatMap parseCSTByteString frontendCSTJsons
+          conEvalProgram = cstProgramToConEvalProgram cstDecls
+          simalaProgram  = ToSimala.compile conEvalProgram
+          programInfo    = extractProgramInfo conEvalProgram
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"
       createDirectoryIfMissing True outputConfig.outputDir
-      T.writeFile (outputConfig.outputDir </> outputConfig.outputProgramFilename) (ToSimala.render smDecls)
-      putStr $ T.unpack $ ToSimala.render smDecls
+      -- save simala program and program info to disk
+      writeFileUtf8 (outputConfig.outputDir </> outputConfig.programFilename) (ToSimala.render simalaProgram)
+      writeFileLBS (outputConfig.outputDir </> outputConfig.programInfoFilename) (encodePretty programInfo)
+      putStr $ T.unpack $ ToSimala.render simalaProgram
       print "-------------------------------"
       -- TODO: What to do if no explicit Eval?
-      _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv smDecls
+      _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv simalaProgram
       pure ()
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]

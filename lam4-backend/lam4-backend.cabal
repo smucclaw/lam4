@@ -54,6 +54,7 @@ library
         Lam4.Expr.ToConcreteEvalAST
         Lam4.Expr.SymEvalAST
         Lam4.Expr.ToSimala
+        Lam4.Expr.ExtractProgramInfo
     other-modules:
 
 
@@ -69,6 +70,7 @@ library
         prettyprinter,
         text,
         aeson,
+        aeson-pretty,
         aeson-optics,
         bytestring,
         either,
