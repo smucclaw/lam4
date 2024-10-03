@@ -5,7 +5,9 @@ import type {LangiumDocument, AstNode} from 'langium';
 // import type { TextDocumentChangeEvent } from 'vscode-languageserver';
 import type { LangiumSharedServices } from 'langium/lsp';
 // import makeClient from '../remote-decision-service-api/api.js';
-// import { paths } from '../remote-decision-service-api/api.js';
+import type { 
+              // paths, 
+              components } from '../remote-decision-service-api/api.js';
 import {config} from "./config.js";
 // import { execFile } from 'child_process';
 // import type { Connection } from 'vscode-languageserver';
@@ -56,6 +58,11 @@ interface CompiledOutputInfo {
   programInfoPath: string;
 }
 
+/****************************************
+    DecisionServiceFunctionDeclPayload
+*****************************************/
+
+type DecisionServiceFunctionDeclPayload = components["schemas"]["Implementation"];
 
 // type DocumentUri = string;
 // const MEDIA_TYPE = "application/json";
@@ -101,7 +108,7 @@ export async function updateDecisionServiceProgramViaCLI(services: LangiumShared
 async function unsafeUpdateDecisionServiceProgram(programInfo: ProgramInfo) {
   const uri = programInfo.uri;
   // TODO: In the future, I want to have a daemon Lam4 HS-backend server and just send a request to it to compile things and get a Simala program back
-  logger.info("unsafeUpdateRemoteDecisionServiceProgram called with ", uri.fsPath);
+  logger.info("unsafeUpdateDecisionServiceProgram called with ", uri.fsPath);
 
   // const basefilename = path.parse(uri.fsPath).name;
   const compiledOutputInfo: CompiledOutputInfo = {
@@ -133,16 +140,21 @@ async function compileToSimala(uri: Uri) {
   }
 }
 
-async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutputInfo) {
+
+// async function updateStockPayloadWithProgramInfo(payload: DecisionServiceFunctionDeclPayload) {
+
+// }
+
+async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutputInfo): Promise<DecisionServiceFunctionDeclPayload | undefined> {
   const requestMakerArgs = getPayloadMakerArgs(outputProgramInfo.simalaProgramPath);
   logger.debug("requestMakerArgs", requestMakerArgs);
   try {
     const { stdout } = await execa(config.getUploadProgramPayloadMakerCmd(), requestMakerArgs);
-    // logger.info("Request maker output:\n", stdout);
     const payload = JSON.parse(stdout);
     return payload;
   } catch (error) {
     logger.error("Error when running payload maker: ", error);
+    return undefined;
   }
 }
 
