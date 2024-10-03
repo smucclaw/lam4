@@ -19,7 +19,7 @@ type Unique = Int
 -- | For, e.g., downstream post-processing of names
 data ReferentStatus = IsEntrypoint | NotEntrypoint
   deriving stock (Eq, Ord, Show, Generic)
-  deriving (Mergeable, ExtractSym, EvalSym) via (Default ReferentStatus    )
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default ReferentStatus)
 
 data Name = MkName
   { name               :: T.Text
@@ -36,7 +36,11 @@ instance Eq Name where
   (==) (MkName _ u _) (MkName _ u' _) = u == u'
 
 instance Ord Name where
-  compare (MkName _ u _) (MkName _ u' _) = compare u u'
+  compare (MkName _ (Just u) _) (MkName _ (Just u') _) = compare u u'
+  compare (MkName _ Nothing _) (MkName _ Nothing _)    = EQ
+  compare (MkName _ (Just _) _) (MkName _ Nothing _)   = GT
+  compare (MkName _ Nothing _) (MkName _ (Just _) _)   = LT
 
 instance Show Name where
-    show (MkName t u langiumNodeType) = show t <> "_" <> show u <> "_" <> show langiumNodeType
+    show (MkName t (Just u) langiumNodeType) = show t <> "_" <> show u <> "_" <> show langiumNodeType
+    show (MkName t Nothing langiumNodeType) = show t <> show langiumNodeType
