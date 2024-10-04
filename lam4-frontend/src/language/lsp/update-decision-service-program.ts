@@ -1,21 +1,19 @@
-import { 
-  URI, 
-} from 'langium';
-import type {LangiumDocument, AstNode} from 'langium';
-// import type { TextDocumentChangeEvent } from 'vscode-languageserver';
-import type { LangiumSharedServices } from 'langium/lsp';
+import { URI } from "langium";
+import type { LangiumDocument, AstNode } from "langium";
+import type { LangiumSharedServices } from "langium/lsp";
 // import makeClient from '../remote-decision-service-api/api.js';
-import type { 
-              // paths, 
-              components } from '../remote-decision-service-api/api.js';
-import {config} from "./config.js";
-// import { execFile } from 'child_process';
+import type {
+  // paths,
+  components,
+} from "../remote-decision-service-api/api.js";
+import { config } from "./config.js";
 // import type { Connection } from 'vscode-languageserver';
-import { DiagnosticSeverity } from 'vscode-languageserver';
+import { DiagnosticSeverity } from "vscode-languageserver";
 // import {UPDATE_REMOTE_DECISION_SERVICE_PROGRAM_REQUEST} from './messages.js';
-import { Uri } from 'vscode';
-import path from 'path';
-import {execa} from 'execa';
+import { Uri } from "vscode";
+import path from "path";
+import { execa } from "execa";
+import fs from "fs-extra";
 
 // -- TODO: These should be put in, and read from, the .env file
 const OUTPUT_DIR = "generated/simala";
@@ -23,19 +21,22 @@ const DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME = "output.simala";
 const DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME = "program_info.json";
 
 const CMD_RUN_LAM4_CLI = "lam4-cli";
-const DEFAULT_OUTPUT_DIR = "generated/"
-const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(DEFAULT_OUTPUT_DIR, DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME); 
+const DEFAULT_OUTPUT_DIR = "generated/";
+const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(DEFAULT_OUTPUT_DIR, DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME);
 const DEFAULT_OUTPUT_PROGRAM_INFO_PATH = path.join(OUTPUT_DIR, DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME);
 // In the long term, will probably have a daemon and communicate back and forth over rpc instead of via file-based IO
 
-const getPayloadMakerArgs = (simalaProgramPath?: string) => 
-  ["create", 
-    "--mapping", config.getDataModelXmlPath(), 
-    "--simala", simalaProgramPath ?? DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH];
+const getPayloadMakerArgs = (simalaProgramPath?: string) => [
+  "create",
+  "--mapping",
+  config.getDataModelXmlPath(),
+  "--simala",
+  simalaProgramPath ?? DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH,
+];
 
 // class UploadProgramRequestMaker {
 //   // #template: UploadProgramPayload
-  
+
 //   static init() {
 
 //   }
@@ -47,8 +48,8 @@ const getPayloadMakerArgs = (simalaProgramPath?: string) =>
 //   makeUploadProgramRequest(outputInfo: CompiledOutputInfo) {
 //     // Read in entrypoint info
 //     // Tweak template with program and entrypoint info
-//   } 
-  
+//   }
+
 // }
 
 type ProgramInfo = LangiumDocument<AstNode>;
@@ -72,7 +73,7 @@ type DecisionServiceFunctionDeclPayload = components["schemas"]["Implementation"
 //               }
 
 /*********************
-     Client, Logger 
+     Client, Logger
 **********************/
 // const client = makeClient(config);
 const logger = config.getLogger();
@@ -92,18 +93,14 @@ export async function updateDecisionServiceProgramViaCLI(services: LangiumShared
   // const documentBuilder = services.workspace.DocumentBuilder;
   const documents = services.workspace.LangiumDocuments;
   const document = await documents.getOrCreateDocument(uri);
-  if (document.diagnostics?.some(e => e.severity === DiagnosticSeverity.Error)) {
+  if (document.diagnostics?.some((e) => e.severity === DiagnosticSeverity.Error)) {
     logger.error("Document has errors, cannot update remote decision service program till errors are fixed");
   } else {
-    await unsafeUpdateDecisionServiceProgram(document); 
+    await unsafeUpdateDecisionServiceProgram(document);
   }
 }
 
-
-/** 
- * Examples of API calls:
- *  https://github.com/smucclaw/royalflush/tree/fendor/oia-to-simala/oia-rules/web-service
- * https://github.com/smucclaw/royalflush/blob/fendor/oia-to-simala/oia-rules/web-service/short_examples.md
+/**
  */
 async function unsafeUpdateDecisionServiceProgram(programInfo: ProgramInfo) {
   const uri = programInfo.uri;
@@ -113,17 +110,16 @@ async function unsafeUpdateDecisionServiceProgram(programInfo: ProgramInfo) {
   // const basefilename = path.parse(uri.fsPath).name;
   const compiledOutputInfo: CompiledOutputInfo = {
     simalaProgramPath: DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH,
-    programInfoPath: DEFAULT_OUTPUT_PROGRAM_INFO_PATH
-  }
+    programInfoPath: DEFAULT_OUTPUT_PROGRAM_INFO_PATH,
+  };
 
-  let programPayload;
   try {
-    // TODO: Need to tweak lam4-cli to also export the entrypoint info
     // TODO2: Don't do the frontend parsing twice
-    await compileToSimala(uri); 
-    programPayload = await runPayloadMakerWithCompiledOutput(compiledOutputInfo);
-    logger.debug(JSON.stringify(programPayload));
+    await compileToSimala(uri);
+    const stockProgramPayload = await runPayloadMakerWithCompiledOutput(compiledOutputInfo);
+    logger.debug(JSON.stringify(stockProgramPayload));
 
+    const updatedProgramPayload = updatePayloadWithProgramInfo(compiledOutputInfo, stockProgramPayload);
     // makeRequest with payload
     // sendRequest
   } catch (error) {
@@ -140,35 +136,44 @@ async function compileToSimala(uri: Uri) {
   }
 }
 
+async function updatePayloadWithProgramInfo(
+  outputProgramInfo: CompiledOutputInfo,
+  payload: DecisionServiceFunctionDeclPayload,
+) {
+  const pload: DecisionServiceFunctionDeclPayload = { ...payload };
+  const programInfo = await fs.readJSON(outputProgramInfo.programInfoPath);
 
-// async function updateStockPayloadWithProgramInfo(payload: DecisionServiceFunctionDeclPayload) {
+  // [TODO/TO-REFACTOR] getting the first entrypoint function name for demo
+  if (pload.declaration?.function?.name) {
+    pload.declaration.function.name = programInfo.entryPointFunctions[0].functionName.textName;
+  }
 
-// }
+  logger.debug("pload is\n", pload);
+}
 
-async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutputInfo): Promise<DecisionServiceFunctionDeclPayload | undefined> {
+async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutputInfo) {
   const requestMakerArgs = getPayloadMakerArgs(outputProgramInfo.simalaProgramPath);
   logger.debug("requestMakerArgs", requestMakerArgs);
-  try {
-    const { stdout } = await execa(config.getUploadProgramPayloadMakerCmd(), requestMakerArgs);
-    const payload = JSON.parse(stdout);
+  const { stdout, stderr } = await execa(config.getUploadProgramPayloadMakerCmd(), requestMakerArgs);
+  const payload = JSON.parse(stdout);
+
+  if (stdout) {
     return payload;
-  } catch (error) {
-    logger.error("Error when running payload maker: ", error);
-    return undefined;
+  } else {
+    logger.error("Error when running payload maker: ", stderr);
   }
 }
+
 
 // function serializeAndSaveToDisk() {
 //   const program = await getProgramAst(fileName);
 //   const noMetadataAstString = serializeProgramToJson(program, noMetadataSerializationConfig) as string;
-//   const astJsonOutPath = writeToDisk(noMetadataAstString, fileName, 
+//   const astJsonOutPath = writeToDisk(noMetadataAstString, fileName,
 //       "", opts.destination);
 
 //   consoleLogAST(noMetadataAstString);
 
-
 // }
-
 
 // async function getRulesOnRemoteDecisionService() {
 //   const { data, error } = await client.GET(routes["all_rules"] as any, {});
@@ -182,6 +187,5 @@ async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutp
 //quick test
 // const obj = await getRulesOnRemoteDecisionService();
 // console.log(obj.data);
-
 
 // const hi = await client.GET("/functions/business_rules" as any, {});

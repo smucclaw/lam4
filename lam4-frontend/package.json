@@ -49,6 +49,7 @@
         "commander": "~12.1.0",
         "dotenv": "^16.4.5",
         "execa": "^9.4.0",
+        "fs-extra": "^11.2.0",
         "langium": "~3.2.0",
         "monaco-editor": "npm:@codingame/monaco-editor-treemended@1.85.6",
         "monaco-editor-workers": "~0.45.0",
@@ -64,6 +65,7 @@
     "devDependencies": {
         "@eslint/js": "^9.10.0",
         "@types/eslint__js": "^8.42.3",
+        "@types/fs-extra": "^11.0.4",
         "@types/node": "^22.7.0",
         "@types/vscode": "~1.93.0",
         "@typescript-eslint/eslint-plugin": "~8.6.0",
