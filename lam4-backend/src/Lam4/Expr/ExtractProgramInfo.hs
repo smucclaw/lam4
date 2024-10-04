@@ -11,7 +11,7 @@ import           Lam4.Expr.Name
 -- import Lam4.Expr.CommonSyntax
 
 newtype ProgramInfo = MkProgramInfo { entryPointFunctions :: [EntrypointFunctionInfo] }
-  deriving newtype (Eq, Ord, Show, ToJSON)
+  deriving newtype (Eq, Ord, Show)
   deriving stock (Generic)
 
 newtype EntrypointFunctionInfo = MkEntrypointFunctionInfo {
@@ -29,6 +29,9 @@ data SimpleName = MkSimpleName {
 }
   deriving stock (Eq, Ord, Show)
   deriving stock (Generic)
+
+instance ToJSON ProgramInfo
+instance FromJSON ProgramInfo
 
 instance ToJSON EntrypointFunctionInfo
 instance FromJSON EntrypointFunctionInfo
