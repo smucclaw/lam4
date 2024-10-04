@@ -27,6 +27,7 @@ const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(DEFAULT_OUTPUT_DIR, DEFAULT
 const DEFAULT_OUTPUT_PROGRAM_INFO_PATH = path.join(OUTPUT_DIR, DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME);
 // In the long term, will probably have a daemon and communicate back and forth over rpc instead of via file-based IO
 
+/** TODO: I really should first check whether the endpoint/function is alr there or something */
 let NUM_TIMES_UPDATE_PROGRAM = 0;
 
 const getPayloadMakerArgs = (simalaProgramPath?: string) => [
