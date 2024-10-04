@@ -1,7 +1,7 @@
 import { URI } from "langium";
 import type { LangiumDocument, AstNode } from "langium";
 import type { LangiumSharedServices } from "langium/lsp";
-// import makeClient from '../remote-decision-service-api/api.js';
+import makeClient from "../remote-decision-service-api/api.js";
 import type {
   // paths,
   components,
@@ -19,12 +19,15 @@ import fs from "fs-extra";
 const OUTPUT_DIR = "generated/simala";
 const DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME = "output.simala";
 const DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME = "program_info.json";
+const DEFAULT_ENDPOINT_NAME = "business_rules"; // aka DEFAULT_FUNCTION_NAME
 
 const CMD_RUN_LAM4_CLI = "lam4-cli";
 const DEFAULT_OUTPUT_DIR = "generated/";
 const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(DEFAULT_OUTPUT_DIR, DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME);
 const DEFAULT_OUTPUT_PROGRAM_INFO_PATH = path.join(OUTPUT_DIR, DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME);
 // In the long term, will probably have a daemon and communicate back and forth over rpc instead of via file-based IO
+
+let NUM_TIMES_UPDATE_PROGRAM = 0;
 
 const getPayloadMakerArgs = (simalaProgramPath?: string) => [
   "create",
@@ -65,17 +68,12 @@ interface CompiledOutputInfo {
 
 type DecisionServiceFunctionDeclPayload = components["schemas"]["Implementation"];
 
-// type DocumentUri = string;
-// const MEDIA_TYPE = "application/json";
-// const routes = {"all_rules": "/functions/",
-//                 "business_rules": "functions/business_rules",
-//                 "eval": "functions/business_rules/evaluation"
-//               }
+const MEDIA_TYPE = "application/json";
 
 /*********************
      Client, Logger
 **********************/
-// const client = makeClient(config);
+const client = makeClient(config);
 const logger = config.getLogger();
 
 // TODO: Try adding a cmd handler in the future
@@ -113,19 +111,31 @@ async function unsafeUpdateDecisionServiceProgram(programInfo: ProgramInfo) {
     programInfoPath: DEFAULT_OUTPUT_PROGRAM_INFO_PATH,
   };
 
-  try {
-    // TODO2: Don't do the frontend parsing twice
-    await compileToSimala(uri);
-    const stockProgramPayload = await runPayloadMakerWithCompiledOutput(compiledOutputInfo);
-    logger.debug(JSON.stringify(stockProgramPayload));
+  // TODO2: Don't do the frontend parsing twice
+  await compileToSimala(uri);
 
-    const updatedProgramPayload = updatePayloadWithProgramInfo(compiledOutputInfo, stockProgramPayload);
-    // makeRequest with payload
-    // sendRequest
-  } catch (error) {
-    logger.error("Error when updating decision service program: ", error);
+  const stockProgramPayload = await runPayloadMakerWithCompiledOutput(compiledOutputInfo);
+  // logger.debug(JSON.stringify(stockProgramPayload));
+
+  const updatedProgramPayload = await updatePayloadWithProgramInfo(compiledOutputInfo, stockProgramPayload);
+  await fs.writeJSON("./generated/tmp/programPayload.json", updatedProgramPayload);
+
+  const endpointName = updatedProgramPayload.declaration?.function?.name ?? DEFAULT_ENDPOINT_NAME;
+
+  const clientCall = NUM_TIMES_UPDATE_PROGRAM === 0 ? client.POST : client.PUT;
+  const { data, error } = await clientCall("/functions/{name}", {
+    params: { path: { name: endpointName } },
+    body: updatedProgramPayload,
+    headers: {"Content-Type": MEDIA_TYPE}
+  });
+  if (data) {
+    NUM_TIMES_UPDATE_PROGRAM++;
+    logger.info("Successfully updated decision service program: ", data);
+  } else if (error) {
+    logger.error("ERROR", error);
   }
 }
+
 
 async function compileToSimala(uri: Uri) {
   try {
@@ -142,19 +152,25 @@ async function updatePayloadWithProgramInfo(
 ) {
   const pload: DecisionServiceFunctionDeclPayload = { ...payload };
   const programInfo = await fs.readJSON(outputProgramInfo.programInfoPath);
+  const program = await fs.readFile(outputProgramInfo.simalaProgramPath, "utf8");
 
   // [TODO/TO-REFACTOR] getting the first entrypoint function name for demo
-  if (pload.declaration?.function?.name) {
+  if (pload.declaration?.function?.name && pload.implementation) {
     pload.declaration.function.name = programInfo.entryPointFunctions[0].functionName.textName;
-  }
+    pload.implementation = [["simala", program]];
 
-  logger.debug("pload is\n", pload);
+    // logger.debug("pload is\n", pload);
+
+    return pload;
+  } else {
+    throw new Error("Error when updating payload with program info");
+  }
 }
 
 async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutputInfo) {
-  const requestMakerArgs = getPayloadMakerArgs(outputProgramInfo.simalaProgramPath);
-  logger.debug("requestMakerArgs", requestMakerArgs);
-  const { stdout, stderr } = await execa(config.getUploadProgramPayloadMakerCmd(), requestMakerArgs);
+  const payloadMakerArgs = getPayloadMakerArgs(outputProgramInfo.simalaProgramPath);
+  logger.debug("payloadMakerArgs", payloadMakerArgs);
+  const { stdout, stderr } = await execa(config.getUploadProgramPayloadMakerCmd(), payloadMakerArgs);
   const payload = JSON.parse(stdout);
 
   if (stdout) {
@@ -163,7 +179,6 @@ async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutp
     logger.error("Error when running payload maker: ", stderr);
   }
 }
-
 
 // function serializeAndSaveToDisk() {
 //   const program = await getProgramAst(fileName);
@@ -179,13 +194,7 @@ async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutp
 //   const { data, error } = await client.GET(routes["all_rules"] as any, {});
 //   return {data, error}
 // }
-// async function updateRemoteDecisionServiceWithNewProgram() {
-//   // TODO
-//   // Send a POST request to update the program on the server
-// }
-
 //quick test
 // const obj = await getRulesOnRemoteDecisionService();
 // console.log(obj.data);
-
 // const hi = await client.GET("/functions/business_rules" as any, {});
