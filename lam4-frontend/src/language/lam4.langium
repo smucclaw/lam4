@@ -107,7 +107,11 @@ entry Program:
 ;
 
 ToplevelElement:
-    RecordDecl | SigDecl | PredicateDecl | FunDecl | ToplevelStatement | ReportDecl
+    RecordDecl | SigDecl | NonDataDecl
+;
+
+NonDataDecl: 
+    PredicateDecl | FunDecl | ReportDecl | ToplevelStatement
 ;
 
 /* ========================================
@@ -190,9 +194,14 @@ fragment AnonFunParams:
     ( params+=Param ( params+=Param)* ) | '(' ')'
 ;
 
-
+fragment IsEntrypoint: 
+    // https://langium.org/docs/reference/grammar-language/
+    // ?= is used to assign a value to a property of type boolean. The value of the property of type boolean is set to true if the right part of the assignment is consumed by the parser.
+    ( isEntrypoint?=FOR_Q_A_FLAG )?
+;
 // a terse FunDecl
 FunDecl:
+    IsEntrypoint
     description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
@@ -212,6 +221,7 @@ FunDecl:
 // a predicate amounts to a special case of a function;
 // namely, a function whose return type is Boolean
 PredicateDecl:
+    IsEntrypoint
     description=SINGLELINE_METADATA_ANNOTATION?
     originalRuleRef=OriginalRuleRef?
     // WithSpecificMetadataBlock?
@@ -233,7 +243,7 @@ PredicateDecl:
 ;
 
 fragment Var:
-    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=Expr
+    name=IDOrBackTickedID (':' varType=TypeAnnot)? ( '=' | 'is') value=(NonDataDecl | Expr)
 ;
 
 VarBinding returns NamedElement:
@@ -251,8 +261,7 @@ IDOrBackTickedID returns string:
 =============================== */
 
 Expr:
-    OrExpr | RecordExpr
-    // TODO: Check if adding LetExpr to the grammar in this way is compositional enough
+    OrExpr
 ;
 
 OpOr: {infer OpOr} 'OR';
@@ -448,7 +457,7 @@ SumOf:
 fragment ListOps: Foldr | Foldl | MaximumOf | MinimumOf | SumOf;
 
 PrimitiveExpr infers Expr:
-    '(' Expr ')' | AnonFunction | List | ListOps | LetExpr
+    '(' Expr ')' | AnonFunction | List | ListOps | LetExpr | RecordExpr
     | NormIsInfringed | Ref | UnaryExpr | IntegerLiteral | DecimalLiteral | BooleanLiteral | StringLiteral
     // Not sure if we want to allow for string literals as expressions
 ;
@@ -473,11 +482,15 @@ UnaryExpr:
     op=UnaryOp value=Expr
 ;
 
-// Denotes entrypoint / what to evaluate. Basically Simala's #eval
+// Denotes what to evaluate. Basically Simala's #eval
 // TODO: Not sure about the 'Report' surface syntax
 ReportDecl:
     "@REPORT" value=Expr
 ;
+
+// Entrypoint:
+//     "@FOR_Q&A" value=PredOrFunDecl
+// ;
 
 /* ============================
     Statements
@@ -500,6 +513,7 @@ StatementRef:
         * LET (but without IN)
 */
 VarDeclStmt:
+    IsEntrypoint
     description=SINGLELINE_METADATA_ANNOTATION?
     'DEFINE' Var
 ;
@@ -755,6 +769,8 @@ terminal ID: /[_a-zA-Z][\w_]*/;
 terminal DECIMAL returns string: INTEGER '.' INTEGER;
 terminal INTEGER returns string: /[0-9]+/;
 // terminal INTEGER returns string: /((-|\\+)?[0-9]+)/;
+
+terminal FOR_Q_A_FLAG: '@FOR_Q&A';
 
 // terminal STRING: /"(\\.|[^"\\])*"|'(\\.|[^'\\])*'/;
 // Don't allow single quotes as delimiters for strings

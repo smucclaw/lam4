@@ -27,14 +27,14 @@ import           Lam4.Expr.CommonSyntax   (BinOp (..), RuleMetadata (..),
                                            Transparency (..), UnaryOp (..))
 import           Lam4.Expr.ConcreteSyntax as CST (Lit (..))
 import           Lam4.Expr.ConEvalAST     as AST
-import           Lam4.Expr.Name           (Name (..), uniqueForNamesThatShouldNotHaveUniqueAppended)
+import           Lam4.Expr.Name
 -- import qualified Simala.Expr.Parser       as SM
 import           Data.Bifunctor           (bimap)
 import qualified Simala.Expr.Evaluator    as SM (doEvalDeclsTracing)
 import qualified Simala.Expr.Render       as SM
 import qualified Simala.Expr.Type         as SM
 
-
+-- TODO: Add a ToSimala monad
 defaultTransparency :: SM.Transparency
 defaultTransparency = SM.Opaque
 
@@ -48,10 +48,9 @@ type SimalaDecl = SM.Decl
 type SimalaProgram = [SM.Decl]
 
 lam4ToSimalaName :: Name -> SM.Name
-lam4ToSimalaName (MkName name unique) =
-  if unique == uniqueForNamesThatShouldNotHaveUniqueAppended
-  then name
-  else name <> "_" <> T.pack (show unique)
+lam4ToSimalaName (MkName name (Just _)     IsEntrypoint)   = name
+lam4ToSimalaName (MkName name Nothing       _)             = name
+lam4ToSimalaName (MkName name (Just unique) NotEntrypoint) = name <> "_" <> T.pack (show unique)
 
 compileTransparency :: Transparency -> SM.Transparency
 compileTransparency = \case
@@ -106,6 +105,9 @@ compileDecl = \case
   ------------------------------------
   ---- VANILLA -----------------------
   ------------------------------------
+  {-
+  TODO: Improve the translation of Rec vs NonRec decls -- do some analysis
+  -}
   NonRec name fun@(Fun ruleMetadata _ _) -> SM.NonRec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
   Rec name fun@(Fun ruleMetadata _ _)    -> SM.Rec (compileTransparency ruleMetadata.transparency) (lam4ToSimalaName name) (compileExpr fun)
 

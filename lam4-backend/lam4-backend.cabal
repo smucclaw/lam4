@@ -42,6 +42,7 @@ library
         Base.Text
         Base.Aeson
         Base.ByteString
+        Base.File
         Base.Grisette
         Lam4.Expr.Name
         Lam4.Expr.ConcreteSyntax
@@ -53,6 +54,7 @@ library
         Lam4.Expr.ToConcreteEvalAST
         Lam4.Expr.SymEvalAST
         Lam4.Expr.ToSimala
+        Lam4.Expr.ExtractProgramInfo
     other-modules:
 
 
@@ -68,12 +70,14 @@ library
         prettyprinter,
         text,
         aeson,
+        aeson-pretty,
         aeson-optics,
         bytestring,
         either,
         pretty-show,
         grisette >= 0.8,
-        simala
+        simala,
+        relude
 
 
 

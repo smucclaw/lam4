@@ -3,7 +3,8 @@ module Lam4.Expr.ToConcreteEvalAST (
   cstProgramToConEvalProgram,
   -- * helpers
   toConEvalDecl,
-  toConEvalExpr)
+  toConEvalExpr,
+  )
 where
 
 import           Base
@@ -12,7 +13,7 @@ import qualified Lam4.Expr.ConcreteSyntax as CST
 import qualified Lam4.Expr.ConEvalAST     as AST
 
 -- | Entry point
-cstProgramToConEvalProgram :: [CST.Decl] -> [AST.ConEvalDecl]
+cstProgramToConEvalProgram :: [CST.Decl] -> AST.ConEvalProgram
 cstProgramToConEvalProgram = map toConEvalDecl
 
 
@@ -66,5 +67,3 @@ toConEvalExpr expression =
         ------------------------------------
         CST.Sig parents []               -> AST.Atom parents
         CST.Sig _       _                -> error "swapConstructors: A Sig with relations is not supported for concrete-evaluation-only backends"
-
-

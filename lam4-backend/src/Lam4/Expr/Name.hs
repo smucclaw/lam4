@@ -8,20 +8,24 @@
 The treatment of names is adapted from http://blog.vmchale.com/article/intern-identifiers
 -}
 
-module Lam4.Expr.Name (Name(..), Unique, uniqueForNamesThatShouldNotHaveUniqueAppended) where
+module Lam4.Expr.Name (Name(..), Unique, ReferentStatus(..)) where
 
 import           Base          (Generic, makeFieldLabelsNoPrefix)
 import           Base.Grisette
 import qualified Base.Text     as T
 
--- | Hack for demo: reserve -1 for names that shouldn't have the Unique appended to them. 
 type Unique = Int
 
-uniqueForNamesThatShouldNotHaveUniqueAppended :: Unique
-uniqueForNamesThatShouldNotHaveUniqueAppended = -1
+-- | For, e.g., downstream post-processing of names
+data ReferentStatus = IsEntrypoint | NotEntrypoint
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving (Mergeable, ExtractSym, EvalSym) via (Default ReferentStatus)
+
 data Name = MkName
-  { name   :: T.Text
-  , unique :: !Unique
+  { name               :: T.Text
+  , unique             :: !(Maybe Unique)
+  , referentNodeStatus :: !ReferentStatus
+  -- TODO: Might be better to stash entrypoint info elsewhere
   }
   deriving stock Generic
   deriving (Mergeable, ExtractSym, EvalSym) via (Default Name)
@@ -29,10 +33,14 @@ makeFieldLabelsNoPrefix ''Name
 
 
 instance Eq Name where
-  (==) (MkName _ u) (MkName _ u') = u == u'
+  (==) (MkName _ u _) (MkName _ u' _) = u == u'
 
 instance Ord Name where
-  compare (MkName _ u) (MkName _ u') = compare u u'
+  compare (MkName _ (Just u) _) (MkName _ (Just u') _) = compare u u'
+  compare (MkName _ Nothing _) (MkName _ Nothing _)    = EQ
+  compare (MkName _ (Just _) _) (MkName _ Nothing _)   = GT
+  compare (MkName _ Nothing _) (MkName _ (Just _) _)   = LT
 
 instance Show Name where
-    show (MkName t u) = show t <> "_" <> show u
+    show (MkName t (Just u) langiumNodeType) = show t <> "_" <> show u <> "_" <> show langiumNodeType
+    show (MkName t Nothing langiumNodeType) = show t <> show langiumNodeType

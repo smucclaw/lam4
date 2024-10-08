@@ -14,13 +14,13 @@ import {
     type LangiumCoreServices,
 
 } from "langium";
-import { Logger } from "tslog";
+// import { Logger } from "tslog";
 import { ANY_SCOPE } from "./lam4-scope.js";
 // import { NamedElement, type Ref } from "./generated/ast.js";
 
-const linkerLogger = new Logger({ 
-  name: "linker",
-  prettyLogTemplate: "{{name}}  ", });
+// const linkerLogger = new Logger({ 
+//   name: "linker",
+//   prettyLogTemplate: "{{name}}  ", });
 
 
 export interface UnknownWrapperRef extends AstNode {
@@ -44,7 +44,7 @@ export class Lam4Linker extends DefaultLinker {
   override getCandidate(refInfo: ReferenceInfo): AstNodeDescription | LinkingError {
     const scope = this.scopeProvider.getScope(refInfo);
     if ((scope as ANY_SCOPE).scopeType === 'ANY_SCOPE') {
-      linkerLogger.debug(`ANY_SCOPE ${refInfo.reference.$refText}`);
+      // linkerLogger.debug(`ANY_SCOPE ${refInfo.reference.$refText}`);
 
       const refText = refInfo.reference.$refText;
       const refNode = refInfo.reference.$refNode;
@@ -63,8 +63,8 @@ export class Lam4Linker extends DefaultLinker {
         "$container": container as any, // TODO -- improve the `any`
         $containerProperty: refInfo.property
       }; 
-      linkerLogger.debug(`wrappedRef ${wrappedRef.$type} ${wrappedRef.$containerProperty}`);
-      linkerLogger.debug(`refText: ${refText}`);
+      // linkerLogger.debug(`wrappedRef ${wrappedRef.$type} ${wrappedRef.$containerProperty}`);
+      // linkerLogger.debug(`refText: ${refText}`);
       
       return this.nodeDescriptionProvider.createDescription(wrappedRef, "UnknownWrapperRef");
     }

@@ -5,23 +5,25 @@
 module Main where
 
 import           Base
+import           Base.Aeson                    (encodePretty)
 import qualified Base.ByteString               as BL
+import           Base.File
 import           Control.Lens.Regex.ByteString (groups, regex)
 import           Data.ByteString               as BS hiding (concat, concatMap,
                                                       map, null, putStr)
 import qualified Data.Text                     as T
-import qualified Data.Text.IO                  as T
 
 import           Cradle
 import qualified Lam4.Expr.ConcreteSyntax      as CST (Decl)
+import           Lam4.Expr.ExtractProgramInfo
 import           Lam4.Expr.Parser              (parseProgramByteStr)
 import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
-import           System.FilePath               ((</>))
 import           System.Directory
+import           System.FilePath               ((</>))
 
 data FrontendConfig =
   MkFrontendConfig { frontendDir :: FilePath
@@ -29,13 +31,29 @@ data FrontendConfig =
                    , args        :: [String]
   }
 
-lam4_frontend_dir :: FilePath
-lam4_frontend_dir = "lam4-frontend"
+data OutputConfig =
+  MkOutputConfig {
+    outputDir           :: FilePath
+  , programFilename     :: FilePath
+  , programInfoFilename :: FilePath
+}
+
+
+lam4FrontendDir :: FilePath
+lam4FrontendDir = "lam4-frontend"
 
 frontendConfig :: FrontendConfig
 frontendConfig = MkFrontendConfig { runner      = "node"
-                                  , frontendDir = lam4_frontend_dir
-                                  , args        = [lam4_frontend_dir </> "bin" </> "cli", "toMinimalAst"] }
+                                  , frontendDir = lam4FrontendDir
+                                  , args        = [lam4FrontendDir </> "bin" </> "cli", "toMinimalAst"] }
+
+-- TODO: Most of the following should be put in, and read from, the .env file
+outputConfig :: OutputConfig
+outputConfig = MkOutputConfig {
+    outputDir = "generated" </> "simala"
+  , programFilename = "output.simala"
+  , programInfoFilename = "program_info.json" }
+
 
 -- TODO: Think about exposing a tracing option?
 data Options =
@@ -73,17 +91,21 @@ main = do
       hPutStrLn stderr "Lam4: no input files given; use --help for help"
     else do
       frontendCSTJsons <- getCSTJsonFromFrontend frontendConfig options.files
-      let cstDecls = concatMap parseCSTByteString frontendCSTJsons
-          smDecls = ToSimala.compile . cstProgramToConEvalProgram $ cstDecls
+      let cstDecls       = concatMap parseCSTByteString frontendCSTJsons
+          conEvalProgram = cstProgramToConEvalProgram cstDecls
+          simalaProgram  = ToSimala.compile conEvalProgram
+          programInfo    = extractProgramInfo conEvalProgram
       print "------- CST -------------"
       pPrint cstDecls
       print "-------- Simala exprs ---------"
-      createDirectoryIfMissing True "generated"
-      T.writeFile ("generated" </> "output.simala") (ToSimala.render smDecls)
-      putStr $ T.unpack $ ToSimala.render smDecls
+      createDirectoryIfMissing True outputConfig.outputDir
+      -- save simala program and program info to disk
+      writeFileUtf8 (outputConfig.outputDir </> outputConfig.programFilename) (ToSimala.render simalaProgram)
+      writeFileLBS (outputConfig.outputDir </> outputConfig.programInfoFilename) (encodePretty programInfo)
+      putStr $ T.unpack $ ToSimala.render simalaProgram
       print "-------------------------------"
       -- TODO: What to do if no explicit Eval?
-      _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv smDecls
+      _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv simalaProgram
       pure ()
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]

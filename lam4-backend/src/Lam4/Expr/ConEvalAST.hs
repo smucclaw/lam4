@@ -11,14 +11,18 @@
 module Lam4.Expr.ConEvalAST (
           ConEvalExpr(..), 
           ConEvalDecl, 
-          DeclF(..)) 
+          DeclF(..),
+           -- * type alias
+          ConEvalProgram
+          ) 
   where
 
 import           Base
-import           Lam4.Expr.Name (Name (..))
+import           Lam4.Expr.Name
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax (Lit (..))
 
+type ConEvalProgram = [ConEvalDecl]
 type ConEvalDecl = DeclF ConEvalExpr
 
 {- | AST for concrete-evaluation-*only* backends like Simala

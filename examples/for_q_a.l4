@@ -1,0 +1,21 @@
+STRUCTURE Applicant
+    publications: Integer
+END
+
+@FOR_Q&A 
+FUNCTION Applicant => Integer
+numberOfPublications(applicant) = applicant's publications
+END
+
+@FOR_Q&A
+GIVEN (x IS_A Applicant)
+DECIDE `is eligible for grant`
+IF NOT numberOfPublications(x) < 2
+
+FUNCTION Applicant => Integer
+a_non_entrypoint_func_for_comparison(applicant) = 0
+END
+
+GIVEN (x IS_A Applicant)
+DECIDE `non entrypoint predicate for comparison`
+IF False

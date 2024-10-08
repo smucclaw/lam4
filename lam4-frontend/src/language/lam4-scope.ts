@@ -8,6 +8,7 @@ import {isProjectExpr} from "./lam4-lang-utils.js";
 
 const scopeLogger = new Logger({ 
   name: "scoper",
+  minLevel: 3,
   prettyLogTemplate: "{{name}}  ", });
 
 /** https://github.com/eclipse-langium/langium/discussions/856
@@ -98,7 +99,7 @@ export class Lam4ScopeProvider extends DefaultScopeProvider {
       */
     }
 
-    scopeLogger.trace("Not rt child of Project");
+    // scopeLogger.trace("Not rt child of Project");
     return super.getScope(context);
   }
 
