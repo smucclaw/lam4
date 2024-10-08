@@ -1,7 +1,7 @@
 import { URI } from "langium";
 import type { LangiumDocument, AstNode } from "langium";
 import type { LangiumSharedServices } from "langium/lsp";
-import makeClient from "../remote-decision-service-api/api.js";
+import {APIClient} from "../remote-decision-service-api/api.js";
 import type {
   // paths,
   components,
@@ -27,8 +27,6 @@ const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(DEFAULT_OUTPUT_DIR, DEFAULT
 const DEFAULT_OUTPUT_PROGRAM_INFO_PATH = path.join(OUTPUT_DIR, DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME);
 // In the long term, will probably have a daemon and communicate back and forth over rpc instead of via file-based IO
 
-/** TODO: I really should first check whether the endpoint/function is alr there or something */
-let NUM_TIMES_UPDATE_PROGRAM = 0;
 
 const getPayloadMakerArgs = (simalaProgramPath?: string) => [
   "create",
@@ -74,7 +72,7 @@ const MEDIA_TYPE = "application/json";
 /*********************
      Client, Logger
 **********************/
-const client = makeClient(config);
+const client = APIClient.make(config);
 const logger = config.getLogger();
 
 // TODO: Try adding a cmd handler in the future
@@ -123,18 +121,13 @@ async function unsafeUpdateDecisionServiceProgram(programInfo: ProgramInfo) {
 
   const endpointName = updatedProgramPayload.declaration?.function?.name ?? DEFAULT_ENDPOINT_NAME;
 
-  const clientCall = NUM_TIMES_UPDATE_PROGRAM === 0 ? client.POST : client.PUT;
-  const { data, error } = await clientCall("/functions/{name}", {
+
+  await client.updateWithProgram(endpointName, "/functions/{name}", {
     params: { path: { name: endpointName } },
     body: updatedProgramPayload,
     headers: {"Content-Type": MEDIA_TYPE}
   });
-  if (data) {
-    NUM_TIMES_UPDATE_PROGRAM++;
-    logger.info("Successfully updated decision service program: ", data);
-  } else if (error) {
-    logger.error("ERROR", error);
-  }
+
 }
 
 
@@ -192,10 +185,9 @@ async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutp
 // }
 
 // async function getRulesOnRemoteDecisionService() {
-//   const { data, error } = await client.GET(routes["all_rules"] as any, {});
+//   const { data, error } = await client.GET("/functions", {});
 //   return {data, error}
 // }
-//quick test
 // const obj = await getRulesOnRemoteDecisionService();
 // console.log(obj.data);
 // const hi = await client.GET("/functions/business_rules" as any, {});

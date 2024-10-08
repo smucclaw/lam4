@@ -14,6 +14,9 @@ const lspLogger = new Logger({
   // minLevel: 1,
   prettyLogTemplate: "{{name}}  {{logLevelName}}  "});
 
+export type LspLogger = typeof lspLogger;
+
+
 /*****************
   .env config 
 ******************/
