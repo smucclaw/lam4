@@ -3,7 +3,6 @@ import type { LangiumDocument, AstNode } from "langium";
 import type { LangiumSharedServices } from "langium/lsp";
 import {APIClient} from "../remote-decision-service-api/api.js";
 import type {
-  // paths,
   components,
 } from "../remote-decision-service-api/api.js";
 import { config } from "./config.js";
@@ -40,11 +39,8 @@ const getPayloadMakerArgs = (simalaProgramPath?: string) => [
 //   // #template: UploadProgramPayload
 
 //   static init() {
-
 //   }
-
 //   private constructor() {
-
 //   }
 
 //   makeUploadProgramRequest(outputInfo: CompiledOutputInfo) {
@@ -183,11 +179,3 @@ async function runPayloadMakerWithCompiledOutput(outputProgramInfo: CompiledOutp
 //   consoleLogAST(noMetadataAstString);
 
 // }
-
-// async function getRulesOnRemoteDecisionService() {
-//   const { data, error } = await client.GET("/functions", {});
-//   return {data, error}
-// }
-// const obj = await getRulesOnRemoteDecisionService();
-// console.log(obj.data);
-// const hi = await client.GET("/functions/business_rules" as any, {});
