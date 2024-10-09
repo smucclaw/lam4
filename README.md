@@ -12,11 +12,21 @@ This will be simpler soon enough, once I've set up a Nix environment etc. But in
 
 You basically have to set up two things:
 
-1. The Langium frontend: see the detailed instructions in the "To build / generate the Langium frontend parser" section below
+1. The Langium frontend and VSCode extension: see the detailed instructions in the "To build / generate the Langium frontend parser" and "To build the VSCode extension" sections below
 
 2. The Haskell codebase: Use GHC 9.6.6 and `cabal`.
 
 When building the Haskell codebase, if the `Grisette` dependencies complains about not having Z3 on your PATH, you may need to add it to your PATH.
+
+Before running the VSCode extension, make sure to have an `.env` that looks like the following in your root `lam4` dir
+
+```.env
+REMOTE_DECISION_SERVICE_URL=<url --- use an empty string if you are not from CCLAW>
+UPDATE_REMOTE_DECISION_SERVICE_ON_SAVE_STATUS=<use "update" if you want it to update remote decision service with new program on save; use "no_update" if not>
+DECISION_SERVICE_REQUEST_MAKER_CMD=<for CCLAW: use "l4-oia">
+DEMO_OIA_DATA_MODEL_XML_PATH=<for CCLAW: use path to projectDataModel.xml>
+COMPILED_SIMALA_OUTPUT_DIR="generated/simala"
+```
 
 ## How to compile Lam4 files
 
@@ -25,6 +35,8 @@ Use the `lam4-cli`.
 EG, from the root `lam4` dir: 
 
 > `cabal run lam4-cli -- examples/arithmetic.l4`
+
+If you want to use the VSCode extension, make sure to `cabal install lam4-cli --overwrite-policy=always` as well.
 
 ## What is Lam4?
 
