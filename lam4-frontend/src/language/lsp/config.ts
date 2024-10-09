@@ -24,7 +24,8 @@ const configSchema = z.object({
   REMOTE_DECISION_SERVICE_URL: z.string(),
   UPDATE_REMOTE_DECISION_SERVICE_ON_SAVE_STATUS: z.enum(['update', 'no_update']),
   DECISION_SERVICE_REQUEST_MAKER_CMD: z.string(),
-  DEMO_OIA_DATA_MODEL_XML_PATH: z.string()
+  DEMO_OIA_DATA_MODEL_XML_PATH: z.string(),
+  COMPILED_SIMALA_OUTPUT_DIR: z.string()
 });
 
 
@@ -37,12 +38,14 @@ export class LSPConfig {
   #updateDecisionServiceOnSaveStatus: 'update' | 'no_update';
   #decisionServiceRequestMakerCmd: string;
   #oiaDataModelPath: string;
+  #compiledSimalaOutputDir: string;
 
   constructor(baseConfig: BaseConfig, logger: typeof lspLogger) {
     this.#decisionServiceUrl = baseConfig.REMOTE_DECISION_SERVICE_URL;
     this.#updateDecisionServiceOnSaveStatus = baseConfig.UPDATE_REMOTE_DECISION_SERVICE_ON_SAVE_STATUS;
     this.#decisionServiceRequestMakerCmd = baseConfig.DECISION_SERVICE_REQUEST_MAKER_CMD;
     this.#oiaDataModelPath = baseConfig.DEMO_OIA_DATA_MODEL_XML_PATH;
+    this.#compiledSimalaOutputDir = baseConfig.COMPILED_SIMALA_OUTPUT_DIR;
 
     this.#logger = logger;
 
@@ -66,6 +69,10 @@ export class LSPConfig {
 
   getDataModelXmlPath() {
     return this.#oiaDataModelPath;
+  }
+
+  getCompiledSimalaOutputDir() {
+    return this.#compiledSimalaOutputDir;
   }
   
   /** Logger */

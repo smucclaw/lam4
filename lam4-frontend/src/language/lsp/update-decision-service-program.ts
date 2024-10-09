@@ -14,15 +14,13 @@ import path from "path";
 import { execa } from "execa";
 import fs from "fs-extra";
 
-// -- TODO: These should be put in, and read from, the .env file
-const OUTPUT_DIR = "generated/simala";
+const OUTPUT_DIR = config.getCompiledSimalaOutputDir();
 const DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME = "output.simala";
 const DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME = "program_info.json";
 const DEFAULT_ENDPOINT_NAME = "business_rules"; // aka DEFAULT_FUNCTION_NAME
 
 const CMD_RUN_LAM4_CLI = "lam4-cli";
-const DEFAULT_OUTPUT_DIR = "generated/";
-const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(DEFAULT_OUTPUT_DIR, DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME);
+const DEFAULT_OUTPUT_SIMALA_PROGRAM_PATH = path.join(OUTPUT_DIR, DEFAULT_SIMALA_OUTPUT_PROGRAM_FILENAME);
 const DEFAULT_OUTPUT_PROGRAM_INFO_PATH = path.join(OUTPUT_DIR, DEFAULT_OUTPUT_PROGRAM_INFO_FILENAME);
 // In the long term, will probably have a daemon and communicate back and forth over rpc instead of via file-based IO
 
