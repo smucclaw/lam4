@@ -95,18 +95,24 @@ main = do
           conEvalProgram = cstProgramToConEvalProgram cstDecls
           simalaProgram  = ToSimala.compile conEvalProgram
           programInfo    = extractProgramInfo conEvalProgram
-      print "------- CST -------------"
-      pPrint cstDecls
-      print "-------- Simala exprs ---------"
+
+      -- Create output directory and write files first
       createDirectoryIfMissing True outputConfig.outputDir
       -- save simala program and program info to disk
       writeFileUtf8 (outputConfig.outputDir </> outputConfig.programFilename) (ToSimala.render simalaProgram)
       writeFileLBS (outputConfig.outputDir </> outputConfig.programInfoFilename) (encodePretty programInfo)
-      putStr $ T.unpack $ ToSimala.render simalaProgram
-      print "-------------------------------"
-      -- TODO: What to do if no explicit Eval?
+
+      -- Perform evaluation (if needed)
       _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv simalaProgram
       pure ()
+
+      -- Finally print output and signal success
+      print "------- CST -------------"
+      pPrint cstDecls
+      print "-------- Simala exprs ---------"
+      putStr $ T.unpack $ ToSimala.render simalaProgram
+      print "-------------------------------"
+
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
 getCSTJsonFromFrontend config files = do

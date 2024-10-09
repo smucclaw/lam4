@@ -147,7 +147,8 @@ async function updatePayloadWithProgramInfo(
     pload.declaration.function.name = programInfo.entryPointFunctions[0].functionName.textName;
     pload.implementation = [["simala", program]];
 
-    // logger.debug("pload is\n", pload);
+    logger.debug("programInfo is\n", programInfo);
+    logger.debug("updated pload is\n", pload);
 
     return pload;
   } else {
