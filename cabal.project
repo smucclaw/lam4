@@ -7,7 +7,7 @@ packages:
 source-repository-package
   type: git
   location: https://github.com/smucclaw/simala
-  tag: 2b0aaccdf88e018a066815eee31e70bf85a8f353
+  tag: 69152a37ee800399999e80460e8d8716ce363afb
 
 
 package *
