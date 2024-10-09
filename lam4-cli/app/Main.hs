@@ -32,17 +32,17 @@ import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.Name
 
 dummyCSTdecl :: CST.Decl
-dummyCSTdecl = TypeDecl
-  (MkName "Lottery" 1)
+dummyCSTdecl = DataDecl
+  (MkName "Lottery" (Just 1) NotEntrypoint)
   (RecordDecl
     [ MkRowTypeDecl
-        (MkName "total_    &+     jackpot" 2)
-        (BuiltinType BuiltinTypeInteger)
+        (MkName "total jack    &+     pot" (Just 2) NotEntrypoint)
+        (TyBuiltin BuiltinTypeInteger)
         (MkRowMetadata $ Just "how much can be won from the jackpot")
 
     , MkRowTypeDecl
-        (MkName "`tax deductible status`" 4)
-        (BuiltinType BuiltinTypeBoolean)
+        (MkName "tax deductible status" (Just 4) NotEntrypoint)
+        (TyBuiltin BuiltinTypeBoolean)
         (MkRowMetadata $ Just "whether buying tickets from this lottery is tax deductible") ]
     []
     (RecordDeclMetadata Transparent (Just "game where you lose money"))
@@ -137,8 +137,7 @@ main = do
       print "-------- Simala exprs ---------"
       putStr $ T.unpack $ ToSimala.render simalaProgram
       print "-------------------------------"
-      -- TODO: What to do if no explicit Eval?
-      _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv smDecls
+
       putStrLn "-------- Natural language (sort of) ---------"
       env <- Render.myNLGEnv
       mapM_ (putStrLn . T.unpack) (Render.renderNL env <$> cstDecls)

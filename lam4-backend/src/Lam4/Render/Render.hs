@@ -5,7 +5,7 @@ module Lam4.Render.Render where
 import qualified Base.Text                as T
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax
-import           Lam4.Expr.Name           (Name(..))
+import qualified Lam4.Expr.Name           as N (Name(..))
 import           Data.String.Interpolate  (i)
 import           Control.Lens             ((&), (%~))
 import           Control.Lens.Regex.Text  (match, regex)
@@ -13,7 +13,7 @@ import           Paths_lam4_backend       (getDataFileName)
 
 -- GF-related stuff
 import           Lam4.Render.Lam4Gf
-import qualified PGF                   as PGF
+import qualified PGF
 
 -- Loosely copied from dsl/…/natural4
 data NLGEnv = NLGEnv
@@ -62,13 +62,13 @@ renderNL env = gfLin env . gf . parseDecl
 
 parseDecl :: Decl -> GS
 parseDecl = \case
-  TypeDecl name typedecl -> GTypeDeclS $ parseTypeDecl name typedecl
+  DataDecl name typedecl -> GTypeDeclS $ parseTypeDecl name typedecl
   Rec name expr -> GExprS $ parseExpr name expr
   Eval expr -> GEmptyS
   x -> error [i|parseDecl: not yet implemented #{x}|]
 
-parseName :: Name -> GName
-parseName (MkName name _) = GMkName $ GString $ T.unpack name
+parseName :: N.Name -> GName
+parseName = GMkName . GString . T.unpack . N.name
 
 parseUnaOp :: UnaryOp -> GUnaryOp
 parseUnaOp = \case
@@ -90,6 +90,7 @@ parseBinOp = \case
   Ge -> GGe
   Eq -> GEq
   Ne -> GNe
+  StrAppend -> GPlus
 
 parseFunMetadata :: RuleMetadata -> GMetadata
 parseFunMetadata metadata =
@@ -100,9 +101,11 @@ parseFunMetadata metadata =
 parseLit :: Lit -> GName
 parseLit = \case
   IntLit int -> GMkName $ GString $ show int
+  FracLit frac -> GMkName $ GString $ show frac
   BoolLit bool -> GMkName $ GString $ show bool
+  StringLit string -> GMkName $ GString $ T.unpack string
 
-parseExpr :: Name -> Expr -> GExpr
+parseExpr :: N.Name -> Expr -> GExpr
 parseExpr name =
   let f = parseExpr name in \case
   Var var                  -> GVar (parseName var)
@@ -123,17 +126,17 @@ parseExpr name =
 
 
 
-parseTypeDecl :: Name -> TypeDecl -> GTypeDecl
+parseTypeDecl :: N.Name -> DataDecl -> GTypeDecl
 parseTypeDecl name typedecl =
  GMkTypeDecl (parseMetadata typedecl) (parseName name) (parseRows typedecl) -- TODO: metadata
   where
-    parseMetadata :: TypeDecl -> GMetadata
+    parseMetadata :: DataDecl -> GMetadata
     parseMetadata (RecordDecl _td _par metadata) =
       case metadata.description of
         Just md -> GMkMetadata $ GString $ T.unpack md
         Nothing -> GNoMetadata
 
-parseRows :: TypeDecl -> GListRowTypeDecl
+parseRows :: DataDecl -> GListRowTypeDecl
 parseRows = \case
   RecordDecl rowtypedecls _parents _metadata ->
     GListRowTypeDecl (parseRow <$> rowtypedecls)
