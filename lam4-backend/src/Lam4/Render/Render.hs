@@ -5,7 +5,7 @@ module Lam4.Render.Render where
 import qualified Base.Text                as T
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax
-import qualified Lam4.Expr.Name           as N (Name(..))
+import qualified Lam4.Expr.Name           as N (Name(..), ReferentStatus(..))
 import           Data.String.Interpolate  (i)
 import           Control.Lens             ((&), (%~))
 import           Control.Lens.Regex.Text  (match, regex)
@@ -64,8 +64,11 @@ parseDecl :: Decl -> GS
 parseDecl = \case
   DataDecl name typedecl -> GTypeDeclS $ parseTypeDecl name typedecl
   Rec name expr -> GExprS $ parseExpr name expr
-  Eval expr -> GEmptyS
+  Eval expr -> GExprS $ parseExpr noName expr
   x -> error [i|parseDecl: not yet implemented #{x}|]
+
+noName :: N.Name
+noName = N.MkName mempty Nothing N.NotEntrypoint
 
 parseName :: N.Name -> GName
 parseName = GMkName . GString . T.unpack . N.name
@@ -74,6 +77,9 @@ parseUnaOp :: UnaryOp -> GUnaryOp
 parseUnaOp = \case
   Not -> GNot
   UnaryMinus -> GUnaryMinus
+  Floor -> GFloor
+  Ceiling -> GCeiling
+  IntegerToFraction -> GIntegerToFraction
 
 parseBinOp :: BinOp -> GBinOp
 parseBinOp = \case
