@@ -105,6 +105,9 @@ data Tree :: * -> * where
   GExprS :: GExpr -> Tree GS_
   GTypeDeclS :: GTypeDecl -> Tree GS_
   GMkTypeDecl :: GMetadata -> GName -> GListRowTypeDecl -> Tree GTypeDecl_
+  GCeiling :: Tree GUnaryOp_
+  GFloor :: Tree GUnaryOp_
+  GIntegerToFraction :: Tree GUnaryOp_
   GNot :: Tree GUnaryOp_
   GUnaryMinus :: Tree GUnaryOp_
   GString :: String -> Tree GString_
@@ -148,6 +151,9 @@ instance Eq (Tree a) where
     (GExprS x1,GExprS y1) -> and [ x1 == y1 ]
     (GTypeDeclS x1,GTypeDeclS y1) -> and [ x1 == y1 ]
     (GMkTypeDecl x1 x2 x3,GMkTypeDecl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GCeiling,GCeiling) -> and [ ]
+    (GFloor,GFloor) -> and [ ]
+    (GIntegerToFraction,GIntegerToFraction) -> and [ ]
     (GNot,GNot) -> and [ ]
     (GUnaryMinus,GUnaryMinus) -> and [ ]
     (GString x, GString y) -> x == y
@@ -312,11 +318,17 @@ instance Gf GTypeDecl where
       _ -> error ("no TypeDecl " ++ show t)
 
 instance Gf GUnaryOp where
+  gf GCeiling = mkApp (mkCId "Ceiling") []
+  gf GFloor = mkApp (mkCId "Floor") []
+  gf GIntegerToFraction = mkApp (mkCId "IntegerToFraction") []
   gf GNot = mkApp (mkCId "Not") []
   gf GUnaryMinus = mkApp (mkCId "UnaryMinus") []
 
   fg t =
     case unApp t of
+      Just (i,[]) | i == mkCId "Ceiling" -> GCeiling 
+      Just (i,[]) | i == mkCId "Floor" -> GFloor 
+      Just (i,[]) | i == mkCId "IntegerToFraction" -> GIntegerToFraction 
       Just (i,[]) | i == mkCId "Not" -> GNot 
       Just (i,[]) | i == mkCId "UnaryMinus" -> GUnaryMinus 
 

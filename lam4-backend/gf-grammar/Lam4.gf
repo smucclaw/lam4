@@ -58,8 +58,11 @@ abstract Lam4 = {
     PredApp : Expr -> [Expr] -> Expr ;
 
     -- Unary and binary operators
-    Not : UnaryOp ;
-    UnaryMinus : UnaryOp ;
+    Not,
+    Floor,
+    Ceiling,
+    UnaryMinus,
+    IntegerToFraction : UnaryOp ;
 
     Or : BinOp ;
     And : BinOp ;

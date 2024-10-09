@@ -148,6 +148,9 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
 
     -- Unary and binary operators
     Not = ss "not" ;
+    Floor = ss "floor of" ;
+    Ceiling = ss "ceiling of" ;
+    IntegerToFraction = ss "" ; -- not important in NLG
     UnaryMinus = ss "-" ;
 
     Or = ss "or" ;
