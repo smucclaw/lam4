@@ -34,7 +34,9 @@ export class Lam4DocumentUpdateHandler extends DefaultDocumentUpdateHandler {
     const uri = URI.parse(event.document.uri);
     logger.debug("didSaveDocument called! ", uri.fsPath);
 
-    updateDecisionServiceProgramViaCLI(this.#sharedServices, uri);
+    if (config.getUpdateRemoteDecisionServiceOnSave.toString() === 'update') {
+      updateDecisionServiceProgramViaCLI(this.#sharedServices, uri);
+    }
   }
 }
 
