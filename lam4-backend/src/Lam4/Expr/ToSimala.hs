@@ -34,7 +34,15 @@ import qualified Simala.Expr.Evaluator    as SM (doEvalDeclsTracing)
 import qualified Simala.Expr.Render       as SM
 import qualified Simala.Expr.Type         as SM
 
--- TODO: Add a ToSimala monad
+{-========
+  TODOs
+==========
+* Add a ToSimala monad
+* Once I have added more support for opaque/transparent in the Lam4 surface syntax, 
+  make a CompileConfig record that keeps track of info like the line delimiter and other constants / defaults
+-}
+
+
 defaultTransparency :: SM.Transparency
 defaultTransparency = SM.Opaque
 
@@ -125,8 +133,8 @@ compileExpr = \case
   Lit (CST.FracLit fractional) -> SM.Lit $ SM.FracLit fractional
   Lit (CST.BoolLit b)          -> SM.Lit $ SM.BoolLit b
   Lit (CST.StringLit s)        -> SM.Lit $ SM.StringLit s
-  Cons first rest              -> SM.Cons (compileExpr first) (compileExpr rest)
-  List xs                      -> SM.List (map compileExpr xs)
+  Cons first rest              -> SM.Builtin SM.Cons [compileExpr first, compileExpr rest]
+  List xs                      -> SM.Builtin SM.List (map compileExpr xs)
 
   -- translate unary minus x to @-1 * x@, accounting for Int vs Frac literals
   -- This obviously won't be enough for applications of UnaryMinus to a non-literal (since can't tell if it's an Int or Frac)
@@ -140,14 +148,14 @@ compileExpr = \case
   Project record label         -> SM.Project (compileExpr record) (lam4ToSimalaName label)
   Fun ruleMetadata params body -> SM.Fun (compileTransparency ruleMetadata.transparency) (map lam4ToSimalaName params) (compileExpr body)
   Let decl body                -> SM.Let (compileDecl decl) (compileExpr body)
-  Atom{}                        -> error "Should already have translated a ONE CONCEPT / SIG with no Relations to a Simala Atom when compiling decls"
-  Foldr combine nil xs         -> SM.Builtin SM.Foldr [compileExpr combine, compileExpr nil, compileExpr xs]
-  Foldl update initial xs      -> SM.Builtin SM.Foldl [compileExpr update, compileExpr initial, compileExpr xs]
+  Atom{}                       -> error "Should already have translated a ONE CONCEPT / SIG with no Relations to a Simala Atom when compiling decls"
+  Foldr combine nil xs         -> SM.Builtin SM.Foldr (map compileExpr [combine, nil, xs])
+  Foldl update initial xs      -> SM.Builtin SM.Foldl (map compileExpr [update, initial, xs])
 
 -------------------------
 
--- | Copied from https://github.com/smucclaw/dsl/blob/e77def08949cac1af094dfdb828c35833c36b8b7/lib/haskell/natural4/src/LS/XPile/Simala/Transpile.hs
+-- | Adapted from https://github.com/smucclaw/dsl/blob/e77def08949cac1af094dfdb828c35833c36b8b7/lib/haskell/natural4/src/LS/XPile/Simala/Transpile.hs
 render :: [SM.Decl] -> Text
-render = T.unlines . fmap ((<> simalaLineDelimiter) . SM.render)
+render = T.unlines . fmap ((<> simalaLineDelimiter) . SM.renderAsText)
   where
     simalaLineDelimiter = " ;"
