@@ -50,6 +50,9 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     EmptyS = {s = ""} ;
     TypeDeclS td = td ;
     ExprS expr = expr ;
+    EvalS expr = {s = "evaluate" ++ expr.s} ;
+    EvalWhetherS expr = {s = "evaluate whether" ++ expr.s} ;
+    AssignS name expr = {s = quote name.s ++ "is assigned the value" ++ quote expr.s} ;
 
     -- Metadata
     MkMetadata str = str ** {isEmpty = NonEmpty} ;
@@ -85,6 +88,9 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     tab = "°" ;
     linebreak = "∞" ;
 
+    quote : Str -> Str ;
+    quote str = "‘" ++ BIND ++ str ++ BIND ++ "’" ;
+
 
     artIndef = pre {
       "eu" | "Eu" | "uni" | "Uni" => "A" ;
@@ -97,18 +103,26 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       Many => conjunctX (ss conj) xs ;
       _ => xs.s2
       } ;
+    linArgs = overload {
+      linArgs : Str -> ListX0 -> Str = \s,xs ->
+        case xs.size of {
+          Zero => "" ;
+          _    => s ++ conjX "and" xs } ;
+      linArgs : Str -> ListX0 -> Str -> Str = \pr,xs,pst ->
+        case xs.size of {
+          Zero => "" ;
+          _    => pr ++ conjX "and" xs ++ pst }
+      } ;
 
-    linArgs : ListX0 -> Str = \xs ->
-      case xs.size of {
-        Zero => "" ;
-        _    => "of" } ++ conjX "and" xs ;
 
   lin
 
     -- Expressions
     MkName str = str ;
 
+    QuoteVar name = {s = quote name.s} ;
     Var name = name ;
+    Lit name = name ;
     Unary op expr = cc2 op expr ;
     BinExpr op e1 e2 = cc3 e1 op e2 ;
 
@@ -119,16 +133,16 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
-    FunApp f xs = {s = f.s ++ linArgs xs} ;
+    FunApp f xs = {s = f.s ++ linArgs "of" xs} ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
 
     -- : Expr -> Name -> Expr ;             -- record projection
-    Project rec field = {s = field.s ++ "of" ++ rec.s} ;
+    Project rec field = {s = glue rec.s "'s" ++ field.s} ;
 
     -- : Name -> Metadata -> [Name] -> Expr -> Expr ;  -- Function
     Fun funname md args body = {
-      s = funname.s ++ ":" ++ linebreak
-       ++ "given" ++ conjX "and" args ++ ","
+      s = "Function" ++ funname.s ++ ":" ++ linebreak
+       ++ linArgs "given" args ","
        ++ "return" ++ body.s
       } ;
     -- Let :        Decl Expr
@@ -136,15 +150,26 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
 
     NormIsInfringed name = {s = name.s ++ "is infringed"} ;
 
-
     -- : (predname : Name)  Metadata -> (args : [Name]) -> Expr -> Expr ;
-    Predicate predname md args body = {
-      s = predname.s ++ linArgs args
-       ++ "holds, if" ++ body.s
+    Predicate is_eligible md args body = {
+      s = case args.size of {
+            -- single argument, "args is_eligible"
+            One => conjX "" args
+                ++ glue is_eligible.s "," ;
+            -- multiple arguments, "is_eligible holds"
+            _   => quote is_eligible.s
+                ++ linArgs "holds for" args ","
+          } ++ "if" ++ body.s ;
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
     PredApp = FunApp ;
+    Fold combine nil over = {
+      s = linebreak ++
+      "Combine" ++ quote over.s ++ "into one value," ++ linebreak
+       ++ "using the function" ++ quote combine.s ++ "," ++ linebreak
+       ++ "starting from" ++ nil.s
+    } ;
 
     -- Unary and binary operators
     Not = ss "not" ;
@@ -164,7 +189,7 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     Le = ss "≤" ;
     Gt = ss ">" ;
     Ge = ss "≥" ;
-    Eq = ss "=" ;
+    Eq = ss "equals to" ;
     Ne = ss "≠" ;
 
     BaseExpr, BaseName = baseListX0 ;

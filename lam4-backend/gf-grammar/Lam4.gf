@@ -18,7 +18,10 @@ abstract Lam4 = {
     -- Placeholder, or skip some constructs?
     EmptyS : S ;
     TypeDeclS : TypeDecl -> S ;
+    EvalS,
+    EvalWhetherS,
     ExprS : Expr -> S ;
+    AssignS : Name -> Expr -> S ;
 
     -- Metadata
     MkMetadata : String -> Metadata ;
@@ -32,9 +35,9 @@ abstract Lam4 = {
 
     -- Expressions
     MkName : String -> Name ;
-
+    Lit,
+    QuoteVar,
     Var : Name -> Expr ;
-  -- | Lit        Lit
   -- | Cons       Expr Expr                           -- list cons
   -- | List       [Expr]                              -- construct a list
     Unary   : UnaryOp -> Expr -> Expr ;
@@ -56,6 +59,7 @@ abstract Lam4 = {
 
     Predicate : (predname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
     PredApp : Expr -> [Expr] -> Expr ;
+    Fold : Expr -> Expr -> Expr -> Expr ;
 
     -- Unary and binary operators
     Not,

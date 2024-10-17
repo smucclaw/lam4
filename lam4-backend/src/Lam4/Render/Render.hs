@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, OverloadedRecordDot #-}
+{-# LANGUAGE QuasiQuotes, OverloadedRecordDot, GADTs #-}
 
 module Lam4.Render.Render where
 
@@ -64,14 +64,30 @@ parseDecl :: Decl -> GS
 parseDecl = \case
   DataDecl name typedecl -> GTypeDeclS $ parseTypeDecl name typedecl
   Rec name expr -> GExprS $ parseExpr name expr
-  Eval expr -> GExprS $ parseExpr noName expr
-  x -> error [i|parseDecl: not yet implemented #{x}|]
+  NonRec name expr -> GAssignS (parseName name) $ parseExpr noName expr
+  Eval expr -> quoteVars $ if isBool expr
+                then GEvalWhetherS $ parseExpr noName expr
+                else GEvalS $ parseExpr noName expr
 
 noName :: N.Name
 noName = N.MkName mempty Nothing N.NotEntrypoint
 
 parseName :: N.Name -> GName
 parseName = GMkName . GString . T.unpack . N.name
+
+quoteVars :: Tree a -> Tree a
+quoteVars (GVar x) = GQuoteVar x
+quoteVars x = composOp quoteVars x
+
+isBool :: Expr -> Bool
+isBool = \case
+  BinExpr Eq _ _ -> True
+  BinExpr Lt _ _ -> True
+  BinExpr Le _ _ -> True
+  BinExpr Gt _ _ -> True
+  BinExpr Ge _ _ -> True
+  BinExpr Ne _ _ -> True
+  _ -> False
 
 parseUnaOp :: UnaryOp -> GUnaryOp
 parseUnaOp = \case
@@ -115,7 +131,7 @@ parseExpr :: N.Name -> Expr -> GExpr
 parseExpr name =
   let f = parseExpr name in \case
   Var var                  -> GVar (parseName var)
-  Lit lit                  -> GVar (parseLit lit)
+  Lit lit                  -> GLit (parseLit lit)
   Unary op expr            -> GUnary (parseUnaOp op) (f expr)
   BinExpr op l r           -> GBinExpr (parseBinOp op) (f l) (f r)
   IfThenElse cond thn els  -> GIfThenElse (f cond) (f thn) (f els)
@@ -126,6 +142,8 @@ parseExpr name =
 --  Let decl body            -> Let decl (f body)
   Predicate md args body   -> GPredicate (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
   PredApp predicate args   -> GPredApp (f predicate) (GListExpr $ fmap f args)
+  Foldr combine nil over   -> GFold (f combine) (f nil) (f over)
+  Foldl combine nil over   -> GFold (f combine) (f nil) (f over)
 --  Sig parents relations    -> Sig parents (traverse f) (tions
 --)  StatementBlock statements  -> undefined -- TODO
   x -> error [i|parseExpr: not yet implemented #{x}|]

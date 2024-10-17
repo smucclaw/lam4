@@ -84,13 +84,16 @@ data Tree :: * -> * where
   GOr :: Tree GBinOp_
   GPlus :: Tree GBinOp_
   GBinExpr :: GBinOp -> GExpr -> GExpr -> Tree GExpr_
+  GFold :: GExpr -> GExpr -> GExpr -> Tree GExpr_
   GFun :: GName -> GMetadata -> GListName -> GExpr -> Tree GExpr_
   GFunApp :: GExpr -> GListExpr -> Tree GExpr_
   GIfThenElse :: GExpr -> GExpr -> GExpr -> Tree GExpr_
+  GLit :: GName -> Tree GExpr_
   GNormIsInfringed :: GName -> Tree GExpr_
   GPredApp :: GExpr -> GListExpr -> Tree GExpr_
   GPredicate :: GName -> GMetadata -> GListName -> GExpr -> Tree GExpr_
   GProject :: GExpr -> GName -> Tree GExpr_
+  GQuoteVar :: GName -> Tree GExpr_
   GUnary :: GUnaryOp -> GExpr -> Tree GExpr_
   GVar :: GName -> Tree GExpr_
   GListExpr :: [GExpr] -> Tree GListExpr_
@@ -101,7 +104,10 @@ data Tree :: * -> * where
   GMkName :: GString -> Tree GName_
   GMkRowDecl :: GMetadata -> GName -> Tree GRowTypeDecl_
   GMkRowTypeDecl :: GMetadata -> GName -> GName -> Tree GRowTypeDecl_
+  GAssignS :: GName -> GExpr -> Tree GS_
   GEmptyS :: Tree GS_
+  GEvalS :: GExpr -> Tree GS_
+  GEvalWhetherS :: GExpr -> Tree GS_
   GExprS :: GExpr -> Tree GS_
   GTypeDeclS :: GTypeDecl -> Tree GS_
   GMkTypeDecl :: GMetadata -> GName -> GListRowTypeDecl -> Tree GTypeDecl_
@@ -130,13 +136,16 @@ instance Eq (Tree a) where
     (GOr,GOr) -> and [ ]
     (GPlus,GPlus) -> and [ ]
     (GBinExpr x1 x2 x3,GBinExpr y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GFold x1 x2 x3,GFold y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GFun x1 x2 x3 x4,GFun y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GFunApp x1 x2,GFunApp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GIfThenElse x1 x2 x3,GIfThenElse y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GLit x1,GLit y1) -> and [ x1 == y1 ]
     (GNormIsInfringed x1,GNormIsInfringed y1) -> and [ x1 == y1 ]
     (GPredApp x1 x2,GPredApp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GPredicate x1 x2 x3 x4,GPredicate y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GProject x1 x2,GProject y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GQuoteVar x1,GQuoteVar y1) -> and [ x1 == y1 ]
     (GUnary x1 x2,GUnary y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GVar x1,GVar y1) -> and [ x1 == y1 ]
     (GListExpr x1,GListExpr y1) -> and [x == y | (x,y) <- zip x1 y1]
@@ -147,7 +156,10 @@ instance Eq (Tree a) where
     (GMkName x1,GMkName y1) -> and [ x1 == y1 ]
     (GMkRowDecl x1 x2,GMkRowDecl y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GMkRowTypeDecl x1 x2 x3,GMkRowTypeDecl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GAssignS x1 x2,GAssignS y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GEmptyS,GEmptyS) -> and [ ]
+    (GEvalS x1,GEvalS y1) -> and [ x1 == y1 ]
+    (GEvalWhetherS x1,GEvalWhetherS y1) -> and [ x1 == y1 ]
     (GExprS x1,GExprS y1) -> and [ x1 == y1 ]
     (GTypeDeclS x1,GTypeDeclS y1) -> and [ x1 == y1 ]
     (GMkTypeDecl x1 x2 x3,GMkTypeDecl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -197,26 +209,32 @@ instance Gf GBinOp where
 
 instance Gf GExpr where
   gf (GBinExpr x1 x2 x3) = mkApp (mkCId "BinExpr") [gf x1, gf x2, gf x3]
+  gf (GFold x1 x2 x3) = mkApp (mkCId "Fold") [gf x1, gf x2, gf x3]
   gf (GFun x1 x2 x3 x4) = mkApp (mkCId "Fun") [gf x1, gf x2, gf x3, gf x4]
   gf (GFunApp x1 x2) = mkApp (mkCId "FunApp") [gf x1, gf x2]
   gf (GIfThenElse x1 x2 x3) = mkApp (mkCId "IfThenElse") [gf x1, gf x2, gf x3]
+  gf (GLit x1) = mkApp (mkCId "Lit") [gf x1]
   gf (GNormIsInfringed x1) = mkApp (mkCId "NormIsInfringed") [gf x1]
   gf (GPredApp x1 x2) = mkApp (mkCId "PredApp") [gf x1, gf x2]
   gf (GPredicate x1 x2 x3 x4) = mkApp (mkCId "Predicate") [gf x1, gf x2, gf x3, gf x4]
   gf (GProject x1 x2) = mkApp (mkCId "Project") [gf x1, gf x2]
+  gf (GQuoteVar x1) = mkApp (mkCId "QuoteVar") [gf x1]
   gf (GUnary x1 x2) = mkApp (mkCId "Unary") [gf x1, gf x2]
   gf (GVar x1) = mkApp (mkCId "Var") [gf x1]
 
   fg t =
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "BinExpr" -> GBinExpr (fg x1) (fg x2) (fg x3)
+      Just (i,[x1,x2,x3]) | i == mkCId "Fold" -> GFold (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "Fun" -> GFun (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "FunApp" -> GFunApp (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "IfThenElse" -> GIfThenElse (fg x1) (fg x2) (fg x3)
+      Just (i,[x1]) | i == mkCId "Lit" -> GLit (fg x1)
       Just (i,[x1]) | i == mkCId "NormIsInfringed" -> GNormIsInfringed (fg x1)
       Just (i,[x1,x2]) | i == mkCId "PredApp" -> GPredApp (fg x1) (fg x2)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "Predicate" -> GPredicate (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "Project" -> GProject (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "QuoteVar" -> GQuoteVar (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Unary" -> GUnary (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "Var" -> GVar (fg x1)
 
@@ -294,13 +312,19 @@ instance Gf GRowTypeDecl where
       _ -> error ("no RowTypeDecl " ++ show t)
 
 instance Gf GS where
+  gf (GAssignS x1 x2) = mkApp (mkCId "AssignS") [gf x1, gf x2]
   gf GEmptyS = mkApp (mkCId "EmptyS") []
+  gf (GEvalS x1) = mkApp (mkCId "EvalS") [gf x1]
+  gf (GEvalWhetherS x1) = mkApp (mkCId "EvalWhetherS") [gf x1]
   gf (GExprS x1) = mkApp (mkCId "ExprS") [gf x1]
   gf (GTypeDeclS x1) = mkApp (mkCId "TypeDeclS") [gf x1]
 
   fg t =
     case unApp t of
+      Just (i,[x1,x2]) | i == mkCId "AssignS" -> GAssignS (fg x1) (fg x2)
       Just (i,[]) | i == mkCId "EmptyS" -> GEmptyS 
+      Just (i,[x1]) | i == mkCId "EvalS" -> GEvalS (fg x1)
+      Just (i,[x1]) | i == mkCId "EvalWhetherS" -> GEvalWhetherS (fg x1)
       Just (i,[x1]) | i == mkCId "ExprS" -> GExprS (fg x1)
       Just (i,[x1]) | i == mkCId "TypeDeclS" -> GTypeDeclS (fg x1)
 
@@ -339,19 +363,25 @@ instance Gf GUnaryOp where
 instance Compos Tree where
   compos r a f t = case t of
     GBinExpr x1 x2 x3 -> r GBinExpr `a` f x1 `a` f x2 `a` f x3
+    GFold x1 x2 x3 -> r GFold `a` f x1 `a` f x2 `a` f x3
     GFun x1 x2 x3 x4 -> r GFun `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GFunApp x1 x2 -> r GFunApp `a` f x1 `a` f x2
     GIfThenElse x1 x2 x3 -> r GIfThenElse `a` f x1 `a` f x2 `a` f x3
+    GLit x1 -> r GLit `a` f x1
     GNormIsInfringed x1 -> r GNormIsInfringed `a` f x1
     GPredApp x1 x2 -> r GPredApp `a` f x1 `a` f x2
     GPredicate x1 x2 x3 x4 -> r GPredicate `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GProject x1 x2 -> r GProject `a` f x1 `a` f x2
+    GQuoteVar x1 -> r GQuoteVar `a` f x1
     GUnary x1 x2 -> r GUnary `a` f x1 `a` f x2
     GVar x1 -> r GVar `a` f x1
     GMkMetadata x1 -> r GMkMetadata `a` f x1
     GMkName x1 -> r GMkName `a` f x1
     GMkRowDecl x1 x2 -> r GMkRowDecl `a` f x1 `a` f x2
     GMkRowTypeDecl x1 x2 x3 -> r GMkRowTypeDecl `a` f x1 `a` f x2 `a` f x3
+    GAssignS x1 x2 -> r GAssignS `a` f x1 `a` f x2
+    GEvalS x1 -> r GEvalS `a` f x1
+    GEvalWhetherS x1 -> r GEvalWhetherS `a` f x1
     GExprS x1 -> r GExprS `a` f x1
     GTypeDeclS x1 -> r GTypeDeclS `a` f x1
     GMkTypeDecl x1 x2 x3 -> r GMkTypeDecl `a` f x1 `a` f x2 `a` f x3
