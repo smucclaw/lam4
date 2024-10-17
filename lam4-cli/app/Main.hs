@@ -26,30 +26,6 @@ import           Options.Applicative           as Options
 import           System.Directory
 import           System.FilePath               ((</>))
 
---------- Temporary, just to make sure we print out something even if parser doesn't work ---------
-import           Lam4.Expr.ConcreteSyntax
-import           Lam4.Expr.CommonSyntax
-import           Lam4.Expr.Name
-
-dummyCSTdecl :: CST.Decl
-dummyCSTdecl = DataDecl
-  (MkName "Lottery" (Just 1) NotEntrypoint)
-  (RecordDecl
-    [ MkRowTypeDecl
-        (MkName "total jack    &+     pot" (Just 2) NotEntrypoint)
-        (TyBuiltin BuiltinTypeInteger)
-        (MkRowMetadata $ Just "how much can be won from the jackpot")
-
-    , MkRowTypeDecl
-        (MkName "tax deductible status" (Just 4) NotEntrypoint)
-        (TyBuiltin BuiltinTypeBoolean)
-        (MkRowMetadata $ Just "whether buying tickets from this lottery is tax deductible") ]
-    []
-    (RecordDeclMetadata Transparent (Just "game where you lose money"))
-  )
---------- end temporary definitions ---------
-
-
 data FrontendConfig =
   MkFrontendConfig { frontendDir :: FilePath
                    , runner      :: String
@@ -141,7 +117,6 @@ main = do
       putStrLn "-------- Natural language (sort of) ---------"
       env <- Render.myNLGEnv
       mapM_ (putStrLn . T.unpack) (Render.renderNL env <$> cstDecls)
-      mapM_ (putStrLn . T.unpack) (Render.renderNL env <$> [dummyCSTdecl]) -- here to make sure that something is printed out
       pure ()
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
