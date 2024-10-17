@@ -56,6 +56,7 @@ myNLGEnv = do
         (Nothing, langs)
           -> error [i|Render.getLang: #{str} not a valid language. (GF grammar contains #{langs}.)|]
 
+-- Entrypoint
 renderNL :: NLGEnv -> Decl -> T.Text
 renderNL env = gfLin env . gf . parseDecl
 

@@ -40,12 +40,10 @@ abstract Lam4 = {
     Var : Name -> Expr ;
   -- | Cons       Expr Expr                           -- list cons
   -- | List       [Expr]                              -- construct a list
+  -- | ListExpr   ListOp [Expr]
     Unary   : UnaryOp -> Expr -> Expr ;
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
     IfThenElse : Expr -> Expr -> Expr -> Expr ;
-  -- TODO: Not Yet Implemented / need to think more about what collection types to support
-  -- TODO: Add Cons after have wired up to an evaluator
-  -- | ListExpr   ListOp [Expr]
     FunApp : Expr -> [Expr] -> Expr ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
     Project : Expr -> Name -> Expr ;             -- record projection
