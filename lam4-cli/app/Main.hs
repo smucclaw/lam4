@@ -20,6 +20,7 @@ import           Lam4.Expr.Parser              (parseProgramByteStr)
 import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
+import qualified Lam4.Render.Render            as Render
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
 import           System.Directory
@@ -113,6 +114,10 @@ main = do
       putStr $ T.unpack $ ToSimala.render simalaProgram
       print "-------------------------------"
 
+      putStrLn "-------- Natural language (sort of) ---------"
+      env <- Render.myNLGEnv
+      mapM_ (putStrLn . T.unpack) (Render.renderNL env <$> cstDecls)
+      pure ()
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
 getCSTJsonFromFrontend config files = do
