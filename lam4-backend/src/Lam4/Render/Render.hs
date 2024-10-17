@@ -167,8 +167,12 @@ parseRows = \case
     GListRowTypeDecl (parseRow <$> rowtypedecls)
 
 parseRow :: RowTypeDecl -> GRowTypeDecl
-parseRow rtd = GMkRowDecl GNoMetadata $ parseName rtd.name
-  -- where
-  --   metadata = (GMkMetadata . GString . T.unpack) <$> rtd.metadata.description
+parseRow rtd = GMkRowDecl (parseMetadata rtd.metadata) (parseName rtd.name)
+  where
+    parseMetadata :: RowMetadata -> GMetadata
+    parseMetadata mdata =
+      case mdata.description of
+        Just md -> GMkMetadata $ GString $ T.unpack md
+        Nothing -> GNoMetadata
 
 
