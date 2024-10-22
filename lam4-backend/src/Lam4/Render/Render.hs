@@ -49,9 +49,12 @@ makeNLGEnv config = do
   gr <- PGF.readPGF grammarFile
 
   -- Set up PGF Language and GF Linearizer
-  let lang = initializeGFLang config.concreteSyntaxName gr
+  let lang       = initializeGFLang config.concreteSyntaxName gr 
       linearizer = makeGFLinearizer gr lang
-  pure $ NLGEnv gr lang linearizer
+  pure $ NLGEnv linearizer
+
+makeGFLinearizer :: PGF.PGF -> PGF.Language -> GFLinearizer
+makeGFLinearizer gr lang = postprocessText . T.pack . PGF.linearize gr lang
 
 initializeGFLang :: String -> PGF.PGF -> PGF.Language
 initializeGFLang str gr =
@@ -63,12 +66,10 @@ initializeGFLang str gr =
     (Nothing, langs)
       -> error [i|Render.getLang: #{str} not a valid language. (GF grammar contains #{langs}.)|]
 
-makeGFLinearizer :: PGF.PGF -> PGF.Language -> PGF.Tree -> T.Text
-makeGFLinearizer gr lang = postprocessText . T.pack . PGF.linearize gr lang
-  where
-    postprocessText :: T.Text -> T.Text
-    postprocessText = newlines . tabs . rmBIND
 
+postprocessText :: T.Text -> T.Text
+postprocessText = newlines . tabs . rmBIND
+  where
     -- TODO: the following could be cleaned up / made clearer
     rmBIND :: T.Text -> T.Text
     rmBIND input = input & [regex|\s+&\+\s+|] . match %~ const ""
