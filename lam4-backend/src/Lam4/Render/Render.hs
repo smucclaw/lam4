@@ -17,6 +17,10 @@ import           Paths_lam4_backend       (getDataFileName)
 import           Lam4.Render.Lam4Gf
 import qualified PGF
 
+-- TODO: Make a ToNLG monad with NLGEnv as the Reader arg
+
+type GFLinearizer = PGF.Tree -> T.Text
+
 -- | Config that stores info about paths and various other NLG configuration things
 data NLGConfig = MkNLGConfig {
       outputDir              :: FilePath
@@ -28,17 +32,14 @@ data NLGConfig = MkNLGConfig {
 
 -- Loosely copied from dsl/…/natural4
 -- | Env that's needed for NLG operations
-data NLGEnv = NLGEnv
-  { gfGrammar :: PGF.PGF
-  , gfLang    :: PGF.Language
---  , gfParse :: Type -> T.Text -> [Expr]
-  , gfLin     :: PGF.Expr -> T.Text
+newtype NLGEnv = NLGEnv
+  { gfLin     :: GFLinearizer
   }
 
 gfPath :: String -> String
 gfPath x = [i|gf-grammar/#{x}|]
 
--- | Smart constructor that initializes the NLGEnv
+-- | Smart constructor that initializes the GFLinearizer
 makeNLGEnv :: NLGConfig -> IO NLGEnv
 makeNLGEnv config = do
   -- TODO: In the future, the GF-specific paths will be loaded from cmd line args, though we could have 'default' filenames or smtg
@@ -48,9 +49,12 @@ makeNLGEnv config = do
   gr <- PGF.readPGF grammarFile
 
   -- Set up PGF Language and GF Linearizer
-  let lang = initializeGFLang config.concreteSyntaxName gr
+  let lang       = initializeGFLang config.concreteSyntaxName gr 
       linearizer = makeGFLinearizer gr lang
-  pure $ NLGEnv gr lang linearizer
+  pure $ NLGEnv linearizer
+
+makeGFLinearizer :: PGF.PGF -> PGF.Language -> GFLinearizer
+makeGFLinearizer gr lang = postprocessText . T.pack . PGF.linearize gr lang
 
 initializeGFLang :: String -> PGF.PGF -> PGF.Language
 initializeGFLang str gr =
@@ -62,12 +66,10 @@ initializeGFLang str gr =
     (Nothing, langs)
       -> error [i|Render.getLang: #{str} not a valid language. (GF grammar contains #{langs}.)|]
 
-makeGFLinearizer :: PGF.PGF -> PGF.Language -> PGF.Tree -> T.Text
-makeGFLinearizer gr lang = postprocessText . T.pack . PGF.linearize gr lang
-  where
-    postprocessText :: T.Text -> T.Text
-    postprocessText = newlines . tabs . rmBIND
 
+postprocessText :: T.Text -> T.Text
+postprocessText = newlines . tabs . rmBIND
+  where
     -- TODO: the following could be cleaned up / made clearer
     rmBIND :: T.Text -> T.Text
     rmBIND input = input & [regex|\s+&\+\s+|] . match %~ const ""
