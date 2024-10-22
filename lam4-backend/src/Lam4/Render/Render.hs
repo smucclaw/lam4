@@ -1,42 +1,74 @@
-{-# LANGUAGE QuasiQuotes, OverloadedRecordDot, GADTs #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE OverloadedRecordDot #-}
+{-# LANGUAGE QuasiQuotes         #-}
 
-module Lam4.Render.Render where
+module Lam4.Render.Render (NLGConfig (..), NLGEnv, makeNLGEnv, renderCstProgramToNL) where
 
 import qualified Base.Text                as T
+import           Control.Lens             ((%~), (&))
+import           Control.Lens.Regex.Text  (match, regex)
+import           Data.String.Interpolate  (i)
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax
-import qualified Lam4.Expr.Name           as N (Name(..), ReferentStatus(..))
-import           Data.String.Interpolate  (i)
-import           Control.Lens             ((&), (%~))
-import           Control.Lens.Regex.Text  (match, regex)
+import qualified Lam4.Expr.Name           as N (Name (..), ReferentStatus (..))
 import           Paths_lam4_backend       (getDataFileName)
 
 -- GF-related stuff
 import           Lam4.Render.Lam4Gf
 import qualified PGF
 
+-- | Config that stores info about paths and various other NLG configuration things
+data NLGConfig = MkNLGConfig {
+      outputDir              :: FilePath
+    , abstractSyntaxFilename :: FilePath
+    -- ^ e.g. "Lam4.pgf"
+    , concreteSyntaxName     :: String
+    -- ^ e.g. "Lam4Eng"
+}
+
 -- Loosely copied from dsl/…/natural4
+-- | Env that's needed for NLG operations
 data NLGEnv = NLGEnv
   { gfGrammar :: PGF.PGF
-  , gfLang :: PGF.Language
+  , gfLang    :: PGF.Language
 --  , gfParse :: Type -> T.Text -> [Expr]
-  , gfLin :: PGF.Expr -> T.Text
+  , gfLin     :: PGF.Expr -> T.Text
   }
 
 gfPath :: String -> String
 gfPath x = [i|gf-grammar/#{x}|]
 
-myNLGEnv :: IO NLGEnv
-myNLGEnv = do
-  grammarFile <- getDataFileName $ gfPath "Lam4.pgf"
+-- | Smart constructor that initializes the NLGEnv
+makeNLGEnv :: NLGConfig -> IO NLGEnv
+makeNLGEnv config = do
+  -- TODO: In the future, the GF-specific paths will be loaded from cmd line args, though we could have 'default' filenames or smtg
+
+  -- Load grammar file
+  grammarFile <- getDataFileName $ gfPath config.abstractSyntaxFilename
   gr <- PGF.readPGF grammarFile
-  let lang = getLang "Lam4Eng" gr
-      -- myParse typ txt = parse gr eng typ (Text.unpack txt)
-      myLin = postprocessText . T.pack . PGF.linearize gr lang
-  pure $ NLGEnv gr lang myLin
+
+  -- Set up PGF Language and GF Linearizer
+  let lang = initializeGFLang config.concreteSyntaxName gr
+      linearizer = makeGFLinearizer gr lang
+  pure $ NLGEnv gr lang linearizer
+
+initializeGFLang :: String -> PGF.PGF -> PGF.Language
+initializeGFLang str gr =
+  case (PGF.readLanguage str, PGF.languages gr) of
+    (Just l, langs)  -- Language looks valid, check if in grammar
+      -> if l `elem` langs
+            then l
+            else error [i|Render.getLang: #{str} not found among #{langs}|]
+    (Nothing, langs)
+      -> error [i|Render.getLang: #{str} not a valid language. (GF grammar contains #{langs}.)|]
+
+makeGFLinearizer :: PGF.PGF -> PGF.Language -> PGF.Tree -> T.Text
+makeGFLinearizer gr lang = postprocessText . T.pack . PGF.linearize gr lang
   where
     postprocessText :: T.Text -> T.Text
     postprocessText = newlines . tabs . rmBIND
+
+    -- TODO: the following could be cleaned up / made clearer
     rmBIND :: T.Text -> T.Text
     rmBIND input = input & [regex|\s+&\+\s+|] . match %~ const ""
 
@@ -46,20 +78,12 @@ myNLGEnv = do
     newlines :: T.Text -> T.Text
     newlines = T.map (\c -> if c == '∞' then '\n' else c)
 
-    getLang :: String -> PGF.PGF -> PGF.Language
-    getLang str gr =
-      case (PGF.readLanguage str, PGF.languages gr) of
-        (Just l, langs)  -- Language looks valid, check if in grammar
-          -> if l `elem` langs
-                then l
-                else error [i|Render.getLang: #{str} not found among #{langs}|]
-        (Nothing, langs)
-          -> error [i|Render.getLang: #{str} not a valid language. (GF grammar contains #{langs}.)|]
+-- | Entrypoint
+renderCstProgramToNL :: NLGEnv -> CSTProgram -> T.Text
+renderCstProgramToNL env =  T.unlines . fmap  (renderCstDeclToNL env)
 
--- Entrypoint
-renderNL :: NLGEnv -> Decl -> T.Text
-renderNL env = gfLin env . gf . parseDecl
-
+renderCstDeclToNL :: NLGEnv -> Decl -> T.Text
+renderCstDeclToNL env = gfLin env . gf . parseDecl
 
 parseDecl :: Decl -> GS
 parseDecl = \case
@@ -78,7 +102,7 @@ parseName = GMkName . GString . T.unpack . N.name
 
 quoteVars :: Tree a -> Tree a
 quoteVars (GVar x) = GQuoteVar x
-quoteVars x = composOp quoteVars x
+quoteVars x        = composOp quoteVars x
 
 isBool :: Expr -> Bool
 isBool = \case

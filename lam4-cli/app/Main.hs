@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE  DuplicateRecordFields #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
@@ -21,6 +22,7 @@ import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
 import qualified Lam4.Render.Render            as Render
+import Lam4.Render.Render (NLGConfig(..))
 import           Lam4.Parser.Monad             (evalParserFromScratch)
 import           Options.Applicative           as Options
 import           System.Directory
@@ -32,13 +34,12 @@ data FrontendConfig =
                    , args        :: [String]
   }
 
-data OutputConfig =
-  MkOutputConfig {
+data SimalaOutputConfig =
+  MkSimalaOutputConfig {
     outputDir           :: FilePath
   , programFilename     :: FilePath
   , programInfoFilename :: FilePath
 }
-
 
 lam4FrontendDir :: FilePath
 lam4FrontendDir = "lam4-frontend"
@@ -49,12 +50,19 @@ frontendConfig = MkFrontendConfig { runner      = "node"
                                   , args        = [lam4FrontendDir </> "bin" </> "cli", "toMinimalAst"] }
 
 -- TODO: Most of the following should be put in, and read from, the .env file
-outputConfig :: OutputConfig
-outputConfig = MkOutputConfig {
+simalaOutputConfig :: SimalaOutputConfig
+simalaOutputConfig = MkSimalaOutputConfig {
     outputDir = "generated" </> "simala"
   , programFilename = "output.simala"
   , programInfoFilename = "program_info.json" }
 
+-- TODO: read outputDir in from a .env file
+nlgConfig :: NLGConfig
+nlgConfig = MkNLGConfig {
+    outputDir = "generated" </> "nlg_en"
+  , abstractSyntaxFilename = "Lam4.pgf"
+  , concreteSyntaxName = "Lam4Eng"
+}
 
 -- TODO: Think about exposing a tracing option?
 data Options =
@@ -92,32 +100,35 @@ main = do
       hPutStrLn stderr "Lam4: no input files given; use --help for help"
     else do
       frontendCSTJsons <- getCSTJsonFromFrontend frontendConfig options.files
-      let cstDecls       = concatMap parseCSTByteString frontendCSTJsons
-          conEvalProgram = cstProgramToConEvalProgram cstDecls
+      let cstProgram       = concatMap parseCSTByteString frontendCSTJsons
+          conEvalProgram = cstProgramToConEvalProgram cstProgram
           simalaProgram  = ToSimala.compile conEvalProgram
           programInfo    = extractProgramInfo conEvalProgram
 
       -- Create output directory and write files first
-      createDirectoryIfMissing True outputConfig.outputDir
+      createDirectoryIfMissing True simalaOutputConfig.outputDir
       -- save simala program and program info to disk
-      writeFileUtf8 (outputConfig.outputDir </> outputConfig.programFilename) (ToSimala.render simalaProgram)
-      writeFileLBS (outputConfig.outputDir </> outputConfig.programInfoFilename) (encodePretty programInfo)
+      writeFileUtf8 (simalaOutputConfig.outputDir </> simalaOutputConfig.programFilename) (ToSimala.render simalaProgram)
+      writeFileLBS (simalaOutputConfig.outputDir </> simalaOutputConfig.programInfoFilename) (encodePretty programInfo)
+
+      -- NLG (put this behind an option later)
+      nlgEnv <- Render.makeNLGEnv nlgConfig
+      let nlRendering = Render.renderCstProgramToNL nlgEnv cstProgram 
+      createDirectoryIfMissing True nlgConfig.outputDir
+      -- TODO: Save a json version with the nlg output as a member      
 
       -- Perform evaluation (if needed)
       _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv simalaProgram
-      pure ()
 
       -- Finally print output and signal success
-      print "------- CST -------------"
-      pPrint cstDecls
-      print "-------- Simala exprs ---------"
+      print "--- CST -----------"
+      pPrint cstProgram
+      print "--- Simala exprs --------"
       putStr $ T.unpack $ ToSimala.render simalaProgram
       print "-------------------------------"
 
-      putStrLn "-------- Natural language (sort of) ---------"
-      env <- Render.myNLGEnv
-      mapM_ (putStrLn . T.unpack) (Render.renderNL env <$> cstDecls)
-      pure ()
+      putStrLn "---- Natural language (sort of) -----"
+      putStr $ T.unpack nlRendering
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
 getCSTJsonFromFrontend config files = do
