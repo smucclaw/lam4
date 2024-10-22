@@ -33,7 +33,7 @@ data NLGConfig = MkNLGConfig {
 -- Loosely copied from dsl/…/natural4
 -- | Env that's needed for NLG operations
 newtype NLGEnv = NLGEnv
-  { gfLin     :: PGF.Expr -> T.Text
+  { gfLin     :: GFLinearizer
   }
 
 gfPath :: String -> String
