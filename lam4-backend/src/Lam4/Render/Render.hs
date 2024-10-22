@@ -28,17 +28,14 @@ data NLGConfig = MkNLGConfig {
 
 -- Loosely copied from dsl/…/natural4
 -- | Env that's needed for NLG operations
-data NLGEnv = NLGEnv
-  { gfGrammar :: PGF.PGF
-  , gfLang    :: PGF.Language
---  , gfParse :: Type -> T.Text -> [Expr]
-  , gfLin     :: PGF.Expr -> T.Text
+newtype NLGEnv = NLGEnv
+  { gfLin     :: PGF.Expr -> T.Text
   }
 
 gfPath :: String -> String
 gfPath x = [i|gf-grammar/#{x}|]
 
--- | Smart constructor that initializes the NLGEnv
+-- | Smart constructor that initializes the GFLinearizer
 makeNLGEnv :: NLGConfig -> IO NLGEnv
 makeNLGEnv config = do
   -- TODO: In the future, the GF-specific paths will be loaded from cmd line args, though we could have 'default' filenames or smtg

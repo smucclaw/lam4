@@ -112,6 +112,7 @@ main = do
       writeFileLBS (simalaOutputConfig.outputDir </> simalaOutputConfig.programInfoFilename) (encodePretty programInfo)
 
       -- NLG (put this behind an option later)
+      -- TODO: Make a ToNLG monad
       nlgEnv <- Render.makeNLGEnv nlgConfig
       let nlRendering = Render.renderCstProgramToNL nlgEnv cstProgram 
       createDirectoryIfMissing True nlgConfig.outputDir
