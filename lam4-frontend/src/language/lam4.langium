@@ -488,10 +488,6 @@ ReportDecl:
     "@REPORT" value=Expr
 ;
 
-// Entrypoint:
-//     "@FOR_Q&A" value=PredOrFunDecl
-// ;
-
 /* ============================
     Statements
 =============================== */
