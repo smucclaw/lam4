@@ -17,6 +17,10 @@ import           Paths_lam4_backend       (getDataFileName)
 import           Lam4.Render.Lam4Gf
 import qualified PGF
 
+-- TODO: Make a ToNLG monad with NLGEnv as the Reader arg
+
+type GFLinearizer = PGF.Tree -> T.Text
+
 -- | Config that stores info about paths and various other NLG configuration things
 data NLGConfig = MkNLGConfig {
       outputDir              :: FilePath
