@@ -6,3 +6,7 @@ cradle:
       config: { cradle: { cabal: { component: "exe:lam4-cli" } } }
     - path: "./lam4-frontend"
       config: { cradle: { none } }
+    - path: "./experiments/contract-automata/src"
+      config: { cradle: { cabal: { component: "lib:contract-automata"}}}
+    - path: "./experiments/contract-automata/app"
+      config: { cradle: { cabal: { component: "exe:contract-automata"}}}
