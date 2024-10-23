@@ -292,7 +292,7 @@ FUNCTION Integer => Integer
   g(x) = x * 2 - 1 / 3
 ```
 
-Now, there are some uses of braces that don't quite fall into this category, e.g. the use of braces in InfixPredApp:
+Now, there are some uses of braces that don't quite fall into this category, e.g. the (purely cosmetic) use of braces in InfixPredApp:
 
 ```lam4
 GIVEN (some_person: Person
@@ -321,3 +321,19 @@ I had gone with this because it's what the legacy Spreadsheet L4 syntax uses. Bu
 * I personally find  the all-caps keywords often makes the code harder to read
 
 ## Whether to use Langium
+
+
+-------
+
+# Notes
+
+
+## Expr sublang
+
+* OK with var identifiers
+* Literals seem fine
+* Operators and functions: stuff tt is pre-defined / builtin shoudl look like stuff u the user could have defiend yourself
+
+AND
+
+what rly needs to be built into the language?
