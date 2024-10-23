@@ -9,9 +9,6 @@ module Automata where
 
 import Data.Foldable          (foldlM)
 import Control.Monad.Identity (Identity(..))
-import Data.Bifunctor         (second)
-import Data.Complex           (Complex, magnitude)
-import Data.Map qualified as Map
 
 
 -- | Finite automaton with state `s`, alphabet `a` and a monadic context `m`.
