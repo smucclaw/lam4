@@ -247,8 +247,8 @@ parseExpr node = do
     "PredicateDecl"  -> parsePredicateE     node
 
     "FunctionApplication"       -> parseFunApp node
-    "InfixPredicateApplication" -> parseInfixPredicateApp node
-    "PostfixPredicateApplication" -> parsePostfixPredicateApp node
+    "InfixOrPostfixPredicateApplication" -> parseInfixPredicateApp node
+    "PrefixPredicateApplication" -> parsePrefixPredicateApp node
 
     "BinExpr"        -> parseBinExpr        node
 
@@ -650,7 +650,7 @@ parsePredicateE predicate = do
     where
       getPredicateParams predicateNode = predicateNode ^.. ix "params" % values % ix "param" % _Object
 
--- | the arg to a InfixPredicateApplication can be either a NamedElement:ID or Expr
+-- | the arg to a InfixOrPostfixPredicateApplication can be either a NamedElement:ID or Expr
 parsePredicateAppArg :: A.Object -> Parser Expr
 parsePredicateAppArg arg =
   if has (ix "$type") arg
@@ -674,11 +674,11 @@ parseInfixPredicateApp predApp = do
       Nothing ->
         PredApp predicate [left]
 
-{- | Example of a PostfixPredicateApplication node (Sep 18 2024):
+{- | Example of a PrefixPredicateApplication node (Sep 18 2024):
 
     @
     {
-        "$type": "PostfixPredicateApplication",
+        "$type": "PrefixPredicateApplication",
         "predicate": {
             "$type": "Ref",
             "value": {
@@ -689,8 +689,8 @@ parseInfixPredicateApp predApp = do
     }
     @
 -}
-parsePostfixPredicateApp ::  A.Object -> Parser Expr
-parsePostfixPredicateApp predApp = do
+parsePrefixPredicateApp ::  A.Object -> Parser Expr
+parsePrefixPredicateApp predApp = do
     predicate <- parseRefToVar =<< predApp .: "predicate"
     args      <- traverse parsePredicateAppArg (predApp `getObjectsAtField` "args")
     pure $ PredApp predicate args

@@ -331,7 +331,7 @@ Mult infers Expr:
 (To be clear, the auto-linking/crossref for this won't work in the playground: https://github.com/eclipse-langium/langium/discussions/1502)
 */
 Project infers Expr:
-    InfixPredicateApplication ({infer Project.left=current} GENITIVE right=Ref)*
+    InfixOrPostfixPredicateApplication ({infer Project.left=current} GENITIVE right=Ref)*
     // Right can't be [NamedElement:ID]
     // because we want the scoper to visit `left` first,
     // so that if `left`'s reference will be resolved via the default scoper/linker, if that's possible.
@@ -345,16 +345,16 @@ am porting what I currently have for Join to Project
 -------------------------------------------------------*/
 
 
-InfixPredicateApplication infers Expr:
-    InfixActionApplication
+InfixOrPostfixPredicateApplication infers Expr:
+    InfixOrPostfixActionApplication
     (
         {infer InfixPredicateApplication.left = current}
         predicate=[PredicateDecl:IDOrBackTickedID]
-        right=InfixActionApplication?
+        right=InfixOrPostfixActionApplication?
     )*
 ;
 
-InfixActionApplication infers Expr:
+InfixOrPostfixActionApplication infers Expr:
     Cons
     (
         {infer InfixActionApplication.left = current}
@@ -368,10 +368,10 @@ InfixActionApplication infers Expr:
 ;
 
 Cons infers Expr:
-    PostfixPredicateApplication
+    PrefixPredicateApplication
     ({infer Cons.first=current}
      'followed_by_items_in'
-     rest=PostfixPredicateApplication
+     rest=PrefixPredicateApplication
     )*
 ;
 
@@ -384,9 +384,9 @@ fragment ExprArgsInParens:
 ;
 
 
-PostfixPredicateApplication:
+PrefixPredicateApplication:
     FunctionApplication
-    ({infer PostfixPredicateApplication.predicate=current}
+    ({infer PrefixPredicateApplication.predicate=current}
 
     ( ( ('IS_SATISFIED_BY' | 'HOLDS_OF') ExprArgsInParens )
     | 'HOLDS?' )
