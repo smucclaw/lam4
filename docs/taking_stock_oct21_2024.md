@@ -32,7 +32,7 @@ Would be good to add closed sum types and enums.
 
 ### Annotations
 
-#### Annotations for 'nautral language generation / rendering templates / knobs'
+#### Annotations for 'natural language generation / rendering templates / knobs'
 
 Has not been implemented, but as Inari pointed out, this would be helpful, and some of the current annotation syntax had been designed to be readily extended with things like that.
 
@@ -76,7 +76,43 @@ STRUCTURE LifeAssured
 END
 ```
 
-And of course, we could and should add constructs for annotating levels of transparency / explanation depth too.
+##### Other related annotation constructs we could or should consider adding
+
+* constructs for annotating levels of transparency / explanation depth (see also the sidenote below). For the 'ASCII' version, perhaps `@Explain_with_details`?
+
+* surface syntax for a `@As_defined_by` construct, e.g:
+
+```lam4
+// The challenge with rendering this: distinguishing between (i) a description for programmers working with this structure and (ii) a description we might use when 'rendering' it 
+/- 
+About: "Info about an Art Union (more precisely, an art union gaming activity)"
+@As_defined_by `Art Union Gaming Activity`
+-/
+STRUCTURE ArtUnionGamingActivity SPECIALIZES GamingActivity {
+  -- The art union that this gaming activity is associated with
+  art_union: ArtUnion
+  -- How much the gross proceeds are
+  gross_proceeds: Integer
+  -- How much can be won from the prize pool.
+  prize_pool: Integer
+}
+
+§4: `Art Union Gaming Activity`
+GIVEN (gaming_activity: GamingActivity)
+DECIDE `is an art union gaming activity`
+IF gaming_activity `is the awarding of prizes by lot by an art union`
+```
+
+
+The big picture point to note is that, if you want to be able to
+
+* (i) get a kind of isomorphism between your surface syntax and natural-language legalese,
+
+* or (ii) capture certain kinds of contentful relations between definitions, whether for downstream querying or explanations or rendering/visualization,
+
+then your language will need more than just constructs for summing numbers / simple computations.
+
+And of course how much we really want to aim to do those things is not obvious, at least not to me. Catala, for instance, doesn't do all of these things; there's really no reason why a so-called legal DSL needs to be able to do literally everything that one might imagine wanting to use a legal DSL for.
 
 #### Sidenote on the SpecificMetadataBlock syntax and how it might be displayed in editors like CodeMirror that allow for inline GUI widgets
 
@@ -101,6 +137,23 @@ The following constructs allow for annotation with the original source citation:
 ###### The section reference parser
 
 should be augmented to allow for references like `§10(a)` or `§10(1)(a)`, and not just `§10`
+
+Also, it needs to be augmented to allow for adding an identifier like the following (I had been experimenting with this on another branch):
+
+```lam4
+§4: `Art Union Gaming Activity`
+GIVEN (gaming_activity: GamingActivity)
+DECIDE `is an art union gaming activity`
+IF gaming_activity `is the awarding of prizes by lot by an art union`
+```
+
+This additional identifier is helpful for multiple reasons.
+
+* It enables a closer isomorphism with the source text.
+
+* I think it might give you a way to give states explicit names.
+
+* Useful for @As_defined_by.
 
 ###### Flexibility in annotation order
 
@@ -139,7 +192,7 @@ ReportDecl:
 
 #### Annotations for description
 
-This is not a comment.
+This is **not** a comment. Comments are `//` or `/* ... */`.
 
 `terminal SINGLELINE_METADATA_ANNOTATION: /--([^\n\r]*)/;`
 
@@ -165,6 +218,8 @@ The syntax I proposed doesn't currently have 'first-class' support for timing co
 
 ### Other constructs that need to be added
 
+#### ListOps
+
 The langium grammar has
 
 ```langium
@@ -183,7 +238,15 @@ SumOf:
 
 but these haven't been implemented in the backend parser (Parser.hs). It'll only take like 5-10 min to do that; just haven't got around to doing it.
 
+#### Date / time computations
 
+I *don't* currently have anything like either surface syntax or a standard lib of functions for things like 'x days'. But these are things that will be required sooner or later.
+
+#### Unknowns, whether values or exprs or ...
+
+I don't currently have any first-class support for this.
+
+We've talked about this --- see the issue I raised on the Simala repo. I personally think this is a pretty high priority for multiple reasons.
 
 ### Rough edges that need to be smoothed out
 
@@ -256,6 +319,5 @@ I had gone with this because it's what the legacy Spreadsheet L4 syntax uses. Bu
 * Not obvious that the all-caps keywords are helpful if we have an environment that allows us to do syntax highlighting / bolding / italicizing
 
 * I personally find  the all-caps keywords often makes the code harder to read
-
 
 ## Whether to use Langium
