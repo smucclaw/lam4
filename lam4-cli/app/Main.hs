@@ -60,6 +60,7 @@ simalaOutputConfig = MkSimalaOutputConfig {
 nlgConfig :: NLGConfig
 nlgConfig = MkNLGConfig {
     outputDir = "generated" </> "nlg_en"
+  , resultFilename = "output.txt"
   , abstractSyntaxFilename = "Lam4.pgf"
   , concreteSyntaxName = "Lam4Eng"
 }
@@ -116,7 +117,8 @@ main = do
       nlgEnv <- Render.makeNLGEnv nlgConfig
       let nlRendering = Render.renderCstProgramToNL nlgEnv cstProgram 
       createDirectoryIfMissing True nlgConfig.outputDir
-      -- TODO: Save a json version with the nlg output as a member      
+      writeFileUtf8 (nlgConfig.outputDir </> nlgConfig.resultFilename) nlRendering
+      -- TODO: Save a json version with the nlg output as a member
 
       -- Perform evaluation (if needed)
       _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv simalaProgram

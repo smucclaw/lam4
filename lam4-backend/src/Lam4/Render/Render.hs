@@ -24,6 +24,7 @@ type GFLinearizer = PGF.Tree -> T.Text
 -- | Config that stores info about paths and various other NLG configuration things
 data NLGConfig = MkNLGConfig {
       outputDir              :: FilePath
+    , resultFilename         :: FilePath
     , abstractSyntaxFilename :: FilePath
     -- ^ e.g. "Lam4.pgf"
     , concreteSyntaxName     :: String
