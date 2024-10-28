@@ -70,6 +70,7 @@ data Options =
   MkOptions
     { tracing :: ToSimala.TraceMode
     , files   :: [FilePath]
+    , onlyNLG :: Bool
     }
 
 -- | Copied from Simala
@@ -85,6 +86,7 @@ optionsDescription =
   MkOptions
   <$> (toTracingMode <$> strOption (long "tracing" <> help "Tracing, one of \"off\", \"full\" (default), \"results\"") <|> pure ToSimala.TraceResults)
   <*> many (strArgument (metavar ".l4 FILES..."))
+  <*> switch (long "nlg-only")
 
 optionsConfig :: Options.ParserInfo Options
 optionsConfig =
@@ -123,15 +125,18 @@ main = do
       -- Perform evaluation (if needed)
       _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv simalaProgram
 
-      -- Finally print output and signal success
-      print "--- CST -----------"
-      pPrint cstProgram
-      print "--- Simala exprs --------"
-      putStr $ T.unpack $ ToSimala.render simalaProgram
-      print "-------------------------------"
+      if options.onlyNLG
+        then putStr $ T.unpack nlRendering
+        else do
+          -- Finally print output and signal success
+          print "--- CST -----------"
+          pPrint cstProgram
+          print "--- Simala exprs --------"
+          putStr $ T.unpack $ ToSimala.render simalaProgram
+          print "-------------------------------"
 
-      putStrLn "---- Natural language (sort of) -----"
-      putStr $ T.unpack nlRendering
+          putStrLn "---- Natural language (sort of) -----"
+          putStr $ T.unpack nlRendering
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
 getCSTJsonFromFrontend config files = do
