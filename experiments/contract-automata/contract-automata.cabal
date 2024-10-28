@@ -47,8 +47,10 @@ library
     import:           defaults
 
     -- Modules exported by the library.
-    exposed-modules:  
-        Automata
+    exposed-modules:
+        Automata,
+        ContractAutomaton,
+        Syntax
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -57,8 +59,9 @@ library
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    
+    build-depends:
         base ^>=4.18.2.1,
+        text,
         optics,
         mtl,
         transformers-base,

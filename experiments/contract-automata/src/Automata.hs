@@ -31,7 +31,7 @@ class Context m where
 class (Eq a, Ord a) => Finite a
 
 -- | Deterministic Finite Automaton.
-type DFA  = Automaton Identity
+type DFA = Automaton Identity
 
 instance Context Identity where
   possible pred (Identity s) = pred s
