@@ -65,7 +65,7 @@ type Guard = CompoundAction
 data CompoundAction = Impossible                             -- ^ the impossible action, aka 0
                     | Skip                                   -- ^ skip, aka 1: matches any action
                     | AtomicAction AtomicAction              -- ^ a
-                    | Sequence     AtomicAction AtomicAction
+                    | Sequence     CompoundAction CompoundAction
   deriving (Eq, Ord, Show)
 
 
