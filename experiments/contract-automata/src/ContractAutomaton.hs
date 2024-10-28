@@ -27,6 +27,7 @@ import           Syntax
 data ContractAutomaton =
   MkContractAutomaton {
       baseAut  :: DFA StateName Trace
+      -- TODO: Actually this prob has to be a NFA if we want to remove the & concurrency operator and use interleaving instead
     , contract :: Map StateName StateInfo 
       -- ^ can also just think of a state as being the product of a StateName and StateInfo (i.e., the clauses active in that state)
       -- TODO: Think more about whether to just make Contract a possibly empty list and then contract :: Map StateName Contract
