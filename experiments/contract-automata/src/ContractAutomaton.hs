@@ -8,7 +8,7 @@ import qualified Data.Text as T
 
 import           Automata
 import           Syntax
-
+import           Name
 
 {- | A contract automaton S is
     a total and deterministic multi-action automaton with
@@ -18,31 +18,20 @@ import           Syntax
 data ContractAutomaton =
   MkContractAutomaton {
       baseAut  :: DFA StateName Trace
-    , contract :: Map StateName (Set Clause)
+    , contract :: Map StateName StateInfo
   }
 
--------------------------------
-  -- Contract Automaton State
--------------------------------
+------------------------------------
+  -- Contract Automaton State Info
+------------------------------------
 
--- | CAStateInfo stands for 'Contract Automaton State Info' --- i.e., the sorts of info associated with a state of a contract automaton
-newtype CAStateInfo = MkCAState { activeClauses :: Set Clause }
+-- | The sorts of info associated with a state of a contract automaton
+newtype StateInfo = MkStateInfo { activeClauses :: Set Clause }
   deriving newtype (Eq, Ord)
   deriving stock Show
 
--------------
-  -- Name
--------------
+----------------
+  -- StateName
+----------------
 
-type Unique = Int
-data Name = MkName { name :: T.Text, unique :: Unique }
 type StateName = Name
-
-instance Eq Name where
-  (==) (MkName _ u) (MkName _ u') = u == u'
-
-instance Ord Name where
-  compare (MkName _ u) (MkName _ u') = compare u u'
-
-instance Show Name where
-  show (MkName n u) = T.unpack n <> "_" <> show u

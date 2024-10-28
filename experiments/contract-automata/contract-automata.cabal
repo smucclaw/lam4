@@ -50,7 +50,8 @@ library
     exposed-modules:
         Automata,
         ContractAutomaton,
-        Syntax
+        Syntax,
+        Name
 
     -- Modules included in this library but not exported.
     -- other-modules:
