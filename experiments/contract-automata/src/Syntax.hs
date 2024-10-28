@@ -1,6 +1,7 @@
 module Syntax where
 
 import Data.Text as T
+import Data.List.NonEmpty
 
 {-----------
   Resources
@@ -16,10 +17,10 @@ SCL:
 -}
 
 
-{- | A wrapper over (what is in effect) a conjuction of clauses.
+{- | A Contract := one or more clauses (if more than one, then it represents the *conjunction* of those clauses). 
 The sense in which I'm using 'contract' is more like Camilieri's than the CA paper (which sometimes treats 'contract' as being synonymous with 'clause').
 -}
-newtype Contract = MkContract { getClauses :: [Clause] }
+newtype Contract = MkContract { getClauses :: NonEmpty Clause }
   deriving newtype (Eq, Ord)
   deriving stock Show
 
@@ -28,12 +29,12 @@ newtype Contract = MkContract { getClauses :: [Clause] }
 --------------
 
 {- | CL_rest.
-      C := O⊥(a) | P(a) | F⊥(a) | C∧C | [β]C | ⊤ | ⊥
+        C := O⊥(a) | P(a) | F⊥(a) | C∧C | [β]C | ⊤ | ⊥
+     Conjunction has been factored out to Contract -- a conjunction of clauses should be represented as a sequence of them (wrapped in a Contract).
 -}
 data Clause = Must   Party ActionForNorm   -- ^ Obligation
             | May    Party ActionForNorm   -- ^ Permission
             | Shant  Party ActionForNorm   -- ^ Prohibition
-            | And    Clause Clause         -- ^ Conjunction of clauses
             | If     Guard  Clause         -- ^ [β]C -- the contract C must be executed if action β is performed
             | Top                          -- ^ ⊤
             | Bottom                       -- ^ ⊥
