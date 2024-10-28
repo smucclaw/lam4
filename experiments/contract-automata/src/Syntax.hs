@@ -1,5 +1,7 @@
 module Syntax where
 
+import Data.Text as T
+
 {-----------
   Resources
 -------------
@@ -13,42 +15,85 @@ SCL:
 * "SCL: A domain-specific language for normative texts with timing constraints"
 -}
 
+
+{- | A wrapper over (what is in effect) a conjuction of clauses.
+The sense in which I'm using 'contract' is more like Camilieri's than the CA paper (which sometimes treats 'contract' as being synonymous with 'clause').
+-}
+newtype Contract = MkContract { getClauses :: [Clause] }
+  deriving newtype (Eq, Ord)
+  deriving stock Show
+
 --------------
---  Clause 
+--  Clause
 --------------
 
 {- | CL_rest.
       C := O⊥(a) | P(a) | F⊥(a) | C∧C | [β]C | ⊤ | ⊥
 -}
-data Clause = Must   Action        -- ^ Obligation
-            | May    Action        -- ^ Permission
-            | Cannot Action        -- ^ Prohibition
-            | And    Clause Clause -- ^ Conjunction of clauses
-            | If     Guard  Clause -- ^ [β]C -- the contract C must be executed if action β is performed
-            | Top                  -- ^ ⊤
-            | Bottom               -- ^ ⊥
+data Clause = Must   Party ActionForNorm   -- ^ Obligation
+            | May    Party ActionForNorm   -- ^ Permission
+            | Shant  Party ActionForNorm   -- ^ Prohibition
+            | And    Clause Clause         -- ^ Conjunction of clauses
+            | If     Guard  Clause         -- ^ [β]C -- the contract C must be executed if action β is performed
+            | Top                          -- ^ ⊤
+            | Bottom                       -- ^ ⊥
   deriving (Eq, Ord, Show)
 
 
 -----------------------
----  Guards, Actions
+---  Actions
 -----------------------
 
-newtype Guard = MkGuard { getGuard :: Action }
-  deriving newtype (Eq, Ord)
-  deriving stock Show
+-- | The notion of actions that's used with norms. In CL_rest, modalities (O, P and F) are only applied to atomic actions (CA p.28)
+type ActionForNorm = AtomicAction
 
-type AtomicAction = String
+{- | An AtomicAction, as I'm using it, does *not* include the agent / party.
+Note that I differ from Camilieri's SCL on this: he uses "the term action to mean both agent and act together".
+-}
+type AtomicAction = Text
 
-{- | β := 0|1|a|a| β&β |β.β |β∗
+type Guard = CompoundAction
+
+{- | β := 0 | 1 | a | β&β |β.β |β∗
   I omit the concurrency operator @&@ because
     (i) truly simultaneous actions are rare in the legal / regulation context
     (ii) it can be simulated with interleaving
     (iii) according to "A framework for conflict analysis of normative texts written
     in controlled natural language", it results in exponential blowup
 -}
-data Action = Impossible                 -- ^ 0
-            | Skip                       -- ^ 1
-            | AtomicAction AtomicAction  -- ^ a
-            | Sequence     Action Action
+data CompoundAction = Impossible                             -- ^ the impossible action, aka 0
+                    | Skip                                   -- ^ skip, aka 1: matches any action
+                    | AtomicAction AtomicAction              -- ^ a
+                    | Sequence     AtomicAction AtomicAction
   deriving (Eq, Ord, Show)
+
+
+-----------------------
+---  Traces, Events
+-----------------------
+
+-- | A trace is a sequence of events
+newtype Trace = MkTrace { getTrace :: [Event] }
+  deriving newtype (Eq, Ord)
+  deriving stock Show
+
+{- |
+"We assume that
+  * each event is in fact a pair containing the event itself and who is the actor (subject, or performer of the event),
+
+  * and that the set Names contains all the possible actors included in a contract (in bilateral contracts as we are having here, there usually be only two subjects, namely the two parties involved in the contract)" (CA p. 30)
+
+"We also assume two projection functions giving the action itself and the subject""
+-}
+data Event = MkEvent { getActor :: Party
+                     , getAction :: ActionForNorm }
+  deriving stock (Eq, Ord, Show)
+
+
+-----------------------
+  ---  Party
+-----------------------
+
+newtype Party = MkParty { getName :: Text }
+  deriving newtype (Eq, Ord)
+  deriving stock (Show)
