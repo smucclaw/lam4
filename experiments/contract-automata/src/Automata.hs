@@ -11,8 +11,10 @@ import Data.Foldable          (foldlM)
 import Control.Monad.Identity (Identity(..))
 
 
--- | Finite automaton with state `s`, alphabet `a` and a monadic context `m`.
---   The type parameters `s` and `a` are assumed to represent finite sets.
+{- | Finite automaton with state `s`, alphabet `a` and a monadic context `m`.
+    The context `m` represents what effects our automaton is capable of. 
+    The type parameters `s` and `a` are assumed to represent finite sets.
+-}
 data Automaton m s a = Automaton
   { initial    :: s               -- ^ Initial State
   , transition :: s -> a -> m s   -- ^ Change state with a context.
@@ -22,6 +24,7 @@ data Automaton m s a = Automaton
 run :: Monad m => Automaton m s a -> [a] -> m s
 run Automaton{..} = foldlM transition initial
 
+-- | If after running the automaton, it ends in an accepting state, we say that it recognizes the input.
 recognize :: (Finite s, Monad m, Context m) => Automaton m s a -> [a] -> Bool
 recognize aut@Automaton{..} = possible accepting . run aut
 
