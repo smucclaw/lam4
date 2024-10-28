@@ -1,14 +1,16 @@
+{-# LANGUAGE PatternSynonyms #-}
+
 module ContractAutomaton where
 
-import           Data.Map (Map)
-import qualified Data.Map as Map
-import           Data.Set (Set)
-import qualified Data.Set as Set
-import qualified Data.Text as T
+import           Data.Map  (Map)
+-- import qualified Data.Map  as Map
+import           Data.Set  (Set)
+-- import qualified Data.Set  as Set
 
 import           Automata
-import           Syntax
+import Control.Monad.Identity (Identity(..))
 import           Name
+import           Syntax
 
 {- | A contract automaton S is
     a total and deterministic multi-action automaton with
@@ -20,6 +22,16 @@ data ContractAutomaton =
       baseAut  :: DFA StateName Trace
     , contract :: Map StateName StateInfo
   }
+
+-- | Convenience pattern synonym
+pattern ContractAutomaton :: 
+        (StateName -> Trace -> Identity StateName) -- transition function
+        -> StateName                               -- initial state
+        -> (StateName -> Bool)                     -- accepting states predicate
+        -> Map StateName StateInfo                 -- contract
+        -> ContractAutomaton
+pattern ContractAutomaton trans initial acc contract =
+    MkContractAutomaton (Automaton initial trans acc) contract
 
 ------------------------------------
   -- Contract Automaton State Info
