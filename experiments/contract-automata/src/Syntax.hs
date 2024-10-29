@@ -1,7 +1,7 @@
 module Syntax where
 
 import Data.Text as T
-import Data.List.NonEmpty
+import Data.List.NonEmpty as NE
 
 {-
 ----------
@@ -30,6 +30,9 @@ The sense in which I'm using 'contract' is more like Camilieri's than the CA pap
 newtype Contract = MkContract { clauses :: NonEmpty Clause }
   deriving newtype (Eq, Ord)
   deriving stock Show
+
+contractToClauses :: Contract -> [Clause]
+contractToClauses (MkContract clauses) = NE.toList clauses
 
 --------------
 --  Clause
@@ -91,9 +94,7 @@ data Guard = GDone Event
 -----------------------
 
 -- | A trace is a sequence of events
-newtype Trace = MkTrace { getTrace :: [Event] }
-  deriving newtype (Eq, Ord)
-  deriving stock Show
+type Trace = [Event]
 
 {- | Event aka 'state of affairs'.
 

@@ -76,4 +76,4 @@ satisfiesGuard trace = \case
   GFalse      -> False
 
 includesEvent :: Trace -> Event -> Bool
-includesEvent (MkTrace events) event = event `elem` events
+includesEvent trace event = event `elem` trace
