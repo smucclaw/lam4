@@ -20,7 +20,7 @@ SCL:
 {- | A Contract := one or more clauses (if more than one, then it represents the *conjunction* of those clauses). 
 The sense in which I'm using 'contract' is more like Camilieri's than the CA paper (which sometimes treats 'contract' as being synonymous with 'clause').
 -}
-newtype Contract = MkContract { getClauses :: NonEmpty Clause }
+newtype Contract = MkContract { clauses :: NonEmpty Clause }
   deriving newtype (Eq, Ord)
   deriving stock Show
 
