@@ -1,4 +1,4 @@
-module ContractAutomaton where
+module ContractAutomaton (ContractAutomaton(..), mkContractAut, CAState(..), contractToCAState) where
 
 import           Automata
 import           Syntax
@@ -6,7 +6,7 @@ import           Syntax
 
 import           Data.Coerce            (coerce)
 import qualified Data.List.NonEmpty     as NE
--- import           Control.Monad.Identity (Identity (..))
+import           Control.Monad.Identity (Identity (..))
 -- import           Data.Set               (Set)
 -- import qualified Data.Set               as Set
 -- import           Data.Map               (Map)
@@ -30,6 +30,13 @@ For a contract with action alphabet Σ, we will introduce its deontic alphabet �
     "The set of states Q is given by all the formulae R reachable from [the initial formula / state] ψ"
 -}
 newtype ContractAutomaton = MkContractAut { aut :: DFA CAState Trace }
+
+-- | Smart constructor
+mkContractAut :: CAState -> (CAState -> Trace -> Identity CAState) -> ContractAutomaton
+mkContractAut initial transition = MkContractAut (Automaton initial transition acceptingPred)
+
+acceptingPred :: CAState -> Bool
+acceptingPred (MkCAState clauses) = all (== Top) clauses
 
 ------------------------------------
   -- Contract Automaton State
