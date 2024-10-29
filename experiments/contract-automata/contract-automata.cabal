@@ -51,6 +51,7 @@ library
         Automata,
         ContractAutomaton,
         Syntax,
+        Eval,
         Name
 
     -- Modules included in this library but not exported.
