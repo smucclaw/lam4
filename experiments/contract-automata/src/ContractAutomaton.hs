@@ -1,4 +1,4 @@
-module ContractAutomaton (ContractAutomaton(..), mkContractAut, CAState(..), contractToCAState) where
+module ContractAutomaton (ContractAutomaton(..), acceptingPred, CAState(..), contractToCAState) where
 
 import           Automata
 import           Syntax
@@ -6,20 +6,15 @@ import           Syntax
 
 import           Data.Coerce            (coerce)
 import qualified Data.List.NonEmpty     as NE
-import           Control.Monad.Identity (Identity (..))
+-- import           Control.Monad.Identity (Identity (..))
 -- import           Data.Set               (Set)
 -- import qualified Data.Set               as Set
 -- import           Data.Map               (Map)
 -- import qualified Data.Map  as Map
 
-
 --------------------------
   -- Contract Automaton
 --------------------------
-
-{- TODO
-For a contract with action alphabet Σ, we will introduce its deontic alphabet Σd which consists of Oa, Pa and Fa for each action a ∈ Σ, that will be used to represent which normative behaviour is enacted at a particular moment.
--}
 
 -- TODO: This prob has to be a NFA if we want to remove the & concurrency operator and use interleaving instead?
 {- | "A contract automaton S is
@@ -31,12 +26,12 @@ For a contract with action alphabet Σ, we will introduce its deontic alphabet �
 -}
 newtype ContractAutomaton = MkContractAut { aut :: DFA CAState Trace }
 
--- | Smart constructor
-mkContractAut :: CAState -> (CAState -> Trace -> Identity CAState) -> ContractAutomaton
-mkContractAut initial transition = MkContractAut (Automaton initial transition acceptingPred)
-
 acceptingPred :: CAState -> Bool
 acceptingPred (MkCAState clauses) = all (== Top) clauses
+
+{- TODO
+For a contract with action alphabet Σ, we will introduce its deontic alphabet Σd which consists of Oa, Pa and Fa for each action a ∈ Σ, that will be used to represent which normative behaviour is enacted at a particular moment.
+-}
 
 ------------------------------------
   -- Contract Automaton State
