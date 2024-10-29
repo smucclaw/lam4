@@ -196,6 +196,10 @@ data Statement = IfStatement Expr Statement    [Statement]  -- If   Condition Th
 
 
 {- | Actions can be given a name with the `Decl` construct
+
+[TODO-Oct29] Not sure now that action blocks / sequences should be blocks of prim actions.
+Might want something like Sequence Norm Norm or Sequence Event Event
+
 Think of an ActionBlock as a function with side effects / a function where the statements in the body are PrimActions
 (and where a block of actions corresponds to 'sequencing' them in the usual 'imperative language' way)
 
