@@ -24,7 +24,7 @@ import qualified Data.List.NonEmpty     as NE
 
     "The set of states Q is given by all the formulae R reachable from [the initial formula / state] ψ"
 -}
-newtype ContractAutomaton = MkContractAut { aut :: DFA CAState Trace }
+newtype ContractAutomaton = MkContractAut { aut :: DFA CAState Event }
 
 acceptingPred :: CAState -> Bool
 acceptingPred (MkCAState clauses) = all (== Top) clauses

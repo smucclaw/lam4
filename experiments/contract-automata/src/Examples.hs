@@ -41,27 +41,30 @@ contractPage31Example = MkContract $ NE.fromList [
   If (GDone eventParty1DoesA) (Must eventParty2DoesB),
   If (GDone eventParty2DoesB) (Shant eventParty1DoesA)]
 
-runPage31AutOnTrace :: [Trace] -> Identity CAState
+runPage31AutOnTrace :: Trace -> Identity CAState
 runPage31AutOnTrace = run autExampleFromPage31.aut
 
 tracePage31Example :: Trace
 tracePage31Example = [eventParty1DoesA, eventParty2DoesB]
 
+-- | This is not exactly the given example, since the given example is a trace containing a set of concurrent actions
 runPage31AutOnGivenTrace :: Identity CAState
-runPage31AutOnGivenTrace = runPage31AutOnTrace [tracePage31Example]
+runPage31AutOnGivenTrace = runPage31AutOnTrace tracePage31Example
 
-residualOnPage31Example :: [Clause]
-residualOnPage31Example = residual (contractToClauses contractPage31Example) tracePage31Example 
+-- Stepping through the example, event by event
+
+residualOnPage31ExampleOnce :: [Clause]
+residualOnPage31ExampleOnce = residual (contractToClauses contractPage31Example) eventParty1DoesA
+
+residualOnPage31ExampleTwice :: [Clause]
+residualOnPage31ExampleTwice = residual residualOnPage31ExampleOnce eventParty2DoesB
 
 {-
-λ> residualOnPage31Example
-
-[Must (MkEvent {getActor = MkParty {getName = "2"}, getAction = "b"}),
-Shant (MkEvent {getActor = MkParty {getName = "1"}, getAction = "a"})]
+λ> residualOnPage31ExampleOnce
+[Must (MkEvent {getActor = MkParty {getName = "2"}, getAction = "b"}),Top]
+λ> residualOnPage31ExampleTwice
+[Top,Top]
 
 λ> runPage31AutOnGivenTrace
-
-Identity (MkCAState {
-    clauses = [Must (MkEvent {getActor = MkParty {getName = "2"}, getAction = "b"}),
-              Shant (MkEvent {getActor = MkParty {getName = "1"}, getAction = "a"})]})
+Identity (MkCAState {clauses = [Top,Top]})
 -}

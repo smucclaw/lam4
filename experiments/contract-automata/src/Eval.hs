@@ -26,7 +26,7 @@ mkContractAut initial = MkContractAut (Automaton initial trans acceptingPred)
   where
     trans = residualToTransition residual
 
-residualToTransition :: ([Clause] -> Trace -> [Clause]) -> (CAState -> Trace -> Identity CAState)
+residualToTransition :: ([Clause] -> Event -> [Clause]) -> (CAState -> Event -> Identity CAState)
 residualToTransition residualFn = \(MkCAState clauses) trace -> Identity $ MkCAState $ residualFn clauses trace
 
 ------------------------
@@ -34,46 +34,50 @@ residualToTransition residualFn = \(MkCAState clauses) trace -> Identity $ MkCAS
 ------------------------
 
 -- | Residual for clause*s* / contracts (that can have no clauses)
-residual :: [Clause] -> Trace -> [Clause]
+residual :: [Clause] -> Event -> [Clause]
 residual = synchronouslyCompose residual'
 
 {- | See CA p.32 and https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/b763318a826fef320fe6773b4fe0b6b095112027/UnknownDL.hs#L75 -}
-synchronouslyCompose :: (Clause -> Trace -> Clause) -> [Clause] -> Trace -> [Clause]
+synchronouslyCompose :: (Clause -> Event -> Clause) -> [Clause] -> Event -> [Clause]
 synchronouslyCompose clauseResidual clauses trace = fmap (`clauseResidual` trace) clauses
   -- synchronous composition corresponds to conjunction over clauses
 
--- | Residual at the level of *clauses* (as opposed to contracts / sequences of clauses)
-residual' :: Clause -> Trace -> Clause
+{- | Residual at the level of *clauses* (as opposed to contracts / sequences of clauses).
+  NOTE: I depart from the paper by simplifying this to use only one event/action as opposed to a set/list of them
+-}
+residual' :: Clause -> Event -> Clause
 residual' = flip flippedResidual'
   where
-    flippedResidual' :: Trace -> Clause -> Clause
-    flippedResidual' trace = \case
+    flippedResidual' :: Event -> Clause -> Clause
+    flippedResidual' actualEvent = \case
         Top               -> Top
         Bottom            -> Bottom
-        Must event        ->
-          if trace `includesEvent` event
+        Must stateOfAffairs   ->
+          if actualEvent `matches` stateOfAffairs
           then Top
           else Bottom
         May _             -> Top
-        Shant event       ->
-          if trace `includesEvent` event
+        Shant stateOfAffairs       ->
+          if actualEvent `matches` stateOfAffairs
           then Bottom
           else Top
         If guard clause   ->
-          if trace `satisfiesGuard` guard
+          if actualEvent `satisfiesGuard` guard
           then clause
           else Top
 
 ------------------------
-  --- Trace operators
+  --- Event operators
 ------------------------
 
-satisfiesGuard :: Trace -> Guard -> Bool
-satisfiesGuard trace = \case
-  GDone event -> trace `includesEvent` event
-  GNot guard  -> not $ satisfiesGuard trace guard
+matches :: Event -> Event -> Bool
+actualEvent `matches` hypothesizedStateOfAffairs = actualEvent == hypothesizedStateOfAffairs
+
+satisfiesGuard :: Event -> Guard -> Bool
+satisfiesGuard actualEvent = \case
+  GDone stateOfAffairs -> actualEvent `matches` stateOfAffairs
+  GNot guard  -> not $ actualEvent `satisfiesGuard` guard
   GTrue       -> True
   GFalse      -> False
 
-includesEvent :: Trace -> Event -> Bool
-includesEvent trace event = event `elem` trace
+

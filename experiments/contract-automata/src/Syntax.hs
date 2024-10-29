@@ -1,7 +1,8 @@
 module Syntax where
 
-import Data.Text as T
-import Data.List.NonEmpty as NE
+import           Data.List.NonEmpty as NE
+import           Data.Text          (Text)
+-- import qualified Data.Text          as T
 
 {-
 ----------
@@ -24,7 +25,7 @@ SCL:
 -}
 
 
-{- | A Contract := one or more clauses (if more than one, then it represents the *conjunction* of those clauses). 
+{- | A Contract := one or more clauses (if more than one, then it represents the *conjunction* of those clauses).
 The sense in which I'm using 'contract' is more like Camilieri's than the CA paper (which sometimes treats 'contract' as being synonymous with 'clause').
 -}
 newtype Contract = MkContract { clauses :: NonEmpty Clause }
@@ -71,11 +72,11 @@ Note that I differ from Camilieri's SCL on this: he uses "the term action to mea
     (ii) it can be simulated with interleaving
     (iii) according to "A framework for conflict analysis of normative texts written
     in controlled natural language", it results in exponential blowup
-  
+
   Useful note re Impossible and Skip, from "A framework for conflict analysis...":
-    We omit from the CNL the two special actions 0 and 1 since they have no obvious equivalent in English. Although they have useful algebraic properties in the logic, they do not appear naturally in any real contracts. 
-    A notable exception is the construction [1∗]C which means that the clause C must be enforced at any state. 
-    For this purpose, we added the keyword `always` which can be used in front of any clause, which adds the condition [1∗] in the corresponding CL formula. 
+    We omit from the CNL the two special actions 0 and 1 since they have no obvious equivalent in English. Although they have useful algebraic properties in the logic, they do not appear naturally in any real contracts.
+    A notable exception is the construction [1∗]C which means that the clause C must be enforced at any state.
+    For this purpose, we added the keyword `always` which can be used in front of any clause, which adds the condition [1∗] in the corresponding CL formula.
     Similarly we did not include the Kleene star in our CNL, except for its use in relation to always.
 -}
 type Action = Text
@@ -84,7 +85,7 @@ data Guard = GDone Event
              -- ^ Party did Action. This corresponds to the `InfixOrPostfixActionApplication` construct in the Lam4 Langium grammar, and to Camilieri's `GDone Action`
            | GNot Guard
              -- ^ Negation of guard condition
-           | GTrue 
+           | GTrue
            | GFalse
   deriving stock (Eq, Ord, Show)
 
@@ -96,6 +97,9 @@ data Guard = GDone Event
 -- | A trace is a sequence of events
 type Trace = [Event]
 
+includesEvent :: Trace -> Event -> Bool
+includesEvent trace event = event `elem` trace
+
 {- | Event aka 'state of affairs'.
 
 "We assume that
@@ -105,7 +109,7 @@ type Trace = [Event]
 
 "We also assume two projection functions giving the action itself and the subject""
 -}
-data Event = MkEvent { getActor :: Party
+data Event = MkEvent { getActor  :: Party
                      , getAction :: ActionForNorm }
   deriving stock (Eq, Ord, Show)
 
