@@ -37,6 +37,7 @@ newtype Contract = MkContract { clauses :: NonEmpty Clause }
 -}
 data Clause = Must   Party ActionForNorm   -- ^ Obligation
             | May    Party ActionForNorm   -- ^ Permission
+            -- TODO: Think about whether to add a construct tt allows user to specify that these are the *only* options available to the actor
             | Shant  Party ActionForNorm   -- ^ Prohibition
             | If     Guard  Clause         -- ^ [β]C -- the contract C must be executed if action β is performed
             | Top                          -- ^ ⊤
@@ -58,12 +59,14 @@ type AtomicAction = Text
 
 type Guard = CompoundAction
 
-{- | β := 0 | 1 | a | β&β |β.β |β∗
+{- | β := 0 | 1 | a | !a | β&β |β.β |β∗
   I omit the concurrency operator @&@ because
     (i) truly simultaneous actions are rare in the legal / regulation context
     (ii) it can be simulated with interleaving
     (iii) according to "A framework for conflict analysis of normative texts written
     in controlled natural language", it results in exponential blowup
+  
+  TODO: Add !a
 -}
 data CompoundAction =  AtomicAction AtomicAction                  -- ^ a
                     | Sequence     CompoundAction CompoundAction
