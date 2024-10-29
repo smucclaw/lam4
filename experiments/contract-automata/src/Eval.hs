@@ -50,21 +50,21 @@ residual' = flip flippedResidual'
   where
     flippedResidual' :: Event -> Clause -> Clause
     flippedResidual' actualEvent = \case
-        Top               -> Top
-        Bottom            -> Bottom
+        Top                   -> Top
+        Bottom                -> Bottom
         Must stateOfAffairs   ->
           if actualEvent `matches` stateOfAffairs
           then Top
           else Bottom
-        May _             -> Top
-        Shant stateOfAffairs       ->
+        May _                 -> Top
+        Shant stateOfAffairs  ->
           if actualEvent `matches` stateOfAffairs
           then Bottom
           else Top
-        If guard clause   ->
+        If guard clause       ->
           if actualEvent `satisfiesGuard` guard
           then clause
-          else Top
+          else Top -- TODO: Not obvious what the semantics of the else shld be -- could instead return the (If guard clause) again, as I think Camilieri does!
 
 ------------------------
   --- Event operators
