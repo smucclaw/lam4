@@ -30,6 +30,9 @@ newtype Contract = MkContract { getClauses :: NonEmpty Clause }
 
 {- | CL_rest.
         C := O⊥(a) | P(a) | F⊥(a) | C∧C | [β]C | ⊤ | ⊥
+
+    CL_rest does not have ⊕ (exclusive or) between deontic operators.
+
      Conjunction has been factored out to Contract -- a conjunction of clauses should be represented as a sequence of them (wrapped in a Contract).
 -}
 data Clause = Must   Party ActionForNorm   -- ^ Obligation
@@ -62,10 +65,10 @@ type Guard = CompoundAction
     (iii) according to "A framework for conflict analysis of normative texts written
     in controlled natural language", it results in exponential blowup
 -}
-data CompoundAction = Impossible                             -- ^ the impossible action, aka 0
-                    | Skip                                   -- ^ skip, aka 1: matches any action
-                    | AtomicAction AtomicAction              -- ^ a
+data CompoundAction =  AtomicAction AtomicAction                  -- ^ a
                     | Sequence     CompoundAction CompoundAction
+                    -- | Impossible                                  -- ^ the impossible action, aka 0
+                    -- | Skip                                        -- ^ skip, aka 1: matches any action
   deriving (Eq, Ord, Show)
 
 
