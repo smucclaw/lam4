@@ -71,7 +71,7 @@ residual' = flip flippedResidual'
 satisfiesGuard :: Trace -> Guard -> Bool
 satisfiesGuard trace = \case
   GDone event -> trace `includesEvent` event
-  GNot guard  -> satisfiesGuard trace guard
+  GNot guard  -> not $ satisfiesGuard trace guard
   GTrue       -> True
   GFalse      -> False
 
