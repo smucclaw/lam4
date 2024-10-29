@@ -1,62 +1,51 @@
-{-# LANGUAGE PatternSynonyms #-}
-
 module ContractAutomaton where
 
-import           Data.Map               (Map)
--- import qualified Data.Map  as Map
 import           Automata
-import           Control.Monad.Identity (Identity (..))
+import           Syntax
+-- import           Name
+
 import           Data.Coerce            (coerce)
 import qualified Data.List.NonEmpty     as NE
-import           Data.Set               (Set)
-import qualified Data.Set               as Set
-import           Name
-import           Syntax
+-- import           Control.Monad.Identity (Identity (..))
+-- import           Data.Set               (Set)
+-- import qualified Data.Set               as Set
+-- import           Data.Map               (Map)
+-- import qualified Data.Map  as Map
+
+
 --------------------------
   -- Contract Automaton
 --------------------------
 
-{- | A contract automaton S is
+{- TODO
+For a contract with action alphabet Σ, we will introduce its deontic alphabet Σd which consists of Oa, Pa and Fa for each action a ∈ Σ, that will be used to represent which normative behaviour is enacted at a particular moment.
+-}
+
+-- TODO: This prob has to be a NFA if we want to remove the & concurrency operator and use interleaving instead?
+{- | "A contract automaton S is
     a total and deterministic multi-action automaton with
     S = ⟨Σ , Q, q0, ->⟩,
     together with a total function contract ∈ Q -> 2^Clause assigning a set of clauses to each state.
 
-    Some of the fields here, e.g. @contract@, might be better placed 
-    in an @Eval@ monad; just doing it this way to remain closer to the paper.
+    "The set of states Q is given by all the formulae R reachable from [the initial formula / state] ψ"
 -}
-data ContractAutomaton =
-  MkContractAutomaton {
-      baseAut  :: DFA StateName Trace
-      -- TODO: Actually this prob has to be a NFA if we want to remove the & concurrency operator and use interleaving instead
-    , contract :: Map StateName StateInfo 
-      -- ^ can also just think of a state as being the product of a StateName and StateInfo (i.e., the clauses active in that state)
-      -- TODO: Think more about whether to just make Contract a possibly empty list and then contract :: Map StateName Contract
-  }
-
--- | Convenience pattern synonym
-pattern ContractAutomaton ::
-        (StateName -> Trace -> Identity StateName) -- transition function
-        -> StateName                               -- initial state
-        -> (StateName -> Bool)                     -- accepting states predicate
-        -> Map StateName StateInfo                 -- contract
-        -> ContractAutomaton
-pattern ContractAutomaton trans initial acc contract =
-    MkContractAutomaton (Automaton initial trans acc) contract
+newtype ContractAutomaton = MkContractAut { aut :: DFA CAState Trace }
 
 ------------------------------------
-  -- Contract Automaton State Info
+  -- Contract Automaton State
 ------------------------------------
 
--- | The sorts of info associated with a state of a contract automaton
-newtype StateInfo = MkStateInfo { activeClauses :: Set Clause }
+-- | The state of a contract automaton. It is possible for a CA state to contain 0 clauses. 
+newtype CAState = MkCAState { clauses :: [Clause] }
   deriving newtype (Eq, Ord)
   deriving stock Show
 
-contractToStateInfo :: Contract -> StateInfo
-contractToStateInfo = coerce . Set.fromList . NE.toList . coerce
+contractToCAState :: Contract -> CAState
+contractToCAState (MkContract clauses) = coerce $ NE.toList clauses
 
 ----------------
   -- StateName
 ----------------
 
-type StateName = Name
+-- TODO: Defer support for explicitly naming states to a future draft
+-- type StateName = Name
