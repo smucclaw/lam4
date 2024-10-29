@@ -82,7 +82,7 @@ Note that I differ from Camilieri's SCL on this: he uses "the term action to mea
 type Action = Text
 
 data Guard = GDone Event
-             -- ^ Party did Action. This corresponds to the `InfixOrPostfixActionApplication` construct in the Lam4 Langium grammar, and to Camilieri's `GDone Action`
+             -- ^ Party did Action. This corresponds to the `InfixOrPostfixActionApplication` construct in the Lam4 Langium grammar, and is kinda similar to Camilieri's `GDone Action`
            | GNot Guard
              -- ^ Negation of guard condition
            | GTrue
