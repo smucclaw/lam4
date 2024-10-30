@@ -67,7 +67,8 @@ library
         optics,
         mtl,
         transformers-base,
-        containers
+        containers,
+        control-bool
 
 
     -- Directories containing source files.

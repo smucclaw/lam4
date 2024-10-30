@@ -2,12 +2,12 @@
 
 module Examples where
 
-import Automata
-import ContractAutomaton
-import Syntax
-import Eval
-import Data.List.NonEmpty as NE
-import Control.Monad.Identity (Identity(..))
+import           Automata
+import           ContractAutomaton
+import           Control.Monad.Identity (Identity (..))
+import           Data.List.NonEmpty     as NE
+import           Eval
+import           Syntax
 
 actionA :: Action
 actionA = "a"
@@ -69,6 +69,10 @@ residualOnPage31ExampleTwice = residualWithoutSimplify residualOnPage31ExampleOn
 λ> residualOnPage31ExampleTwice
 [Top,
  Shant (MkEvent {getActor = MkParty {getName = "1"}, getAction = "a"})]
+
+λ> recognize autExampleFromPage31.aut tracePage31Example
+True
+
 -}
 
 -------------------------
@@ -162,4 +166,8 @@ The example is setup so that we get the 'conflicting clauses':
         (May (MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"}))
     ]
   })
+
+λ> recognize autBankExample.aut bankExampleTrace
+False
+(because of the conflicting clauses)
 -}

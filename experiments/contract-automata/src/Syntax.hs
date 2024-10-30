@@ -3,6 +3,9 @@ module Syntax where
 import           Data.List.NonEmpty as NE
 import           Data.Text          (Text)
 -- import qualified Data.Text          as T
+import           Data.Containers.ListUtils (nubOrd)
+import           Data.Maybe                (mapMaybe)
+
 
 {-
 ----------
@@ -54,6 +57,19 @@ data Clause = Must   Event   -- ^ Obligation
             | Top                          -- ^ ⊤
             | Bottom                       -- ^ ⊥
   deriving (Eq, Ord, Show)
+
+getEventFromClause :: Clause -> Maybe Event
+getEventFromClause = \case
+  Top -> Nothing
+  Bottom -> Nothing
+  Must event -> Just event
+  May event -> Just event
+  Shant event -> Just event
+  If (GDone event) _ -> Just event
+  If _ _ -> Nothing
+  
+eventsFromClauses :: [Clause] -> [Event]
+eventsFromClauses = nubOrd . mapMaybe getEventFromClause
 
 -----------------------
 ---  Actions

@@ -6,7 +6,8 @@ import           Automata
 import           ContractAutomaton
 import           Syntax
 -- import Data.Coerce (coerce)
-import           Control.Monad.Identity (Identity (..))
+import           Control.Bool
+import           Control.Monad.Identity    (Identity (..))
 
 {----------------------
   Resources / See also
@@ -29,6 +30,29 @@ mkContractAut initial residualFunc = MkContractAut (Automaton initial trans acce
 
 residualToTransition :: ([Clause] -> Event -> [Clause]) -> (CAState -> Event -> Identity CAState)
 residualToTransition residualFn = \(MkCAState clauses) trace -> Identity $ MkCAState $ residualFn clauses trace
+
+----------------------------
+  --- Accepting predicate
+----------------------------
+
+acceptingPred :: CAState -> Bool
+acceptingPred =  noConflictingClauses <&&> clausesAreTopAfterSimplify
+
+noConflictingClauses :: CAState -> Bool
+noConflictingClauses (MkCAState clauses) = null $ findEventsThatAppearInConflictingClauses clauses
+  where
+    findEventsThatAppearInConflictingClauses clauzes = [event | event <- eventsFromClauses clauzes,
+                                                          May event `elem` clauses,
+                                                          Shant event `elem` clauses] <>
+                                                       [event | event <- eventsFromClauses clauzes,
+                                                          Must event `elem` clauses,
+                                                          Shant event `elem` clauses]
+                                                        -- no need to worry about other kinds of conflicts,
+                                                        -- because omissions aren't currently allowed as actions
+
+
+clausesAreTopAfterSimplify :: CAState -> Bool
+clausesAreTopAfterSimplify (MkCAState clauses) = all ((== Top) . simplify) clauses
 
 ------------------------
   --- Residual

@@ -1,4 +1,4 @@
-module ContractAutomaton (ContractAutomaton(..), acceptingPred, CAState(..), contractToCAState) where
+module ContractAutomaton (ContractAutomaton(..), CAState(..), contractToCAState) where
 
 import           Automata
 import           Syntax
@@ -26,9 +26,6 @@ import qualified Data.List.NonEmpty     as NE
 -}
 newtype ContractAutomaton = MkContractAut { aut :: DFA CAState Event }
 
-acceptingPred :: CAState -> Bool
-acceptingPred (MkCAState clauses) = all (== Top) clauses
-
 {- TODO
 For a contract with action alphabet Σ, we will introduce its deontic alphabet Σd which consists of Oa, Pa and Fa for each action a ∈ Σ, that will be used to represent which normative behaviour is enacted at a particular moment.
 -}
@@ -37,9 +34,9 @@ For a contract with action alphabet Σ, we will introduce its deontic alphabet �
   -- Contract Automaton State
 ------------------------------------
 
--- | The state of a contract automaton. It is possible for a CA state to contain 0 clauses. 
+-- | The state of a contract automaton. It is possible for a CA state to contain 0 clauses.
 newtype CAState = MkCAState { clauses :: [Clause] }
-  deriving newtype (Eq, Ord)
+  deriving newtype (Eq, Ord, Finite)
   deriving stock Show
 
 contractToCAState :: Contract -> CAState
