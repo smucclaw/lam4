@@ -21,10 +21,11 @@ SCL ("SCL: A domain-specific language for normative texts with timing constraint
 -}
 
 -- | Smart constructor for making a contract automaton. Uses the `residual` function defined in Eval.hs
-mkContractAut :: CAState -> ContractAutomaton
-mkContractAut initial = MkContractAut (Automaton initial trans acceptingPred)
+-- mkContractAut :: CAState -> ContractAutomaton
+mkContractAut :: CAState -> ([Clause] -> Event -> [Clause]) -> ContractAutomaton
+mkContractAut initial residualFunc = MkContractAut (Automaton initial trans acceptingPred)
   where
-    trans = residualToTransition residual
+    trans = residualToTransition residualFunc
 
 residualToTransition :: ([Clause] -> Event -> [Clause]) -> (CAState -> Event -> Identity CAState)
 residualToTransition residualFn = \(MkCAState clauses) trace -> Identity $ MkCAState $ residualFn clauses trace
@@ -34,12 +35,15 @@ residualToTransition residualFn = \(MkCAState clauses) trace -> Identity $ MkCAS
 ------------------------
 
 -- | Residual for clause*s* / contracts (that can have no clauses)
-residual :: [Clause] -> Event -> [Clause]
-residual = synchronouslyCompose residual'
+residualWithoutSimplify :: [Clause] -> Event -> [Clause]
+residualWithoutSimplify = synchronouslyCompose residual'
+
+residualWithSimplify :: [Clause] -> Event -> [Clause]
+residualWithSimplify = \clauses event -> simplify <$> synchronouslyCompose residual' clauses event
 
 {- | See CA p.32 and https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/b763318a826fef320fe6773b4fe0b6b095112027/UnknownDL.hs#L75 -}
 synchronouslyCompose :: (Clause -> Event -> Clause) -> [Clause] -> Event -> [Clause]
-synchronouslyCompose clauseResidual clauses trace = fmap (`clauseResidual` trace) clauses
+synchronouslyCompose clauseResidual = \clauses event -> fmap (`clauseResidual` event) clauses
   -- synchronous composition corresponds to conjunction over clauses
 
 {- | Residual at the level of *clauses* (as opposed to contracts / sequences of clauses).
@@ -56,15 +60,22 @@ residual' = flip flippedResidual'
           if actualEvent `matches` stateOfAffairs
           then Top
           else Bottom
-        May _                 -> Top
+        mc@(May _)            -> mc
         Shant stateOfAffairs  ->
           if actualEvent `matches` stateOfAffairs
           then Bottom
           else Top
-        If guard clause       ->
+        cif@(If guard clause)  ->
           if actualEvent `satisfiesGuard` guard
           then clause
-          else Top -- TODO: Not obvious what the semantics of the else shld be -- could instead return the (If guard clause) again, as I think Camilieri does!
+          else cif -- I think the paper would just return Top, but if you need that behavior, can just use residualWithSimplify
+
+-- | Seems natural to compose this with residual' for some (but not all) usecases
+simplify :: Clause -> Clause
+simplify = \case
+  If _ _      -> Top
+  May _       -> Top
+  clause      -> clause
 
 ------------------------
   --- Event operators
@@ -79,5 +90,3 @@ satisfiesGuard actualEvent = \case
   GNot guard  -> not $ actualEvent `satisfiesGuard` guard
   GTrue       -> True
   GFalse      -> False
-
-

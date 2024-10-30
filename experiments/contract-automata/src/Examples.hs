@@ -22,9 +22,10 @@ party2 :: Party
 party2 = MkParty "2"
 
 
--------------------------
+--------------------------
   -- example from p. 31
 --------------------------
+-- Note: The way I handle If Guard Clause might be different from the paper
 
 eventParty1DoesA :: Event
 eventParty1DoesA = MkEvent party1 actionA
@@ -33,7 +34,7 @@ eventParty2DoesB :: Event
 eventParty2DoesB = MkEvent party2 actionB
 
 autExampleFromPage31 :: ContractAutomaton
-autExampleFromPage31 = mkContractAut (contractToCAState contractPage31Example)
+autExampleFromPage31 = mkContractAut (contractToCAState contractPage31Example) residualWithSimplify
 
 -- | ψ := [a]O(b) ∧ [b]F(a), from p. 31
 contractPage31Example :: Contract
@@ -54,17 +55,111 @@ runPage31AutOnGivenTrace = runPage31AutOnTrace tracePage31Example
 -- Stepping through the example, event by event
 
 residualOnPage31ExampleOnce :: [Clause]
-residualOnPage31ExampleOnce = residual (contractToClauses contractPage31Example) eventParty1DoesA
+residualOnPage31ExampleOnce = residualWithoutSimplify (contractToClauses contractPage31Example) eventParty1DoesA
 
 residualOnPage31ExampleTwice :: [Clause]
-residualOnPage31ExampleTwice = residual residualOnPage31ExampleOnce eventParty2DoesB
+residualOnPage31ExampleTwice = residualWithoutSimplify residualOnPage31ExampleOnce eventParty2DoesB
 
 {-
 λ> residualOnPage31ExampleOnce
-[Must (MkEvent {getActor = MkParty {getName = "2"}, getAction = "b"}),Top]
-λ> residualOnPage31ExampleTwice
-[Top,Top]
+[Must (MkEvent {getActor = MkParty {getName = "2"}, getAction = "b"}),
+ If (GDone (MkEvent {getActor = MkParty {getName = "2"}, getAction = "b"}))
+    (Shant (MkEvent {getActor = MkParty {getName = "1"}, getAction = "a"}))]
 
-λ> runPage31AutOnGivenTrace
-Identity (MkCAState {clauses = [Top,Top]})
+λ> residualOnPage31ExampleTwice
+[Top,
+ Shant (MkEvent {getActor = MkParty {getName = "1"}, getAction = "a"})]
+-}
+
+-------------------------
+  -- bank example (p.15)
+-------------------------
+
+{-
+consider John signing a contract with his bank.
+The contract says that
+(i) whenever he is logged into his Internet banking account,
+he is to be permitted to make money transfers; and
+(ii) if a malicious attempt to log in to his account is identified,
+logging in and making transfers will be prohibited until the situation is cleared
+-}
+
+actLogin :: Action
+actLogin = "login"
+
+actAttemptHack :: Action
+actAttemptHack = "attemptHack"
+
+actResolveSituation :: Action
+actResolveSituation = "resolveSituation"
+
+actMakeTransfers :: Action
+actMakeTransfers = "makeMoneyTransfers"
+
+partyJohn :: Party
+partyJohn = MkParty "John"
+
+partyHacker :: Party
+partyHacker = MkParty "Hacker"
+
+partyBank :: Party
+partyBank = MkParty "Bank"
+
+eventJohnLogin :: Event
+eventJohnLogin = MkEvent partyJohn actLogin
+
+eventHackAttempt :: Event
+eventHackAttempt = MkEvent partyHacker actAttemptHack
+
+
+johnCanLoginAgainIfSituationResolved :: Clause
+johnCanLoginAgainIfSituationResolved = If (GDone (MkEvent partyBank actResolveSituation))
+                                        (May (MkEvent partyJohn actLogin))
+
+johnCanTransferAgainIfSituationResolved :: Clause
+johnCanTransferAgainIfSituationResolved = If (GDone (MkEvent partyBank actResolveSituation))
+                                        (May (MkEvent partyJohn actMakeTransfers))
+
+-- | This is not 100% faithful to the original
+contractBank :: Contract
+contractBank = MkContract $ NE.fromList [
+  If (GDone eventJohnLogin) (May (MkEvent partyJohn actMakeTransfers)),
+  -- once a hacker attempt is detected, john cannot login or make transfers...
+  If (GDone eventHackAttempt) (Shant (MkEvent partyJohn actLogin)),
+  If (GDone eventHackAttempt) (Shant (MkEvent partyJohn actMakeTransfers)),
+  -- ... unless the situation is resolved
+  If (GDone eventHackAttempt) johnCanLoginAgainIfSituationResolved,
+  If (GDone eventHackAttempt) johnCanTransferAgainIfSituationResolved
+  ]
+
+bankExampleTrace :: [Event]
+bankExampleTrace = [eventJohnLogin, eventHackAttempt]
+
+autBankExample :: ContractAutomaton
+autBankExample = mkContractAut (contractToCAState contractBank) residualWithoutSimplify
+
+runBankExampleOnTrace :: Trace -> Identity CAState
+runBankExampleOnTrace = run autBankExample.aut
+
+runBankExampleOnGivenTrace :: Identity CAState
+runBankExampleOnGivenTrace = runBankExampleOnTrace bankExampleTrace
+
+residualBankExample :: Event -> [Clause]
+residualBankExample = residualWithoutSimplify (contractToClauses contractBank)
+
+{-
+The example is setup so that we get the 'conflicting clauses':
+
+  λ> runBankExampleOnGivenTrace
+  Identity (MkCAState {
+    clauses = [
+      May (MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"}),
+      Shant (MkEvent {getActor = MkParty {getName = "John"}, getAction = "login"}),
+      Shant (MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"}),
+      If (GDone (MkEvent {getActor = MkParty {getName = "Bank"}, getAction = "resolveSituation"}))
+        (May (MkEvent {getActor = MkParty {getName = "John"}, getAction = "login"})),
+      If (GDone (MkEvent {getActor = MkParty {getName = "Bank"}, getAction = "resolveSituation"}))
+        (May (MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"}))
+    ]
+  })
 -}
