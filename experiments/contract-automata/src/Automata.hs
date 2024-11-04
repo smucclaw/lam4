@@ -38,11 +38,3 @@ type DFA = Automaton Identity
 
 instance Context Identity where
   possible pred (Identity s) = pred s
-
-
--- -- | Non-deterministic Finite Automaton.
--- type NFA = Automaton []
-
--- instance Context [] where
---  possible :: Finite s => (s -> Bool) -> [s] -> Bool
---  possible = any
