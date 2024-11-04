@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE  DuplicateRecordFields #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE QuasiQuotes           #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
 module Main where
 
@@ -14,6 +14,8 @@ import           Data.ByteString               as BS hiding (concat, concatMap,
                                                       map, null, putStr)
 import qualified Data.Text                     as T
 
+import           Configuration.Dotenv (loadFile, defaultConfig, onMissingFile)
+
 import           Cradle
 import qualified Lam4.Expr.ConcreteSyntax      as CST (Decl)
 import           Lam4.Expr.ExtractProgramInfo
@@ -21,12 +23,17 @@ import           Lam4.Expr.Parser              (parseProgramByteStr)
 import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
-import qualified Lam4.Render.Render            as Render
-import Lam4.Render.Render (NLGConfig(..))
 import           Lam4.Parser.Monad             (evalParserFromScratch)
+import           Lam4.Render.Render            (NLGConfig (..))
+import qualified Lam4.Render.Render            as Render
 import           Options.Applicative           as Options
 import           System.Directory
 import           System.FilePath               ((</>))
+import           System.Environment.Blank      (getEnv)
+
+------------------------------
+  -- The key config types
+-------------------------------
 
 data FrontendConfig =
   MkFrontendConfig { frontendDir :: FilePath
@@ -34,12 +41,22 @@ data FrontendConfig =
                    , args        :: [String]
   }
 
+data OutputConfig =
+  MkOutputConfig { simalaOutputConfig :: SimalaOutputConfig
+                 , nlgOutputConfig    :: NLGConfig  }
+
 data SimalaOutputConfig =
   MkSimalaOutputConfig {
     outputDir           :: FilePath
   , programFilename     :: FilePath
   , programInfoFilename :: FilePath
 }
+
+----------------------------------
+  -- Constants / default values
+----------------------------------
+
+-- TODO: Most of the following should be put in, and read from, the .env file
 
 lam4FrontendDir :: FilePath
 lam4FrontendDir = "lam4-frontend"
@@ -49,21 +66,23 @@ frontendConfig = MkFrontendConfig { runner      = "node"
                                   , frontendDir = lam4FrontendDir
                                   , args        = [lam4FrontendDir </> "bin" </> "cli", "toMinimalAst"] }
 
--- TODO: Most of the following should be put in, and read from, the .env file
-simalaOutputConfig :: SimalaOutputConfig
-simalaOutputConfig = MkSimalaOutputConfig {
+defaultSimalaOutputConfig :: SimalaOutputConfig
+defaultSimalaOutputConfig = MkSimalaOutputConfig {
     outputDir = "generated" </> "simala"
   , programFilename = "output.simala"
   , programInfoFilename = "program_info.json" }
 
--- TODO: read outputDir in from a .env file
-nlgConfig :: NLGConfig
-nlgConfig = MkNLGConfig {
+defaultNlgConfig :: NLGConfig
+defaultNlgConfig = MkNLGConfig {
     outputDir = "generated" </> "nlg_en"
-  , resultFilename = "output.txt"
-  , abstractSyntaxFilename = "Lam4.pgf"
+  , outputFilename = "nlg_en_output.json"
+  , pgfFilename = "Lam4.pgf"
   , concreteSyntaxName = "Lam4Eng"
 }
+
+--------------------
+  -- CLI Options
+--------------------
 
 -- TODO: Think about exposing a tracing option?
 data Options =
@@ -95,6 +114,32 @@ optionsConfig =
     <> header "Lam4 (an experimental variant of the L4 legal DSL)"
     )
 
+-- | Load output configs from environment variables if .env present; use default configs if not
+loadConfigsFromEnv :: IO OutputConfig
+loadConfigsFromEnv = do
+  -- Try to load .env file, warn if not found
+  _ <- onMissingFile
+    (loadFile defaultConfig)
+    (hPutStrLn stderr "Warning: .env file not found, using default configuration")
+
+  mSimalaOutDir   <- getEnv "COMPILED_SIMALA_OUTPUT_DIR"
+  mNlgEnOutDir    <- getEnv "NLG_EN_OUTPUT_DIR"
+  mGfPgfFilename  <- getEnv "GF_PORTABLE_GRAMMAR_FORMAT_FILENAME"
+  mNlgOutFilename <- getEnv "NLG_EN_OUTPUT_FILENAME"
+
+  let simalaOutConfig = MkSimalaOutputConfig {
+                                               outputDir = fromMaybe defaultSimalaOutputConfig.outputDir mSimalaOutDir
+                                             , programFilename = defaultSimalaOutputConfig.programFilename          -- TODO: move to .env in the future (and update the lsp client accordingly)
+                                             , programInfoFilename = defaultSimalaOutputConfig.programInfoFilename -- TODO: move to .env in the future (and update the lsp client accordingly)
+                                             }
+      nlgOutConfig = MkNLGConfig { outputDir = fromMaybe defaultNlgConfig.outputDir mNlgEnOutDir
+                                 , outputFilename = fromMaybe defaultNlgConfig.outputFilename mNlgOutFilename
+                                 , pgfFilename = fromMaybe defaultNlgConfig.pgfFilename mGfPgfFilename
+                                 , concreteSyntaxName = defaultNlgConfig.concreteSyntaxName -- TODO: Figure out a better way to handle this
+                                 }
+  pure $ MkOutputConfig { simalaOutputConfig = simalaOutConfig
+                        , nlgOutputConfig = nlgOutConfig }
+
 main :: IO ()
 main = do
   options <- Options.execParser optionsConfig
@@ -108,18 +153,23 @@ main = do
           simalaProgram  = ToSimala.compile conEvalProgram
           programInfo    = extractProgramInfo conEvalProgram
 
+      -- Load output configs
+      outConfig <- loadConfigsFromEnv
+      let simalaOutConfig = outConfig.simalaOutputConfig
+          nlgOutConfig    = outConfig.nlgOutputConfig
+
       -- Create output directory and write files first
-      createDirectoryIfMissing True simalaOutputConfig.outputDir
+      createDirectoryIfMissing True outConfig.simalaOutputConfig.outputDir
       -- save simala program and program info to disk
-      writeFileUtf8 (simalaOutputConfig.outputDir </> simalaOutputConfig.programFilename) (ToSimala.render simalaProgram)
-      writeFileLBS (simalaOutputConfig.outputDir </> simalaOutputConfig.programInfoFilename) (encodePretty programInfo)
+      writeFileUtf8 (simalaOutConfig.outputDir </> simalaOutConfig.programFilename) (ToSimala.render simalaProgram)
+      writeFileLBS (simalaOutConfig.outputDir </> simalaOutConfig.programInfoFilename) (encodePretty programInfo)
 
       -- NLG (put this behind an option later)
       -- TODO: Make a ToNLG monad
-      nlgEnv <- Render.makeNLGEnv nlgConfig
-      let nlRendering = Render.renderCstProgramToNL nlgEnv cstProgram 
-      createDirectoryIfMissing True nlgConfig.outputDir
-      writeFileUtf8 (nlgConfig.outputDir </> nlgConfig.resultFilename) nlRendering
+      nlgEnv <- Render.makeNLGEnv nlgOutConfig
+      let nlRendering = Render.renderCstProgramToNL nlgEnv cstProgram
+      createDirectoryIfMissing True nlgOutConfig.outputDir
+      writeFileUtf8 (nlgOutConfig.outputDir </> nlgOutConfig.outputFilename) nlRendering
       -- TODO: Save a json version with the nlg output as a member
 
       -- Perform evaluation (if needed)
