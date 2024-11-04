@@ -35,8 +35,8 @@ newtype Contract = MkContract { clauses :: NonEmpty Clause }
   deriving newtype (Eq, Ord)
   deriving stock Show
 
-contractToClauses :: Contract -> [Clause]
-contractToClauses (MkContract clauses) = NE.toList clauses
+getClauses :: Contract -> [Clause]
+getClauses (MkContract clauses) = NE.toList clauses
 
 --------------
 --  Clause
@@ -47,7 +47,9 @@ contractToClauses (MkContract clauses) = NE.toList clauses
 
     CL_rest does not have ⊕ (exclusive or) between deontic operators.
 
-     Conjunction has been factored out to Contract -- a conjunction of clauses should be represented as a sequence of them (wrapped in a Contract).
+     Conjunction has been factored out to Contract -- a top-level conjunction of clauses should be represented as a sequence of them (wrapped in a Contract).
+     Non-top-level conjunctions of clauses can be encoded 
+     via other means --- I'm trying to keep the implementation simple.
 -}
 data Clause = Must   Event   -- ^ Obligation
             | May    Event   -- ^ Permission

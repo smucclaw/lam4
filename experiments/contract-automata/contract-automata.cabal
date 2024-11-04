@@ -52,7 +52,7 @@ library
         ContractAutomaton,
         Syntax,
         Eval,
-        Name
+        Examples
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -68,7 +68,8 @@ library
         mtl,
         transformers-base,
         containers,
-        control-bool
+        control-bool,
+        pretty-simple
 
 
     -- Directories containing source files.

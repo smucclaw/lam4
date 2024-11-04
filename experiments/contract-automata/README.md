@@ -8,6 +8,7 @@ I did this mainly for my own understanding.
 
 * no interleaving -- just synchronous composition right now
 * no sequence operator (that seems to be sugar anyway)
+* Didn't bother explicitly supporting non-top-level conjunctions, to keep the implementation simple (these can be simulated via other, less ergonomic ways)
 * Simplified event model - single events rather than sets of concurrent events
 * My handling of conditional (If) clauses might differ from the paper's
 
@@ -17,6 +18,14 @@ See [`Examples.hs`](./src/Examples.hs) for some examples, e.g.
 
 1. A basic contract interaction example (from p.31 of the paper)
 2. The bank example from the paper that gets you 'conflicting clauses'
+
+In particular, you can try running things like the following in your terminal:
+
+```bash
+cabal repl --repl-options "-interactive-print=Text.Pretty.Simple.pPrint"
+:l Examples
+runPage31AutOnGivenTrace
+```
 
 ## To do / to think about
 
