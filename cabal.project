@@ -3,6 +3,7 @@ with-compiler: ghc-9.6.6
 packages:
     ./lam4-cli/
     ./lam4-backend/
+    ./experiments/contract-automata
 
 source-repository-package
   type: git
