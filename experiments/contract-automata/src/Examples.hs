@@ -9,6 +9,11 @@ import           Data.List.NonEmpty     as NE
 import           Eval
 import           Syntax
 
+--------------------------
+  -- example from p. 31
+--------------------------
+-- Note: The way I handle If Guard Clause might be different from the paper
+
 actionA :: Action
 actionA = "a"
 
@@ -20,12 +25,6 @@ party1 = MkParty "1"
 
 party2 :: Party
 party2 = MkParty "2"
-
-
---------------------------
-  -- example from p. 31
---------------------------
--- Note: The way I handle If Guard Clause might be different from the paper
 
 eventParty1DoesA :: Event
 eventParty1DoesA = MkEvent party1 actionA
@@ -55,7 +54,7 @@ runPage31AutOnGivenTrace = runPage31AutOnTrace tracePage31Example
 -- Stepping through the example, event by event
 
 residualOnPage31ExampleOnce :: [Clause]
-residualOnPage31ExampleOnce = residualWithoutSimplify (contractToClauses contractPage31Example) eventParty1DoesA
+residualOnPage31ExampleOnce = residualWithoutSimplify (getClauses contractPage31Example) eventParty1DoesA
 
 residualOnPage31ExampleTwice :: [Clause]
 residualOnPage31ExampleTwice = residualWithoutSimplify residualOnPage31ExampleOnce eventParty2DoesB
@@ -149,7 +148,7 @@ runBankExampleOnGivenTrace :: Identity CAState
 runBankExampleOnGivenTrace = runBankExampleOnTrace bankExampleTrace
 
 residualBankExample :: Event -> [Clause]
-residualBankExample = residualWithoutSimplify (contractToClauses contractBank)
+residualBankExample = residualWithoutSimplify (getClauses contractBank)
 
 {-
 The example is setup so that we get the 'conflicting clauses':
