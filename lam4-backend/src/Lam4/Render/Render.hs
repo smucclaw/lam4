@@ -23,11 +23,11 @@ type GFLinearizer = PGF.Tree -> T.Text
 
 -- | Config that stores info about paths and various other NLG configuration things
 data NLGConfig = MkNLGConfig {
-      outputDir              :: FilePath
-    , resultFilename         :: FilePath
-    , abstractSyntaxFilename :: FilePath
-    -- ^ e.g. "Lam4.pgf"
-    , concreteSyntaxName     :: String
+      outputDir          :: FilePath
+    , outputFilename     :: FilePath
+    , pgfFilename        :: FilePath
+    -- ^ GF Portable Grammar Format filename. E.g. "Lam4.pgf"
+    , concreteSyntaxName :: String
     -- ^ e.g. "Lam4Eng"
 }
 
@@ -46,11 +46,11 @@ makeNLGEnv config = do
   -- TODO: In the future, the GF-specific paths will be loaded from cmd line args, though we could have 'default' filenames or smtg
 
   -- Load grammar file
-  grammarFile <- getDataFileName $ gfPath config.abstractSyntaxFilename
+  grammarFile <- getDataFileName $ gfPath config.pgfFilename
   gr <- PGF.readPGF grammarFile
 
   -- Set up PGF Language and GF Linearizer
-  let lang       = initializeGFLang config.concreteSyntaxName gr 
+  let lang       = initializeGFLang config.concreteSyntaxName gr
       linearizer = makeGFLinearizer gr lang
   pure $ NLGEnv linearizer
 
@@ -201,5 +201,3 @@ parseRow rtd = GMkRowDecl (parseMetadata rtd.metadata) (parseName rtd.name)
       case mdata.description of
         Just md -> GMkMetadata $ GString $ T.unpack md
         Nothing -> GNoMetadata
-
-
