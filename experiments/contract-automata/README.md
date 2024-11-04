@@ -22,7 +22,7 @@ See [`Examples.hs`](./src/Examples.hs) for some examples, e.g.
 In particular, you can try running things like the following in your terminal:
 
 ```bash
-cabal repl
+cabal repl --repl-options "-interactive-print=Text.Pretty.Simple.pPrint"
 :l Examples
 runPage31AutOnGivenTrace
 ```

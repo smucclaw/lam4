@@ -68,7 +68,8 @@ library
         mtl,
         transformers-base,
         containers,
-        control-bool
+        control-bool,
+        pretty-simple
 
 
     -- Directories containing source files.
