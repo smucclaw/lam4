@@ -348,7 +348,7 @@ am porting what I currently have for Join to Project
 InfixOrPostfixPredicateApplication infers Expr:
     InfixOrPostfixActionApplication
     (
-        {infer InfixPredicateApplication.left = current}
+        {infer InfixOrPostfixPredicateApplication.left = current}
         predicate=[PredicateDecl:IDOrBackTickedID]
         right=InfixOrPostfixActionApplication?
     )*
@@ -357,9 +357,9 @@ InfixOrPostfixPredicateApplication infers Expr:
 InfixOrPostfixActionApplication infers Expr:
     Cons
     (
-        {infer InfixActionApplication.left = current}
+        {infer InfixOrPostfixActionApplication.left = current}
         ("DOES" | "DO")
-        // ("DOES" | "DO") is a short term hack to avoid clashing with InfixPredicateApplication.
+        // ("DOES" | "DO") is a short term hack to avoid clashing with InfixOrPostfixPredicateApplication.
         // TODO: Might want to just overload the surface syntax for action/predicate application and use type annotations / inference to distinguish them?
         // Also, may want to add an infix fun app and then use Langium actions to desugar this to an infix fun app?
         action=[ActionDecl:IDOrBackTickedID]
