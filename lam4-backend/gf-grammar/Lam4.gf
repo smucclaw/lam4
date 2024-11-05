@@ -14,6 +14,10 @@ abstract Lam4 = {
     Name ;
     [Name]{0} ;
 
+    -- (condition, value)
+    -- in order to flatten nested if-then-elses into if-elif-elif-…-else
+    IfThen ;
+    [IfThen]{1} ;
   fun
     -- Placeholder, or skip some constructs?
     EmptyS : S ;
@@ -22,6 +26,7 @@ abstract Lam4 = {
     EvalWhetherS,
     ExprS : Expr -> S ;
     AssignS : Name -> Expr -> S ;
+    AtomicConcept : Name -> S ;
 
     -- Metadata
     MkMetadata : String -> Metadata ;
@@ -38,17 +43,71 @@ abstract Lam4 = {
     Lit,
     QuoteVar,
     Var : Name -> Expr ;
-  -- | Cons       Expr Expr                           -- list cons
-  -- | List       [Expr]                              -- construct a list
-  -- | ListExpr   ListOp [Expr]
+
+    -- the following correspond to List and ListExpr in Lam4 AST,
+    -- named differently because of a bug in GF,
+    -- see https://github.com/GrammaticalFramework/gf-core/issues/163
+    ConjExpr : [Expr] -> Expr ; -- construct a list
+    -- ApplyListOp : ListOp -> [Expr] -> Expr ;
+
     Unary   : UnaryOp -> Expr -> Expr ;
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
+
+    -- TODO: get rid of all nested IfThenElses
     IfThenElse : Expr -> Expr -> Expr -> Expr ;
+    -- make them into Elif instead
+    Elif: [IfThen] -> Expr -> Expr ;
+    {-
+
+      IF    i's `the business's number of past and current clients`  is larger than
+       * 10.0: => the business's client bonus factor is 1.5
+       * 4.0  => the business's client bonus factor is 1.35
+       * 1.0  => the business's client bonus factor is 1.2
+       * ELSE => the business's client bonus factor is 1.0
+
+    -}
+
     FunApp : Expr -> [Expr] -> Expr ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
     Project : Expr -> Name -> Expr ;             -- record projection
     Fun : (funname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;  -- Function
-    -- Let :        Decl Expr
+    Sig : [Name] -> [Expr] -> Expr ; -- TODO: what is this? only `Sig [] []` present in royalflush data
+
+    {- TODO: this is used in context like
+
+       LET { foo
+           , bar
+           , baz
+           }
+       IN { expression that uses definitions
+          , another expression
+          , yet another
+          … }
+
+       as AST it looks like
+         Let (foo
+           Let (bar
+             Let baz )))
+
+       transform into:
+
+       [all variables]
+
+       [all Exprs]
+
+       and linearize as
+       -- Definitions ---
+       foo = …
+       bar = …
+       baz = …
+
+       -- Expressions --
+       if they are just like
+       `the business eligibility text` = `the business eligibility text`,
+       then don't print them.
+    -}
+    Let : S -> Expr -> Expr ;
+    Record : Name -> Expr -> Expr ;
     -- StatementBlock :  (NonEmpty Statement)
 
     NormIsInfringed : Name -> Expr ;             -- NormIsInfringed NameOfNorm.
@@ -58,6 +117,12 @@ abstract Lam4 = {
     Predicate : (predname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
     PredApp : Expr -> [Expr] -> Expr ;
     Fold : Expr -> Expr -> Expr -> Expr ;
+
+    -- When generating natural language for some file that defines a bunch of stuff like cons, map, filter,
+    -- apply this function instead to keep it in the AST
+    -- but skip linearization.
+    KnownFunction : Name -> Expr ;
+
 
     -- Unary and binary operators
     Not,

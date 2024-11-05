@@ -49,7 +49,7 @@ makeNLGEnv config = do
   gr <- PGF.readPGF grammarFile
 
   -- Set up PGF Language and GF Linearizer
-  let lang       = initializeGFLang config.concreteSyntaxName gr 
+  let lang       = initializeGFLang config.concreteSyntaxName gr
       linearizer = makeGFLinearizer gr lang
   pure $ NLGEnv linearizer
 
@@ -90,7 +90,11 @@ renderCstDeclToNL env = gfLin env . gf . parseDecl
 parseDecl :: Decl -> GS
 parseDecl = \case
   DataDecl name typedecl -> GTypeDeclS $ parseTypeDecl name typedecl
-  Rec name expr -> GExprS $ parseExpr name expr
+  Rec name expr ->
+    if commonFunction name.name
+      then GExprS $ GKnownFunction $ parseName name
+      else GExprS $ parseExpr name expr
+  NonRec name (Sig [] []) -> GAtomicConcept (parseName name)
   NonRec name expr -> GAssignS (parseName name) $ parseExpr noName expr
   Eval expr -> quoteVars $ if isBool expr
                 then GEvalWhetherS $ parseExpr noName expr
@@ -101,6 +105,9 @@ noName = N.MkName mempty Nothing N.NotEntrypoint
 
 parseName :: N.Name -> GName
 parseName = GMkName . GString . T.unpack . N.name
+
+commonFunction :: T.Text -> Bool
+commonFunction x = T.unpack x `elem` ["id", "map", "filter", "cons", "nil", "minus", "plus", "div", "mult", "add", "modulo", "pow", "round", "certain", "uncertain", "known", "unknown"]
 
 quoteVars :: Tree a -> Tree a
 quoteVars (GVar x) = GQuoteVar x
@@ -171,11 +178,16 @@ parseExpr name =
   PredApp predicate args   -> GPredApp (f predicate) (GListExpr $ fmap f args)
   Foldr combine nil over   -> GFold (f combine) (f nil) (f over)
   Foldl combine nil over   -> GFold (f combine) (f nil) (f over)
---  Sig parents relations    -> Sig parents (traverse f) (tions
+  Sig parents relations    -> GSig (GListName $ fmap parseName parents) (GListExpr $ fmap f relations)
+  Let decl expr            -> GLet (parseDecl decl) (f expr)
+  Cons e1 e2               -> GConjExpr (GListExpr [f e1, f e2])
+  List es                  -> GConjExpr (GListExpr $ fmap f es)
+  Record rows              -> GConjExpr (GListExpr $ fmap parseRecordRow rows)
 --)  StatementBlock statements  -> undefined -- TODO
   x -> error [i|parseExpr: not yet implemented #{x}|]
 
-
+parseRecordRow :: (N.Name, Expr) -> GExpr
+parseRecordRow (name, expr) = GRecord (parseName name) (parseExpr name expr)
 
 parseTypeDecl :: N.Name -> DataDecl -> GTypeDecl
 parseTypeDecl name typedecl =

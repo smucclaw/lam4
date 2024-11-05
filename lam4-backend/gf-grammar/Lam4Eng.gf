@@ -53,6 +53,7 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     EvalS expr = {s = "evaluate" ++ expr.s} ;
     EvalWhetherS expr = {s = "evaluate whether" ++ expr.s} ;
     AssignS name expr = {s = quote name.s ++ "is assigned the value" ++ quote expr.s} ;
+    AtomicConcept name = {s = name.s ++ "is an atomic concept."} ;
 
     -- Metadata
     MkMetadata str = str ** {isEmpty = NonEmpty} ;
@@ -85,11 +86,16 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
   oper
     bullet = "*" ;
     -- just ad hoc characters to `tr "°∞" "\t\n"` in shell
-    tab = "°" ;
+    tab = "°°" ;
+    space = "°" ;
     linebreak = "∞" ;
 
+    indent1, indent2 : Str -> Str ;
+    indent1 str = linebreak ++ space ++ str ;
+    indent2 str = linebreak ++ tab ++ str ;
+
     quote : Str -> Str ;
-    quote str = "‘" ++ BIND ++ str ++ BIND ++ "’" ;
+    quote str = "[" ++ BIND ++ str ++ BIND ++ "]" ;
 
 
     artIndef = pre {
@@ -98,6 +104,11 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       "a" | "e" | "i" | "o" | "A" | "E" | "I" | "O" => "An" ;
       _ => "A"
       } ;
+
+    conjXss = overload {
+      conjXss : ListX0 -> SS = \xs -> ss (conjX "" xs) ;
+      conjXss : Str -> ListX0 -> SS = \c,xs -> ss (conjX c xs)
+    } ;
 
     conjX : Str -> ListX0 -> Str = \conj,xs -> case xs.size of {
       Many => conjunctX (ss conj) xs ;
@@ -127,9 +138,9 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     BinExpr op e1 e2 = cc3 e1 op e2 ;
 
     IfThenElse if then else = {
-      s = "if" ++ if.s ++ linebreak ++ tab
-        ++ "then" ++ then.s ++ linebreak ++ tab
-        ++ "else" ++ else.s
+      s = "if" ++ if.s
+        ++ indent2 "then" ++ then.s
+        ++ indent2 "else" ++ else.s
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
@@ -142,9 +153,18 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     -- : Name -> Metadata -> [Name] -> Expr -> Expr ;  -- Function
     Fun funname md args body = {
       s = "Function" ++ funname.s ++ ":" ++ linebreak
-       ++ linArgs "given" args ","
-       ++ "return" ++ body.s
+       ++ linArgs "given" args ", return"
+       ++ indent1 body.s
       } ;
+
+    -- : S -> Expr -> Expr ;
+    Let decl expr = {
+      s = decl.s ++ linebreak ++ expr.s
+    } ;
+
+    -- : Name -> Expr -> Expr ;
+    Record name field = {s = glue name.s "'s" ++ field.s} ;
+    Sig parents relations = cc2 (conjXss parents) (conjXss relations) ;
     -- Let :        Decl Expr
     -- StatementBlock :  (NonEmpty Statement)
 
@@ -171,6 +191,12 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
        ++ "starting from" ++ nil.s
     } ;
 
+    -- When generating natural language for some file that defines a bunch of stuff like cons, map, filter,
+    -- apply this function instead to keep it in the AST
+    -- but skip linearization.
+    -- : Name -> Expr
+    KnownFunction _ = {s = ""} ;
+
     -- Unary and binary operators
     Not = ss "not" ;
     Floor = ss "floor of" ;
@@ -194,6 +220,7 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
 
     BaseExpr, BaseName = baseListX0 ;
     ConsExpr, ConsName = consListX0 ;
+    ConjExpr = conjXss ;
 }
 
 {-
