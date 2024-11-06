@@ -32,8 +32,9 @@ data NLGConfig = MkNLGConfig {
 
 -- Loosely copied from dsl/…/natural4
 -- | Env that's needed for NLG operations
-newtype NLGEnv = NLGEnv
+data NLGEnv = NLGEnv
   { gfLin     :: GFLinearizer
+  , gfTree    :: GFLinearizer
   }
 
 gfPath :: String -> String
@@ -51,7 +52,8 @@ makeNLGEnv config = do
   -- Set up PGF Language and GF Linearizer
   let lang       = initializeGFLang config.concreteSyntaxName gr
       linearizer = makeGFLinearizer gr lang
-  pure $ NLGEnv linearizer
+      printTree  = T.pack . PGF.showExpr []
+  pure $ NLGEnv linearizer printTree
 
 makeGFLinearizer :: PGF.PGF -> PGF.Language -> GFLinearizer
 makeGFLinearizer gr lang = postprocessText . T.pack . PGF.linearize gr lang
@@ -82,10 +84,14 @@ postprocessText = newlines . tabs . rmBIND
 
 -- | Entrypoint
 renderCstProgramToNL :: NLGEnv -> CSTProgram -> T.Text
-renderCstProgramToNL env =  T.unlines . fmap  (renderCstDeclToNL env)
+renderCstProgramToNL env decls = T.unlines $
+  fmap (renderCstDeclToNL env) decls <> fmap (renderCstDeclToGFtrees env) decls
 
 renderCstDeclToNL :: NLGEnv -> Decl -> T.Text
 renderCstDeclToNL env = gfLin env . gf . parseDecl
+
+renderCstDeclToGFtrees :: NLGEnv -> Decl -> T.Text
+renderCstDeclToGFtrees env = gfTree env . gf . parseDecl
 
 parseDecl :: Decl -> GS
 parseDecl = \case
@@ -95,6 +101,10 @@ parseDecl = \case
       then GExprS $ GKnownFunction $ parseName name
       else GExprS $ parseExpr name expr
   NonRec name (Sig [] []) -> GAtomicConcept (parseName name)
+  NonRec name expr@(BinExpr binop _ _) ->
+    if comparisonOp binop
+      then GLetIsTrue (parseName name) $ parseExpr noName expr
+      else GAssignS (parseName name) $ parseExpr noName expr
   NonRec name expr -> GAssignS (parseName name) $ parseExpr noName expr
   Eval expr -> quoteVars $ if isBool expr
                 then GEvalWhetherS $ parseExpr noName expr
@@ -106,8 +116,17 @@ noName = N.MkName mempty Nothing N.NotEntrypoint
 parseName :: N.Name -> GName
 parseName = GMkName . GString . T.unpack . N.name
 
+parseNameForRecord :: N.Name -> GName
+parseNameForRecord = GMkName . GString . T.unpack . rmThe . N.name
+  where
+    rmThe :: T.Text -> T.Text
+    rmThe input = input & [regex|^\s?the+\s+|] . match %~ const ""
+
 commonFunction :: T.Text -> Bool
 commonFunction x = T.unpack x `elem` ["id", "map", "filter", "cons", "nil", "minus", "plus", "div", "mult", "add", "modulo", "pow", "round", "certain", "uncertain", "known", "unknown"]
+
+comparisonOp :: BinOp -> Bool
+comparisonOp op = op `elem` [Eq, Lt, Gt, Le, Ge, Ne]
 
 quoteVars :: Tree a -> Tree a
 quoteVars (GVar x) = GQuoteVar x
@@ -169,9 +188,12 @@ parseExpr name =
   Unary op expr            -> GUnary (parseUnaOp op) (f expr)
   BinExpr op l r           -> GBinExpr (parseBinOp op) (f l) (f r)
   IfThenElse cond thn els  -> GIfThenElse (f cond) (f thn) (f els)
+
+  FunApp (Var (N.MkName "div" _ _)) [l,r] -> parseExpr name (BinExpr Divide l r)
+  FunApp (Var (N.MkName "mult" _ _)) [l,r] -> parseExpr name (BinExpr Mult l r)
   FunApp fun args          -> GFunApp (f fun) (GListExpr $ fmap f args)
 --  Record rows              -> GRecord
-  Project record label     -> GProject (f record) (parseName label)
+  Project record label     -> GProject (f record) (parseNameForRecord label)
   Fun md args body         -> GFun (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
 --  Let decl body            -> Let decl (f body)
   Predicate md args body   -> GPredicate (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)

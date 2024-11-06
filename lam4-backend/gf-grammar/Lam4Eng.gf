@@ -52,7 +52,8 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     ExprS expr = expr ;
     EvalS expr = {s = "evaluate" ++ expr.s} ;
     EvalWhetherS expr = {s = "evaluate whether" ++ expr.s} ;
-    AssignS name expr = {s = quote name.s ++ "is assigned the value" ++ quote expr.s} ;
+    AssignS name expr = {s = quote name.s ++ "is calculated as" ++ indent2 expr.s} ;
+    LetIsTrue name expr =  {s = quote name.s ++ "is true if" ++ indent2 expr.s} ;
     AtomicConcept name = {s = name.s ++ "is an atomic concept."} ;
 
     -- Metadata
@@ -97,6 +98,8 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     quote : Str -> Str ;
     quote str = "[" ++ BIND ++ str ++ BIND ++ "]" ;
 
+    quoteSS : SS -> SS ;
+    quoteSS ss = {s = quote ss.s} ;
 
     artIndef = pre {
       "eu" | "Eu" | "uni" | "Uni" => "A" ;
@@ -135,7 +138,7 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     Var name = name ;
     Lit name = name ;
     Unary op expr = cc2 op expr ;
-    BinExpr op e1 e2 = cc3 e1 op e2 ;
+    BinExpr op e1 e2 = cc3 (quoteSS e1) op (quoteSS e2) ;
 
     IfThenElse if then else = {
       s = "if" ++ if.s

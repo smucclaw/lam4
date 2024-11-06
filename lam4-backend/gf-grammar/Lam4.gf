@@ -26,6 +26,7 @@ abstract Lam4 = {
     EvalWhetherS,
     ExprS : Expr -> S ;
     AssignS : Name -> Expr -> S ;
+    LetIsTrue : Name -> Expr -> S ;
     AtomicConcept : Name -> S ;
 
     -- Metadata

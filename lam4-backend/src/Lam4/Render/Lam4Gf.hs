@@ -46,6 +46,8 @@ type GExpr = Tree GExpr_
 data GExpr_
 type GListExpr = Tree GListExpr_
 data GListExpr_
+type GListIfThen = Tree GListIfThen_
+data GListIfThen_
 type GListName = Tree GListName_
 data GListName_
 type GListRowTypeDecl = Tree GListRowTypeDecl_
@@ -62,6 +64,8 @@ type GTypeDecl = Tree GTypeDecl_
 data GTypeDecl_
 type GUnaryOp = Tree GUnaryOp_
 data GUnaryOp_
+type GIfThen = Tree GIfThen_
+data GIfThen_
 type GString = Tree GString_
 data GString_
 type GInt = Tree GInt_
@@ -85,6 +89,7 @@ data Tree :: * -> * where
   GPlus :: Tree GBinOp_
   GBinExpr :: GBinOp -> GExpr -> GExpr -> Tree GExpr_
   GConjExpr :: GListExpr -> Tree GExpr_
+  GElif :: GListIfThen -> GExpr -> Tree GExpr_
   GFold :: GExpr -> GExpr -> GExpr -> Tree GExpr_
   GFun :: GName -> GMetadata -> GListName -> GExpr -> Tree GExpr_
   GFunApp :: GExpr -> GListExpr -> Tree GExpr_
@@ -102,6 +107,7 @@ data Tree :: * -> * where
   GUnary :: GUnaryOp -> GExpr -> Tree GExpr_
   GVar :: GName -> Tree GExpr_
   GListExpr :: [GExpr] -> Tree GListExpr_
+  GListIfThen :: [GIfThen] -> Tree GListIfThen_
   GListName :: [GName] -> Tree GListName_
   GListRowTypeDecl :: [GRowTypeDecl] -> Tree GListRowTypeDecl_
   GMkMetadata :: GString -> Tree GMetadata_
@@ -115,6 +121,7 @@ data Tree :: * -> * where
   GEvalS :: GExpr -> Tree GS_
   GEvalWhetherS :: GExpr -> Tree GS_
   GExprS :: GExpr -> Tree GS_
+  GLetIsTrue :: GName -> GExpr -> Tree GS_
   GTypeDeclS :: GTypeDecl -> Tree GS_
   GMkTypeDecl :: GMetadata -> GName -> GListRowTypeDecl -> Tree GTypeDecl_
   GCeiling :: Tree GUnaryOp_
@@ -143,6 +150,7 @@ instance Eq (Tree a) where
     (GPlus,GPlus) -> and [ ]
     (GBinExpr x1 x2 x3,GBinExpr y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GConjExpr x1,GConjExpr y1) -> and [ x1 == y1 ]
+    (GElif x1 x2,GElif y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GFold x1 x2 x3,GFold y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GFun x1 x2 x3 x4,GFun y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GFunApp x1 x2,GFunApp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -160,6 +168,7 @@ instance Eq (Tree a) where
     (GUnary x1 x2,GUnary y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GVar x1,GVar y1) -> and [ x1 == y1 ]
     (GListExpr x1,GListExpr y1) -> and [x == y | (x,y) <- zip x1 y1]
+    (GListIfThen x1,GListIfThen y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListName x1,GListName y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GListRowTypeDecl x1,GListRowTypeDecl y1) -> and [x == y | (x,y) <- zip x1 y1]
     (GMkMetadata x1,GMkMetadata y1) -> and [ x1 == y1 ]
@@ -173,6 +182,7 @@ instance Eq (Tree a) where
     (GEvalS x1,GEvalS y1) -> and [ x1 == y1 ]
     (GEvalWhetherS x1,GEvalWhetherS y1) -> and [ x1 == y1 ]
     (GExprS x1,GExprS y1) -> and [ x1 == y1 ]
+    (GLetIsTrue x1 x2,GLetIsTrue y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GTypeDeclS x1,GTypeDeclS y1) -> and [ x1 == y1 ]
     (GMkTypeDecl x1 x2 x3,GMkTypeDecl y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GCeiling,GCeiling) -> and [ ]
@@ -222,6 +232,7 @@ instance Gf GBinOp where
 instance Gf GExpr where
   gf (GBinExpr x1 x2 x3) = mkApp (mkCId "BinExpr") [gf x1, gf x2, gf x3]
   gf (GConjExpr x1) = mkApp (mkCId "ConjExpr") [gf x1]
+  gf (GElif x1 x2) = mkApp (mkCId "Elif") [gf x1, gf x2]
   gf (GFold x1 x2 x3) = mkApp (mkCId "Fold") [gf x1, gf x2, gf x3]
   gf (GFun x1 x2 x3 x4) = mkApp (mkCId "Fun") [gf x1, gf x2, gf x3, gf x4]
   gf (GFunApp x1 x2) = mkApp (mkCId "FunApp") [gf x1, gf x2]
@@ -243,6 +254,7 @@ instance Gf GExpr where
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "BinExpr" -> GBinExpr (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "ConjExpr" -> GConjExpr (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "Elif" -> GElif (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "Fold" -> GFold (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "Fun" -> GFun (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "FunApp" -> GFunApp (fg x1) (fg x2)
@@ -274,6 +286,18 @@ instance Gf GListExpr where
 
 
       _ -> error ("no ListExpr " ++ show t)
+
+instance Gf GListIfThen where
+  gf (GListIfThen [x1]) = mkApp (mkCId "BaseIfThen") [gf x1]
+  gf (GListIfThen (x:xs)) = mkApp (mkCId "ConsIfThen") [gf x, gf (GListIfThen xs)]
+  fg t =
+    GListIfThen (fgs t) where
+     fgs t = case unApp t of
+      Just (i,[x1]) | i == mkCId "BaseIfThen" -> [fg x1]
+      Just (i,[x1,x2]) | i == mkCId "ConsIfThen" -> fg x1 : fgs x2
+
+
+      _ -> error ("no ListIfThen " ++ show t)
 
 instance Gf GListName where
   gf (GListName []) = mkApp (mkCId "BaseName") []
@@ -340,6 +364,7 @@ instance Gf GS where
   gf (GEvalS x1) = mkApp (mkCId "EvalS") [gf x1]
   gf (GEvalWhetherS x1) = mkApp (mkCId "EvalWhetherS") [gf x1]
   gf (GExprS x1) = mkApp (mkCId "ExprS") [gf x1]
+  gf (GLetIsTrue x1 x2) = mkApp (mkCId "LetIsTrue") [gf x1, gf x2]
   gf (GTypeDeclS x1) = mkApp (mkCId "TypeDeclS") [gf x1]
 
   fg t =
@@ -350,6 +375,7 @@ instance Gf GS where
       Just (i,[x1]) | i == mkCId "EvalS" -> GEvalS (fg x1)
       Just (i,[x1]) | i == mkCId "EvalWhetherS" -> GEvalWhetherS (fg x1)
       Just (i,[x1]) | i == mkCId "ExprS" -> GExprS (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "LetIsTrue" -> GLetIsTrue (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "TypeDeclS" -> GTypeDeclS (fg x1)
 
 
@@ -384,10 +410,19 @@ instance Gf GUnaryOp where
       _ -> error ("no UnaryOp " ++ show t)
 
 
+
+instance Gf GIfThen where
+  gf _ = undefined
+  fg _ = undefined
+
+
+
+
 instance Compos Tree where
   compos r a f t = case t of
     GBinExpr x1 x2 x3 -> r GBinExpr `a` f x1 `a` f x2 `a` f x3
     GConjExpr x1 -> r GConjExpr `a` f x1
+    GElif x1 x2 -> r GElif `a` f x1 `a` f x2
     GFold x1 x2 x3 -> r GFold `a` f x1 `a` f x2 `a` f x3
     GFun x1 x2 x3 x4 -> r GFun `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GFunApp x1 x2 -> r GFunApp `a` f x1 `a` f x2
@@ -413,9 +448,11 @@ instance Compos Tree where
     GEvalS x1 -> r GEvalS `a` f x1
     GEvalWhetherS x1 -> r GEvalWhetherS `a` f x1
     GExprS x1 -> r GExprS `a` f x1
+    GLetIsTrue x1 x2 -> r GLetIsTrue `a` f x1 `a` f x2
     GTypeDeclS x1 -> r GTypeDeclS `a` f x1
     GMkTypeDecl x1 x2 x3 -> r GMkTypeDecl `a` f x1 `a` f x2 `a` f x3
     GListExpr x1 -> r GListExpr `a` foldr (a . a (r (:)) . f) (r []) x1
+    GListIfThen x1 -> r GListIfThen `a` foldr (a . a (r (:)) . f) (r []) x1
     GListName x1 -> r GListName `a` foldr (a . a (r (:)) . f) (r []) x1
     GListRowTypeDecl x1 -> r GListRowTypeDecl `a` foldr (a . a (r (:)) . f) (r []) x1
     _ -> r t
