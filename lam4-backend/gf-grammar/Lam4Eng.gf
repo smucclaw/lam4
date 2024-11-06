@@ -6,9 +6,11 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     Metadata = LinMetadata ;
     ListExpr = ListX0 ;
     ListName = ListX0 ;
+    BinOp = {s : Verbosity => Str} ;
   param
     IsEmpty = Empty | NonEmpty ;
     MyListSize = Zero | One | Many ;
+    Verbosity = Concise | Verbose ;
 
   oper
     ListX0 : Type = ListX ** {size : MyListSize} ;
@@ -50,10 +52,19 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     EmptyS = {s = ""} ;
     TypeDeclS td = td ;
     ExprS expr = expr ;
-    EvalS expr = {s = "evaluate" ++ expr.s} ;
-    EvalWhetherS expr = {s = "evaluate whether" ++ expr.s} ;
-    AssignS name expr = {s = quote name.s ++ "is calculated as" ++ indent2 expr.s} ;
-    LetIsTrue name expr =  {s = quote name.s ++ "is true if" ++ indent2 expr.s} ;
+    EvalS expr = {s = "evaluate" ++ expr.s ++ linebreak} ;
+    EvalWhetherS expr = {s = "evaluate whether" ++ expr.s ++ linebreak} ;
+    AssignS name expr = {
+      s = quote name.s
+       ++ "is calculated by"
+       ++ indent1 expr.s
+       ++ linebreak } ;
+    LetIsTrue name expr = {
+      s = quote name.s
+       ++ "is true if"
+       ++ indent1 expr.s
+       ++ linebreak
+       } ;
     AtomicConcept name = {s = name.s ++ "is an atomic concept."} ;
 
     -- Metadata
@@ -128,6 +139,12 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
           _    => pr ++ conjX "and" xs ++ pst }
       } ;
 
+    mkBinExpr : Str -> Str -> {s : Verbosity => Str} ;
+    mkBinExpr short long = {
+      s = table {
+        Concise => short ;
+        Verbose => long }
+      } ;
 
   lin
 
@@ -138,12 +155,45 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     Var name = name ;
     Lit name = name ;
     Unary op expr = cc2 op expr ;
-    BinExpr op e1 e2 = cc3 (quoteSS e1) op (quoteSS e2) ;
+    BinExpr op e1 e2 = {
+      s = e1.s
+       ++ op.s ! Concise
+       ++ e2.s
+      } ;
+
+    QuotedBinExpr op e1 e2 = {
+      s = quote e1.s
+       ++ op.s ! Concise
+       ++ quote e2.s
+      } ;
+
+    VerboseBinExpr op e1 e2 = {
+      s =         (quote e1.s)
+       ++ indent1 (op.s ! Verbose)
+       ++ indent1 (quote e2.s)
+      } ;
+
+    Unknown expr = {
+      s = quote expr.s ++ "is unknown"
+    } ;
+
+    Uncertain expr = {
+      s = quote expr.s ++ "is uncertain"
+    } ;
+
 
     IfThenElse if then else = {
       s = "if" ++ if.s
         ++ indent2 "then" ++ then.s
         ++ indent2 "else" ++ else.s
+      } ;
+
+    -- : Expr -> Expr -> Expr ;
+    InstanceSumIf entities condition = {
+      s = "adding up those of"
+       ++ indent2 (quote entities.s)
+       ++ indent1 "where"
+       ++ indent2 (quote condition.s)
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
@@ -187,6 +237,13 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
 
     -- : Expr -> [Expr] -> Expr ;
     PredApp = FunApp ;
+
+    PredAppMany op args preds = {
+      s = quote (conjX "and" args) ++ "is" ++ conjX (op.s ! Verbose) preds
+    } ;
+
+
+
     Fold combine nil over = {
       s = linebreak ++
       "Combine" ++ quote over.s ++ "into one value," ++ linebreak
@@ -207,19 +264,19 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     IntegerToFraction = ss "" ; -- not important in NLG
     UnaryMinus = ss "-" ;
 
-    Or = ss "or" ;
-    And = ss "and" ;
-    Plus = ss "+" ;
-    Minus = ss "-" ;
-    Modulo = ss "%" ;
-    Mult = ss "*" ;
-    Divide = ss "/" ;
-    Lt = ss "<" ;
-    Le = ss "≤" ;
-    Gt = ss ">" ;
-    Ge = ss "≥" ;
-    Eq = ss "equals to" ;
-    Ne = ss "≠" ;
+    Or = mkBinExpr "||" "or" ;
+    And = mkBinExpr "&&" "and" ;
+    Plus = mkBinExpr "+" "added to" ;
+    Minus = mkBinExpr "-" "subtracted from" ;
+    Modulo = mkBinExpr "%" "modulo" ;
+    Mult = mkBinExpr "*" "multiplied by" ;
+    Divide = mkBinExpr "/" "divided by" ;
+    Lt = mkBinExpr "<" "is less than" ;
+    Le = mkBinExpr "≤" "is less than or equal" ;
+    Gt = mkBinExpr ">" "is greater than" ;
+    Ge = mkBinExpr "≥" "is greater than or equal to" ;
+    Eq = mkBinExpr "=" "equals to" ;
+    Ne = mkBinExpr "≠" "is not equal to" ;
 
     BaseExpr, BaseName = baseListX0 ;
     ConsExpr, ConsName = consListX0 ;

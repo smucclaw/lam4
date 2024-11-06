@@ -52,7 +52,11 @@ abstract Lam4 = {
     -- ApplyListOp : ListOp -> [Expr] -> Expr ;
 
     Unary   : UnaryOp -> Expr -> Expr ;
+    VerboseBinExpr, -- newline + quotes around args
+    QuotedBinExpr, -- no newline, quotes around args
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
+
+    Unknown, Uncertain : Expr -> Expr ;
 
     -- TODO: get rid of all nested IfThenElses
     IfThenElse : Expr -> Expr -> Expr -> Expr ;
@@ -68,6 +72,14 @@ abstract Lam4 = {
 
     -}
 
+{- [The investor's total allocation in Energy]
+   is calculated by (AssignS)
+   adding up (InstanceSumIf)
+    [the investor's funds allocated to the investment as per sector share]
+   where
+     [the investment is in Energy]
+-}
+    InstanceSumIf : (entities : Expr) -> (condition : Expr)-> Expr ;
     FunApp : Expr -> [Expr] -> Expr ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
     Project : Expr -> Name -> Expr ;             -- record projection
@@ -117,6 +129,7 @@ abstract Lam4 = {
 
     Predicate : (predname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
     PredApp : Expr -> [Expr] -> Expr ;
+    PredAppMany : BinOp -> (business_is_good : [Expr]) -> (uncertain_unknown : [Expr]) -> Expr ;
     Fold : Expr -> Expr -> Expr -> Expr ;
 
     -- When generating natural language for some file that defines a bunch of stuff like cons, map, filter,
