@@ -7,22 +7,21 @@ import           Syntax
 import           Data.Coerce            (coerce)
 import qualified Data.List.NonEmpty     as NE
 -- import           Control.Monad.Identity (Identity (..))
--- import           Data.Set               (Set)
--- import qualified Data.Set               as Set
--- import           Data.Map               (Map)
--- import qualified Data.Map  as Map
 
 --------------------------
   -- Contract Automaton
 --------------------------
 
--- TODO: This prob has to be a NFA if we want to remove the & concurrency operator and use interleaving instead?
-{- | "A contract automaton S is
-    a total and deterministic multi-action automaton with
-    S = ⟨Σ , Q, q0, ->⟩,
-    together with a total function contract ∈ Q -> 2^Clause assigning a set of clauses to each state.
+{- | Definition from paper:
+      "A contract automaton S is
+      a total and deterministic multi-action automaton with
+      S = ⟨Σ , Q, q0, ->⟩,
+      together with a total function contract ∈ Q -> 2^Clause assigning a set of clauses to each state.
 
-    "The set of states Q is given by all the formulae R reachable from [the initial formula / state] ψ"
+      "The set of states Q is given by all the formulae R reachable from [the initial formula / state] ψ"
+
+    NOTE: I'm simplified the transition function so that it's Q ->  Σ -> Q,
+    as opposed to the paper's Q -> 2^Σ -> Q
 -}
 newtype ContractAutomaton = MkContractAut { aut :: DFA CAState Event }
 

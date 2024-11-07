@@ -47,8 +47,8 @@ noConflictingClauses (MkCAState clauses) = null $ findEventsThatAppearInConflict
                                                        [event | event <- eventsFromClauses clauzes,
                                                           Must event `elem` clauses,
                                                           Shant event `elem` clauses]
-                                                        -- no need to worry about other kinds of conflicts,
-                                                        -- because omissions aren't currently allowed as actions
+                                                        -- Simplification: not worrying about other kinds of conflicts
+                                                        -- Note also that there isn't currently explicit support for omissions as actions
 
 
 clausesAreTopAfterSimplify :: CAState -> Bool
