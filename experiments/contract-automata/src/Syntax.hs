@@ -55,7 +55,7 @@ data Clause = Must   Event   -- ^ Obligation
             | May    Event   -- ^ Permission
             -- TODO: Think about whether to add a construct tt allows user to specify that these are the *only* options available to the actor
             | Shant  Event   -- ^ Prohibition
-            | If     Guard  Clause         -- ^ [β]C -- the contract C must be executed if action β is performed
+            | If     Guard  Clause         -- ^ [β]C -- the contract C will be executed if action β is performed
             | Top                          -- ^ ⊤
             | Bottom                       -- ^ ⊥
   deriving (Eq, Ord, Show)
