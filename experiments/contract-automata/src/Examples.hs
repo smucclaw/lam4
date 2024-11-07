@@ -153,18 +153,65 @@ residualBankExample = residualWithoutSimplify (getClauses contractBank)
 {-
 The example is setup so that we get the 'conflicting clauses':
 
-  λ> runBankExampleOnGivenTrace
-  Identity (MkCAState {
-    clauses = [
-      May (MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"}),
-      Shant (MkEvent {getActor = MkParty {getName = "John"}, getAction = "login"}),
-      Shant (MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"}),
-      If (GDone (MkEvent {getActor = MkParty {getName = "Bank"}, getAction = "resolveSituation"}))
-        (May (MkEvent {getActor = MkParty {getName = "John"}, getAction = "login"})),
-      If (GDone (MkEvent {getActor = MkParty {getName = "Bank"}, getAction = "resolveSituation"}))
-        (May (MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"}))
-    ]
-  })
+λ> runBankExampleOnGivenTrace
+Identity
+    ( MkCAState
+        { clauses =
+            [ May
+                ( MkEvent
+                    { getActor = MkParty
+                        { getName = "John" }
+                    , getAction = "makeMoneyTransfers"
+                    }
+                )
+            , Shant
+                ( MkEvent
+                    { getActor = MkParty
+                        { getName = "John" }
+                    , getAction = "login"
+                    }
+                )
+            , Shant
+                ( MkEvent
+                    { getActor = MkParty
+                        { getName = "John" }
+                    , getAction = "makeMoneyTransfers"
+                    }
+                )
+            , If
+                ( GDone
+                    ( MkEvent
+                        { getActor = MkParty
+                            { getName = "Bank" }
+                        , getAction = "resolveSituation"
+                        }
+                    )
+                )
+                ( May
+                    ( MkEvent
+                        { getActor = MkParty
+                            { getName = "John" }
+                        , getAction = "login"
+                        }
+                    )
+                )
+            , If
+                ( GDone
+                    ( MkEvent
+                        { getActor = MkParty
+                            { getName = "Bank" }
+                        , getAction = "resolveSituation"
+                        }
+                    )
+                )
+                ( May
+                    ( MkEvent
+                        { getActor = MkParty
+                            { getName = "John" }
+                        , getAction = "makeMoneyTransfers"
+                        }
+                    ))
+            ]})
 
 λ> recognize autBankExample.aut bankExampleTrace
 False
