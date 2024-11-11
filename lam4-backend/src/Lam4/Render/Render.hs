@@ -8,6 +8,7 @@ import qualified Base.Text                as T
 import           Control.Lens             ((%~), (&))
 import           Control.Lens.Regex.Text  (match, regex)
 import           Data.String.Interpolate  (i)
+import           Text.RawString.QQ
 import           Lam4.Expr.CommonSyntax
 import           Lam4.Expr.ConcreteSyntax
 import qualified Lam4.Expr.Name           as N (Name (..), ReferentStatus (..))
@@ -82,16 +83,111 @@ postprocessText = newlines . tabs . rmBIND
     newlines :: T.Text -> T.Text
     newlines = T.map (\c -> if c == '∞' then '\n' else c)
 
+style = [r|<head>
+
+    <style>
+        /* Insert the CSS styling here */
+
+        /* Base styles for dl, dt, dd */
+        dl {
+          margin: 0; /* Remove default margin from dl */
+          padding: 0; /* Remove default padding from dl */
+
+        }
+
+        dt, dd {
+          margin: 0;
+          padding: 0.25em 0;
+          padding-left: 0.5em;
+        }
+
+        dt + dd {
+          margin-top: 0.01em; /* Small margin between dt and dd */
+        }
+
+        /* Level 2 styles */
+        dl dl {
+          background-color: #f4f6f6; /* gray */
+          padding-left: 0.5em;
+          border-color: #00796b;
+        }
+
+        dl dl > dt {
+          font-weight: bold;
+          color: #004d40;
+        }
+
+        dl dl > dd {
+          margin-left: 1em;
+        }
+
+        /* Level 3 styles */
+        dl dl dl {
+          background-color: #fff1ed; /* Light pink */
+          padding-left: 0.5em;
+        }
+
+        dl dl dl > dt {
+          font-weight: bold;
+
+          color: #880e4f;
+        }
+
+        dl dl dl > dd {
+          margin-left: 1em;
+        }
+
+        /* Level 4 styles */
+        dl dl dl dl {
+          background-color: #e9ffd2; /* Light green */
+          padding-left: 0.5em;
+
+        }
+
+        dl dl dl dl > dt {
+          font-weight: bold;
+          color: #79b47e;
+        }
+
+        dl dl dl dl > dd {
+          margin-left: 1em;
+        }
+
+
+        /* Level 5 styles */
+        dl dl dl dl dl {
+          background-color: #ffe0b2; /* Light orange */
+          padding-left: 0.5em;
+          border-color: #f57c00;
+
+        }
+
+        dl dl dl dl dl > dt {
+          font-weight: bold;
+          color: #e65100;
+        }
+
+        dl dl dl dl dl > dd {
+          margin-left: 1em;
+        }
+        /* Add more levels as needed */
+      </style>
+</head>|]
+
 -- | Entrypoint
 renderCstProgramToNL :: NLGEnv -> CSTProgram -> T.Text
-renderCstProgramToNL env decls = T.unlines $
-  fmap (renderCstDeclToNL env) decls <> fmap (renderCstDeclToGFtrees env) decls
+renderCstProgramToNL env decls = T.unlines (
+  ["<html>", "<head>", style, "</head>", "<body>"] <>
+  fmap (renderCstDeclToNL env) decls  <>
+  ["</body>", "</html>"]
+
+  <> fmap (renderCstDeclToGFtrees env) decls)
 
 renderCstDeclToNL :: NLGEnv -> Decl -> T.Text
-renderCstDeclToNL env = gfLin env . gf . aggregatePredApp . parseDecl
+renderCstDeclToNL env = gfLin env . gf . genericTreeTrans . parseDecl
 
 renderCstDeclToGFtrees :: NLGEnv -> Decl -> T.Text
-renderCstDeclToGFtrees env = gfTree env . gf . aggregatePredApp . parseDecl
+renderCstDeclToGFtrees env = gfTree env . gf . genericTreeTrans . parseDecl
 
 parseDecl :: Decl -> GS
 parseDecl = \case
@@ -133,30 +229,30 @@ isPredicate = \case
   Var (N.MkName name _ _) -> name `elem` ["certain", "known", "uncertain", "unknown"]
   _ -> False
 
+varFromFun :: Expr -> Expr
+varFromFun = \case
+  Fun _md _args (Project _rec label) -> Var label
+  e -> e
 ---- Tree transformations -----
+
+genericTreeTrans :: Tree a -> Tree a
+genericTreeTrans = flattenNestedAndOr . aggregatePredApp . binExprVerbosity
 
 quoteVars :: Tree a -> Tree a
 quoteVars (GVar x) = GQuoteVar x
 quoteVars x        = composOp quoteVars x
 
--- Ground rule: binexpr is verbose if arguments are complex
--- exception: if it's in if-then-else
+-- Control verbosity of BinExpr in specific contexts
+binExprVerbosity :: Tree a -> Tree a
+binExprVerbosity (GAssignS e (GBinExpr op lc rc)) = GAssignS e (GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc))
+binExprVerbosity (GLetIsTrue e (GBinExpr op lc rc)) = GLetIsTrue e (GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc))
+binExprVerbosity (GVerboseBinExpr op lc rc) = GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc)
+binExprVerbosity x = composOp binExprVerbosity x
+
+-- helper function for binExprVerbosity
 unVerboseBinExpr :: Tree a -> Tree a
-unVerboseBinExpr (GVerboseBinExpr op l r) = GBinExpr op l r
---   GQuotedBinExpr op
---     (quoteVarsBinExpr l) -- inner bin exprs become now quoted, even if they were unquoted previously
---     (quoteVarsBinExpr r)
+unVerboseBinExpr (GVerboseBinExpr op lc rc) = GBinExpr op lc rc
 unVerboseBinExpr x = composOp unVerboseBinExpr x
-
-unVerboseNested :: Tree a -> Tree a
-unVerboseNested (GVerboseBinExpr op l r) = GVerboseBinExpr op (unVerboseBinExpr l) (unVerboseBinExpr r)
-unVerboseNested x = composOp unVerboseNested x
-
--- like above, but also forces concise BinExpr to be quoted
-quoteVarsBinExpr :: Tree a -> Tree a
-quoteVarsBinExpr (GVerboseBinExpr op l r) = GQuotedBinExpr op l r
-quoteVarsBinExpr (GBinExpr op l r) = GQuotedBinExpr op l r
-quoteVarsBinExpr x = composOp quoteVarsBinExpr x
 
 aggregatePredApp :: Tree a -> Tree a
 aggregatePredApp tree@(GBinExpr op (GPredApp f arg) (GPredApp g arg')) =
@@ -176,6 +272,34 @@ aggregatePredApp tree@(GVerboseBinExpr op (GFunApp f arg) (GFunApp g arg')) =
         then GPredAppMany op arg (GListExpr [f,g])
         else tree
 aggregatePredApp x = composOp aggregatePredApp x
+
+flattenNestedAndOr :: Tree a -> Tree a
+flattenNestedAndOr e@GBinExpr{} = composOp flattenNestedAndOr (flattenIfLongEnough e)
+flattenNestedAndOr e@GVerboseBinExpr{} = composOp flattenNestedAndOr (flattenIfLongEnough e)
+flattenNestedAndOr x = composOp flattenNestedAndOr x
+
+flattenIfLongEnough :: GExpr -> GExpr
+flattenIfLongEnough e =
+  case orExprs of
+    (_:_:_) -> GApplyListOp GListOr (GListLExpr orExprs)
+    _ -> case andExprs of
+           (_:_:_) -> GApplyListOp GListAnd (GListLExpr andExprs)
+           _ -> e
+  where
+    orExprs = GcoerceListExpr <$> collectOr e
+    andExprs = GcoerceListExpr <$> collectAnd e
+
+    collectOr :: GExpr -> [GExpr]
+    collectOr = \case
+      GBinExpr        GOr left right -> collectOr left <> collectOr right
+      GVerboseBinExpr GOr left right -> collectOr left <> collectOr right
+      expr                    -> [expr]
+
+    collectAnd :: GExpr -> [GExpr]
+    collectAnd = \case
+      GBinExpr        GAnd left right -> collectAnd left <> collectAnd right
+      GVerboseBinExpr GAnd left right -> collectAnd left <> collectAnd right
+      expr                           -> [expr]
 
 --------------------------------
 
@@ -237,21 +361,25 @@ parseExpr name =
   Lit lit                  -> GLit (parseLit lit)
   Unary op expr            -> GUnary (parseUnaOp op) (f expr)
   -- e.g. "x / y"
-  BinExpr op l@Var{} r@Var{}    -> GBinExpr (parseBinOp op) (f l) (f r)
+  BinExpr op lc@Var{} rc@Var{}    -> GBinExpr (parseBinOp op) (f lc) (f rc)
+
+  -- e.g. "x / b's y"
+  BinExpr op lc@Var{} rc@Project{}    -> GBinExpr (parseBinOp op) (f lc) (f rc)
 
   -- e.g. "a's x / y"
-  BinExpr op l@Project{} r@Var{} -> GBinExpr (parseBinOp op) (f l) (f r)
+  BinExpr op lc@Project{} rc@Var{} -> GBinExpr (parseBinOp op) (f lc) (f rc)
 
   -- e.g. "a's x / b's y"
-  BinExpr op l@Project{} r@Project{} -> GBinExpr (parseBinOp op) (f l) (f r)
+  BinExpr op lc@Project{} rc@Project{} -> GBinExpr (parseBinOp op) (f lc) (f rc)
 
   -- other BinExprs are "verbose" = newlines and stuff
-  BinExpr op l r           -> GVerboseBinExpr (parseBinOp op) (f l) (f r)
-  IfThenElse cond thn els  -> unVerboseNested $ GIfThenElse (f cond) (f thn) (f els)
+  BinExpr op lc rc         -> GVerboseBinExpr (parseBinOp op) (f lc) (f rc)
+  IfThenElse cond thn els  -> GIfThenElse (f cond) (f thn) (f els)
   FunApp (Var (N.MkName "instanceSumIf" _ _)) args -> parseInstanceSum args
-  FunApp (Var (N.MkName "div" _ _)) [l,r] -> parseExpr name (BinExpr Divide l r)
-  FunApp (Var (N.MkName "mult" _ _)) [l,r] -> parseExpr name (BinExpr Mult l r)
-  FunApp (Var (N.MkName "add" _ _)) [l,r] -> parseExpr name (BinExpr Plus l r)
+  FunApp (Var (N.MkName "instanceSum" _ _)) args -> parseInstanceSum args
+  FunApp (Var (N.MkName "div" _ _)) [lc,rc] -> parseExpr name (BinExpr Divide lc rc)
+  FunApp (Var (N.MkName "mult" _ _)) [lc,rc] -> parseExpr name (BinExpr Mult lc rc)
+  FunApp (Var (N.MkName "add" _ _)) [lc,rc] -> parseExpr name (BinExpr Plus lc rc)
   FunApp fun args -> if isPredicate fun
                     then parseExpr name (PredApp fun args)
                     else GFunApp (f fun) (GListExpr $ fmap f args)
@@ -274,13 +402,12 @@ parseExpr name =
 
 parseInstanceSum :: [Expr] -> GExpr
 parseInstanceSum [_set, inst, cond] = GInstanceSumIf instExpr condExpr
- where
-  instExpr = parseExpr noName $ varFromFun inst
-  condExpr = parseExpr noName $ varFromFun cond
-  varFromFun :: Expr -> Expr
-  varFromFun = \case
-    Fun _md _args (Project _rec label) -> Var label
-    e -> e
+  where
+    instExpr = parseExpr noName $ varFromFun inst
+    condExpr = parseExpr noName $ varFromFun cond
+parseInstanceSum [_set, inst] = GInstanceSum instExpr
+  where
+    instExpr = parseExpr noName $ varFromFun inst
 parseInstanceSum _ = GKnownFunction $ GMkName $ GString "SOMETHING WENT WRONG D:"
 
 parseRecordRow :: (N.Name, Expr) -> GExpr

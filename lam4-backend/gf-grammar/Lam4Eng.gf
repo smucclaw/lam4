@@ -7,9 +7,13 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     ListExpr = ListX0 ;
     ListName = ListX0 ;
     BinOp = {s : Verbosity => Str} ;
+    ListLExpr = LinLExpr ;
+    ListOp = LinListOp ;
+
   param
     IsEmpty = Empty | NonEmpty ;
     MyListSize = Zero | One | Many ;
+    PListOp = PListAnd | PListOr ;
     Verbosity = Concise | Verbose ;
 
     Hilight = Strong | Emph | Underline ;
@@ -37,50 +41,10 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     ifKw : Str = hilight Strong "if" ;
     thenKw : Str = hilight Strong "then" ;
     elseKw : Str = hilight Strong "else" ;
-
-    -- List operations
-    ListX0 : Type = ListX ** {size : MyListSize} ;
-
-    baseListX0 : ListX0 = {
-      s1, s2 = "" ;
-      size = Zero
-    } ;
-
-  -- twoStr : (x,y : Str) -> ListX = \x,y ->
-  --   {s1 = x ; s2 = y} ;
-  -- consStr : Str -> ListX -> Str -> ListX = \comma,xs,x ->
-  --   {s1 = xs.s1 ++ comma ++ xs.s2 ; s2 = x } ;
-
-
-
-    conslListX0 : SS -> ListX0 -> ListX0 = \x,xs -> case xs.size of {
-        Many => xs ** {
-          s1 = xs.s1 ++ bindComma ++ xs.s2 ;
-          s2 = x.s
-          } ;
-        One => xs ** {
-          s2 = x.s ;
-          size = Many
-          } ;
-        Zero => xs ** {
-          s1 = x.s ;
-          size = One
-          }
-      } ;
-
-    consrListX0 : SS -> ListX0 -> ListX0 = \x,xs -> case xs.size of {
-        Many => xs ** {
-          s1 = x.s ++ bindComma ++ xs.s1 ;
-          } ;
-        One => xs ** {
-          s1 = x.s ;
-          size = Many
-          } ;
-        Zero => xs ** {
-          s2 = x.s ;
-          size = One
-          }
-      } ;
+    andKw : Str = hilight Emph "and" ;
+    orKw : Str = hilight Emph "or" ;
+    allKw : Str = hilight Strong (hilight Emph "all of") ;
+    anyKw : Str = hilight Strong (hilight Emph "any of") ;
 
     LinMetadata : Type = {s : Str ; isEmpty : IsEmpty} ;
     linRowMd : LinMetadata -> Str = \md ->
@@ -190,8 +154,8 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     mkBinExpr : Str -> Str -> {s : Verbosity => Str} ;
     mkBinExpr short long = {
       s = table {
-        Concise => short ;
-        Verbose => hilight Emph long }
+        Concise => hilight Strong short ;
+        Verbose => long }
       } ;
 
     -- ul = overload {
@@ -275,8 +239,13 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
 
     -- : Expr -> Expr -> Expr ;
     InstanceSumIf entities condition = {
-      s = dl "adding up those of" (quote entities.s)
-       ++ dl "where" (quote condition.s)
+      s = dl "adding up those of" entities.s
+       ++ dl "where" condition.s
+      } ;
+
+    -- : Expr -> Expr ;
+    InstanceSum entities = {
+      s = dl "adding up" entities.s
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
@@ -369,9 +338,90 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     Eq = mkBinExpr "=" "equals to" ;
     Ne = mkBinExpr "≠" "is not equal to" ;
 
+
+-------------------------
+  -- List operations
+  oper
+    ListX0 : Type = ListX ** {size : MyListSize} ;
+
+    baseListX0 : ListX0 = {
+      s1, s2 = "" ;
+      size = Zero
+    } ;
+
+    conslListX0 : SS -> ListX0 -> ListX0 = \x,xs -> case xs.size of {
+        Many => xs ** {
+          s1 = xs.s1 ++ bindComma ++ xs.s2 ;
+          s2 = x.s
+          } ;
+        One => xs ** {
+          s2 = x.s ;
+          size = Many
+          } ;
+        Zero => xs ** {
+          s1 = x.s ;
+          size = One
+          }
+      } ;
+
+    consrListX0 : SS -> ListX0 -> ListX0 = \x,xs -> case xs.size of {
+        Many => xs ** {
+          s1 = x.s ++ bindComma ++ xs.s1 ;
+          } ;
+        One => xs ** {
+          s1 = x.s ;
+          size = Many
+          } ;
+        Zero => xs ** {
+          s2 = x.s ;
+          size = One
+          }
+      } ;
+
+  -- Special for flattening nested And/Or
+  LinLExpr : Type = {s : PListOp => Str} ;
+  LinListOp : Type = {s : Str ; op : PListOp} ;
+
+  conjTable : PListOp => Str = table {
+    PListAnd => andKw ;
+    PListOr => orKw } ;
+
+  headerTable : PListOp => Str = table {
+    PListAnd => allKw ;
+    PListOr => anyKw } ;
+
+  baseLExpr : SS -> SS -> LinLExpr = \s1,s2 -> {
+    s = \\conj =>
+         dl (conjTable ! conj) s1.s
+      ++
+         dl (conjTable ! conj) s2.s
+
+    } ;
+
+  consLExpr : SS -> LinLExpr -> LinLExpr = \s,ss -> ss ** {
+    s = \\conj =>
+         dl (conjTable ! conj) s.s
+      ++
+         ss.s ! conj
+
+    } ;
+
+  conjLExpr : LinListOp -> LinLExpr -> SS = \co,ss -> {
+    s = ss.s ! co.op
+    } ;
+
+lin
     BaseExpr, BaseName = baseListX0 ;
     ConsExpr, ConsName = consrListX0 ;
     ConjExpr = conjXss ;
+
+    BaseLExpr = baseLExpr ;
+    ConsLExpr = consLExpr ;
+    ApplyListOp = conjLExpr ;
+
+    ListAnd = {s = "" ; op = PListAnd} ;
+    ListOr = {s = "" ; op = PListOr} ;
+    coerceListExpr = id SS ;
 }
 
 {-

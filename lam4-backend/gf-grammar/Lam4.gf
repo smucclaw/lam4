@@ -14,6 +14,11 @@ abstract Lam4 = {
     Name ;
     [Name]{0} ;
 
+    -- Special values for aggregation
+    ListOp ;
+    LExpr ;
+    [LExpr]{2} ;
+
     -- (condition, value)
     -- in order to flatten nested if-then-elses into if-elif-elif-…-else
     IfThen ;
@@ -49,7 +54,11 @@ abstract Lam4 = {
     -- named differently because of a bug in GF,
     -- see https://github.com/GrammaticalFramework/gf-core/issues/163
     ConjExpr : [Expr] -> Expr ; -- construct a list
-    -- ApplyListOp : ListOp -> [Expr] -> Expr ;
+
+    coerceListExpr : Expr -> LExpr ;
+    ApplyListOp : ListOp -> [LExpr] -> Expr ;
+
+    ListAnd, ListOr : ListOp ;
 
     Unary   : UnaryOp -> Expr -> Expr ;
     VerboseBinExpr, -- newline + quotes around args
@@ -79,7 +88,8 @@ abstract Lam4 = {
    where
      [the investment is in Energy]
 -}
-    InstanceSumIf : (entities : Expr) -> (condition : Expr)-> Expr ;
+    InstanceSumIf : (entities, condition : Expr)-> Expr ;
+    InstanceSum : (entities : Expr) -> Expr ;
     FunApp : Expr -> [Expr] -> Expr ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
     Project : Expr -> Name -> Expr ;             -- record projection
