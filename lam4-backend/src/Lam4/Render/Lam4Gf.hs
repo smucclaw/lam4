@@ -97,6 +97,7 @@ data Tree :: * -> * where
   GBinExpr :: GBinOp -> GExpr -> GExpr -> Tree GExpr_
   GCertain :: GExpr -> Tree GExpr_
   GConjExpr :: GListExpr -> Tree GExpr_
+  GDefault :: GExpr -> GExpr -> Tree GExpr_
   GElif :: GListIfThen -> GExpr -> Tree GExpr_
   GFold :: GExpr -> GExpr -> GExpr -> Tree GExpr_
   GFun :: GName -> GMetadata -> GListName -> GExpr -> Tree GExpr_
@@ -116,6 +117,7 @@ data Tree :: * -> * where
   GQuoteVar :: GName -> Tree GExpr_
   GQuotedBinExpr :: GBinOp -> GExpr -> GExpr -> Tree GExpr_
   GRecord :: GName -> GExpr -> Tree GExpr_
+  GRound :: GExpr -> GExpr -> Tree GExpr_
   GSig :: GListName -> GListExpr -> Tree GExpr_
   GUnary :: GUnaryOp -> GExpr -> Tree GExpr_
   GUncertain :: GExpr -> Tree GExpr_
@@ -172,6 +174,7 @@ instance Eq (Tree a) where
     (GBinExpr x1 x2 x3,GBinExpr y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GCertain x1,GCertain y1) -> and [ x1 == y1 ]
     (GConjExpr x1,GConjExpr y1) -> and [ x1 == y1 ]
+    (GDefault x1 x2,GDefault y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GElif x1 x2,GElif y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GFold x1 x2 x3,GFold y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GFun x1 x2 x3 x4,GFun y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
@@ -191,6 +194,7 @@ instance Eq (Tree a) where
     (GQuoteVar x1,GQuoteVar y1) -> and [ x1 == y1 ]
     (GQuotedBinExpr x1 x2 x3,GQuotedBinExpr y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GRecord x1 x2,GRecord y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GRound x1 x2,GRound y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSig x1 x2,GSig y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUnary x1 x2,GUnary y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUncertain x1,GUncertain y1) -> and [ x1 == y1 ]
@@ -268,6 +272,7 @@ instance Gf GExpr where
   gf (GBinExpr x1 x2 x3) = mkApp (mkCId "BinExpr") [gf x1, gf x2, gf x3]
   gf (GCertain x1) = mkApp (mkCId "Certain") [gf x1]
   gf (GConjExpr x1) = mkApp (mkCId "ConjExpr") [gf x1]
+  gf (GDefault x1 x2) = mkApp (mkCId "Default") [gf x1, gf x2]
   gf (GElif x1 x2) = mkApp (mkCId "Elif") [gf x1, gf x2]
   gf (GFold x1 x2 x3) = mkApp (mkCId "Fold") [gf x1, gf x2, gf x3]
   gf (GFun x1 x2 x3 x4) = mkApp (mkCId "Fun") [gf x1, gf x2, gf x3, gf x4]
@@ -287,6 +292,7 @@ instance Gf GExpr where
   gf (GQuoteVar x1) = mkApp (mkCId "QuoteVar") [gf x1]
   gf (GQuotedBinExpr x1 x2 x3) = mkApp (mkCId "QuotedBinExpr") [gf x1, gf x2, gf x3]
   gf (GRecord x1 x2) = mkApp (mkCId "Record") [gf x1, gf x2]
+  gf (GRound x1 x2) = mkApp (mkCId "Round") [gf x1, gf x2]
   gf (GSig x1 x2) = mkApp (mkCId "Sig") [gf x1, gf x2]
   gf (GUnary x1 x2) = mkApp (mkCId "Unary") [gf x1, gf x2]
   gf (GUncertain x1) = mkApp (mkCId "Uncertain") [gf x1]
@@ -300,6 +306,7 @@ instance Gf GExpr where
       Just (i,[x1,x2,x3]) | i == mkCId "BinExpr" -> GBinExpr (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "Certain" -> GCertain (fg x1)
       Just (i,[x1]) | i == mkCId "ConjExpr" -> GConjExpr (fg x1)
+      Just (i,[x1,x2]) | i == mkCId "Default" -> GDefault (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Elif" -> GElif (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "Fold" -> GFold (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "Fun" -> GFun (fg x1) (fg x2) (fg x3) (fg x4)
@@ -319,6 +326,7 @@ instance Gf GExpr where
       Just (i,[x1]) | i == mkCId "QuoteVar" -> GQuoteVar (fg x1)
       Just (i,[x1,x2,x3]) | i == mkCId "QuotedBinExpr" -> GQuotedBinExpr (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "Record" -> GRecord (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "Round" -> GRound (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Sig" -> GSig (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Unary" -> GUnary (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "Uncertain" -> GUncertain (fg x1)
@@ -512,6 +520,7 @@ instance Compos Tree where
     GBinExpr x1 x2 x3 -> r GBinExpr `a` f x1 `a` f x2 `a` f x3
     GCertain x1 -> r GCertain `a` f x1
     GConjExpr x1 -> r GConjExpr `a` f x1
+    GDefault x1 x2 -> r GDefault `a` f x1 `a` f x2
     GElif x1 x2 -> r GElif `a` f x1 `a` f x2
     GFold x1 x2 x3 -> r GFold `a` f x1 `a` f x2 `a` f x3
     GFun x1 x2 x3 x4 -> r GFun `a` f x1 `a` f x2 `a` f x3 `a` f x4
@@ -531,6 +540,7 @@ instance Compos Tree where
     GQuoteVar x1 -> r GQuoteVar `a` f x1
     GQuotedBinExpr x1 x2 x3 -> r GQuotedBinExpr `a` f x1 `a` f x2 `a` f x3
     GRecord x1 x2 -> r GRecord `a` f x1 `a` f x2
+    GRound x1 x2 -> r GRound `a` f x1 `a` f x2
     GSig x1 x2 -> r GSig `a` f x1 `a` f x2
     GUnary x1 x2 -> r GUnary `a` f x1 `a` f x2
     GUncertain x1 -> r GUncertain `a` f x1

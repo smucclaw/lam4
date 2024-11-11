@@ -143,11 +143,11 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       linArgs : Str -> ListX0 -> Str = \s,xs ->
         case xs.size of {
           Zero => "" ;
-          _    => paragraph (s ++ conjX "and" xs) } ;
+          _    => s ++ conjX "and" xs } ;
       linArgs : Str -> ListX0 -> Str -> Str = \pr,xs,pst ->
         case xs.size of {
           Zero => "" ;
-          _    => paragraph (pr ++ conjX "and" xs ++ pst) }
+          _    => pr ++ conjX "and" xs ++ pst }
       } ;
 
     -- Bin expr
@@ -233,6 +233,17 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       s = quote expr.s ++ "is certain"
     } ;
 
+    Round expr precision = expr ;
+    -- { -- for being extra verbose
+    --   s = dl "rounding" expr.s
+    --    ++ dl "to precision of" (precision.s ++ "decimals")
+    -- } ;
+
+    Default expr default = {
+      s = dl ("if" ++ expr.s ++ "is uncertain, then") default.s
+       ++ dl "else" expr.s
+    } ;
+
     IfThenElse if then else = {
       s = ite if.s then.s else.s
       } ;
@@ -249,7 +260,9 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
-    FunApp f xs = {s = f.s ++ linArgs "of" xs} ;
+    FunApp f xs = {
+      s = dl f.s (linArgs "" xs)
+      } ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
 
     -- : Expr -> Name -> Expr ;             -- record projection

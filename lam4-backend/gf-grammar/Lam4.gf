@@ -66,6 +66,8 @@ abstract Lam4 = {
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
 
     Known, Certain, Unknown, Uncertain : Expr -> Expr ;
+    Round : (expr, prec : Expr) -> Expr ;
+    Default : (val, default : Expr) -> Expr ;
 
     -- TODO: get rid of all nested IfThenElses
     IfThenElse : Expr -> Expr -> Expr -> Expr ;

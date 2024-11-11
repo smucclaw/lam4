@@ -83,6 +83,7 @@ postprocessText = newlines . tabs . rmBIND
     newlines :: T.Text -> T.Text
     newlines = T.map (\c -> if c == '∞' then '\n' else c)
 
+style :: T.Text
 style = [r|<head>
 
     <style>
@@ -377,6 +378,8 @@ parseExpr name =
   IfThenElse cond thn els  -> GIfThenElse (f cond) (f thn) (f els)
   FunApp (Var (N.MkName "instanceSumIf" _ _)) args -> parseInstanceSum args
   FunApp (Var (N.MkName "instanceSum" _ _)) args -> parseInstanceSum args
+  FunApp (Var (N.MkName "round" _ _))       args -> parseRound args
+  FunApp (Var (N.MkName "default" _ _))     args -> parseDefault args
   FunApp (Var (N.MkName "div" _ _)) [lc,rc] -> parseExpr name (BinExpr Divide lc rc)
   FunApp (Var (N.MkName "mult" _ _)) [lc,rc] -> parseExpr name (BinExpr Mult lc rc)
   FunApp (Var (N.MkName "add" _ _)) [lc,rc] -> parseExpr name (BinExpr Plus lc rc)
@@ -409,6 +412,14 @@ parseInstanceSum [_set, inst] = GInstanceSum instExpr
   where
     instExpr = parseExpr noName $ varFromFun inst
 parseInstanceSum _ = GKnownFunction $ GMkName $ GString "SOMETHING WENT WRONG D:"
+
+parseRound :: [Expr] -> GExpr
+parseRound [expr, prec] = GRound (parseExpr noName expr) (parseExpr noName prec)
+parseRound _ = GKnownFunction $ GMkName $ GString "SOMETHING WENT WRONG D:"
+
+parseDefault :: [Expr] -> GExpr
+parseDefault [expr, deflt] = GDefault (parseExpr noName expr) (parseExpr noName deflt)
+parseDefault _ = GKnownFunction $ GMkName $ GString "SOMETHING WENT WRONG D:"
 
 parseRecordRow :: (N.Name, Expr) -> GExpr
 parseRecordRow (name, expr) = GRecord (parseName name) (parseExpr name expr)
