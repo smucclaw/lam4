@@ -120,6 +120,7 @@ data Tree :: * -> * where
   GRound :: GExpr -> GExpr -> Tree GExpr_
   GSig :: GListName -> GListExpr -> Tree GExpr_
   GUnary :: GUnaryOp -> GExpr -> Tree GExpr_
+  GUnaryMinusExpr :: GExpr -> Tree GExpr_
   GUncertain :: GExpr -> Tree GExpr_
   GUnknown :: GExpr -> Tree GExpr_
   GVar :: GName -> Tree GExpr_
@@ -200,6 +201,7 @@ instance Eq (Tree a) where
     (GRound x1 x2,GRound y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GSig x1 x2,GSig y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUnary x1 x2,GUnary y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GUnaryMinusExpr x1,GUnaryMinusExpr y1) -> and [ x1 == y1 ]
     (GUncertain x1,GUncertain y1) -> and [ x1 == y1 ]
     (GUnknown x1,GUnknown y1) -> and [ x1 == y1 ]
     (GVar x1,GVar y1) -> and [ x1 == y1 ]
@@ -301,6 +303,7 @@ instance Gf GExpr where
   gf (GRound x1 x2) = mkApp (mkCId "Round") [gf x1, gf x2]
   gf (GSig x1 x2) = mkApp (mkCId "Sig") [gf x1, gf x2]
   gf (GUnary x1 x2) = mkApp (mkCId "Unary") [gf x1, gf x2]
+  gf (GUnaryMinusExpr x1) = mkApp (mkCId "UnaryMinusExpr") [gf x1]
   gf (GUncertain x1) = mkApp (mkCId "Uncertain") [gf x1]
   gf (GUnknown x1) = mkApp (mkCId "Unknown") [gf x1]
   gf (GVar x1) = mkApp (mkCId "Var") [gf x1]
@@ -335,6 +338,7 @@ instance Gf GExpr where
       Just (i,[x1,x2]) | i == mkCId "Round" -> GRound (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Sig" -> GSig (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Unary" -> GUnary (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "UnaryMinusExpr" -> GUnaryMinusExpr (fg x1)
       Just (i,[x1]) | i == mkCId "Uncertain" -> GUncertain (fg x1)
       Just (i,[x1]) | i == mkCId "Unknown" -> GUnknown (fg x1)
       Just (i,[x1]) | i == mkCId "Var" -> GVar (fg x1)
@@ -555,6 +559,7 @@ instance Compos Tree where
     GRound x1 x2 -> r GRound `a` f x1 `a` f x2
     GSig x1 x2 -> r GSig `a` f x1 `a` f x2
     GUnary x1 x2 -> r GUnary `a` f x1 `a` f x2
+    GUnaryMinusExpr x1 -> r GUnaryMinusExpr `a` f x1
     GUncertain x1 -> r GUncertain `a` f x1
     GUnknown x1 -> r GUnknown `a` f x1
     GVar x1 -> r GVar `a` f x1

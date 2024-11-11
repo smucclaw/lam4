@@ -194,7 +194,9 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     QuoteVar name = {s = quote name.s} ;
     Var name = name ;
     Lit name = name ;
-    Unary op expr = cc2 op expr ;
+    Unary op expr = {
+      s = dl op.s expr.s
+      } ;
     BinExpr op e1 e2 = {
       s = e1.s
        ++ op.s ! Concise
@@ -342,11 +344,13 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     KnownFunction _ = {s = ""} ;
 
     -- Unary and binary operators
-    Not = ss "not" ;
+    Not = ss (hilight Strong "it is not the case that") ;
     Floor = ss "floor of" ;
     Ceiling = ss "ceiling of" ;
     IntegerToFraction = ss "" ; -- not important in NLG
     UnaryMinus = ss "-" ;
+
+    UnaryMinusExpr expr = {s = glue "-" expr.s} ;
 
     Or = mkBinExpr "||" "or" ;
     And = mkBinExpr "&&" "and" ;

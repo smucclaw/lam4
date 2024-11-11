@@ -199,8 +199,8 @@ renderCstProgramToNL env decls = T.unlines (
   ["<html>", "<head>", style, "</head>", "<body>"] <>
   fmap (renderCstDeclToNL env) decls  <>
   ["</body>", "</html>"]
-
-  <> fmap (renderCstDeclToGFtrees env) decls)
+--  <> fmap (renderCstDeclToGFtrees env) decls
+  )
 
 renderCstDeclToNL :: NLGEnv -> Decl -> T.Text
 renderCstDeclToNL env = gfLin env . gf . genericTreeTrans . parseDecl
@@ -393,6 +393,7 @@ parseExpr name =
   let f = parseExpr name in \case
   Var var                  -> GVar (parseName var)
   Lit lit                  -> GLit (parseLit lit)
+  Unary UnaryMinus expr    -> GUnaryMinusExpr (f expr) ;
   Unary op expr            -> GUnary (parseUnaOp op) (f expr)
   -- e.g. "x / y"
   BinExpr op lc@Var{} rc@Var{}    -> GBinExpr (parseBinOp op) (f lc) (f rc)

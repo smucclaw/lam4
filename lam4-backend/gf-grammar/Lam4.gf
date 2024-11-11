@@ -65,7 +65,7 @@ abstract Lam4 = {
     QuotedBinExpr, -- no newline, quotes around args
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
 
-    Known, Certain, Unknown, Uncertain : Expr -> Expr ;
+    UnaryMinusExpr, Known, Certain, Unknown, Uncertain : Expr -> Expr ;
     Round : (expr, prec : Expr) -> Expr ;
     Default : (val, default : Expr) -> Expr ;
 
