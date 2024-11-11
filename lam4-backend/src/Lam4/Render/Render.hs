@@ -102,7 +102,7 @@ parseDecl = \case
       else GExprS $ parseExpr name expr
   NonRec name (Sig [] []) -> GAtomicConcept (parseName name)
   NonRec name expr@(BinExpr binop _ _) ->
-    if comparisonOp binop
+    if booleanOp binop
       then GLetIsTrue (parseName name) $ parseExpr noName expr
       else GAssignS (parseName name) $ parseExpr noName expr
   NonRec name expr -> GAssignS (parseName name) $ parseExpr noName expr
@@ -125,8 +125,13 @@ parseNameForRecord = GMkName . GString . T.unpack . rmThe . N.name
 commonFunction :: T.Text -> Bool
 commonFunction x = T.unpack x `elem` ["id", "map", "filter", "cons", "nil", "minus", "plus", "div", "mult", "add", "modulo", "pow", "round", "certain", "uncertain", "known", "unknown", "default", "instanceSumIf", "instanceSum"]
 
-comparisonOp :: BinOp -> Bool
-comparisonOp op = op `elem` [Eq, Lt, Gt, Le, Ge, Ne]
+booleanOp :: BinOp -> Bool
+booleanOp op = op `elem` [Eq, Lt, Gt, Le, Ge, Ne, And, Or]
+
+isPredicate :: Expr -> Bool
+isPredicate = \case
+  Var (N.MkName name _ _) -> name `elem` ["certain", "known", "uncertain", "unknown"]
+  _ -> False
 
 ---- Tree transformations -----
 
@@ -137,11 +142,15 @@ quoteVars x        = composOp quoteVars x
 -- Ground rule: binexpr is verbose if arguments are complex
 -- exception: if it's in if-then-else
 unVerboseBinExpr :: Tree a -> Tree a
-unVerboseBinExpr (GVerboseBinExpr op l r) =
-  GQuotedBinExpr op
-    (quoteVarsBinExpr l) -- inner bin exprs become now quoted, even if they were unquoted previously
-    (quoteVarsBinExpr r)
+unVerboseBinExpr (GVerboseBinExpr op l r) = GBinExpr op l r
+--   GQuotedBinExpr op
+--     (quoteVarsBinExpr l) -- inner bin exprs become now quoted, even if they were unquoted previously
+--     (quoteVarsBinExpr r)
 unVerboseBinExpr x = composOp unVerboseBinExpr x
+
+unVerboseNested :: Tree a -> Tree a
+unVerboseNested (GVerboseBinExpr op l r) = GVerboseBinExpr op (unVerboseBinExpr l) (unVerboseBinExpr r)
+unVerboseNested x = composOp unVerboseNested x
 
 -- like above, but also forces concise BinExpr to be quoted
 quoteVarsBinExpr :: Tree a -> Tree a
@@ -150,11 +159,22 @@ quoteVarsBinExpr (GBinExpr op l r) = GQuotedBinExpr op l r
 quoteVarsBinExpr x = composOp quoteVarsBinExpr x
 
 aggregatePredApp :: Tree a -> Tree a
-aggregatePredApp tree@(GQuotedBinExpr op (GFunApp f arg) (GFunApp g arg')) =
-  if True -- sameTree arg arg'
+aggregatePredApp tree@(GBinExpr op (GPredApp f arg) (GPredApp g arg')) =
+  if sameTree arg arg'
     then GPredAppMany op arg (GListExpr [f,g])
     else tree
-
+aggregatePredApp tree@(GVerboseBinExpr op (GPredApp f arg) (GPredApp g arg')) =
+      if sameTree arg arg'
+        then GPredAppMany op arg (GListExpr [f,g])
+        else tree
+aggregatePredApp tree@(GBinExpr op (GFunApp f arg) (GFunApp g arg')) =
+      if sameTree arg arg'
+        then GPredAppMany op arg (GListExpr [f,g])
+        else tree
+aggregatePredApp tree@(GVerboseBinExpr op (GFunApp f arg) (GFunApp g arg')) =
+      if sameTree arg arg'
+        then GPredAppMany op arg (GListExpr [f,g])
+        else tree
 aggregatePredApp x = composOp aggregatePredApp x
 
 --------------------------------
@@ -219,17 +239,23 @@ parseExpr name =
   -- e.g. "x / y"
   BinExpr op l@Var{} r@Var{}    -> GBinExpr (parseBinOp op) (f l) (f r)
 
-  -- e.g. "x's z / y"
+  -- e.g. "a's x / y"
   BinExpr op l@Project{} r@Var{} -> GBinExpr (parseBinOp op) (f l) (f r)
+
+  -- e.g. "a's x / b's y"
+  BinExpr op l@Project{} r@Project{} -> GBinExpr (parseBinOp op) (f l) (f r)
 
   -- other BinExprs are "verbose" = newlines and stuff
   BinExpr op l r           -> GVerboseBinExpr (parseBinOp op) (f l) (f r)
-  IfThenElse cond thn els  -> unVerboseBinExpr $ GIfThenElse (f cond) (f thn) (f els)
+  IfThenElse cond thn els  -> unVerboseNested $ GIfThenElse (f cond) (f thn) (f els)
   FunApp (Var (N.MkName "instanceSumIf" _ _)) args -> parseInstanceSum args
   FunApp (Var (N.MkName "div" _ _)) [l,r] -> parseExpr name (BinExpr Divide l r)
   FunApp (Var (N.MkName "mult" _ _)) [l,r] -> parseExpr name (BinExpr Mult l r)
   FunApp (Var (N.MkName "add" _ _)) [l,r] -> parseExpr name (BinExpr Plus l r)
-  FunApp fun args          -> GFunApp (f fun) (GListExpr $ fmap f args)
+  FunApp fun args -> if isPredicate fun
+                    then parseExpr name (PredApp fun args)
+                    else GFunApp (f fun) (GListExpr $ fmap f args)
+--  FunApp fun args          -> GFunApp (f fun) (GListExpr $ fmap f args)
 --  Record rows              -> GRecord
   Project record label     -> GProject (f record) (parseNameForRecord label)
   Fun md args body         -> GFun (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)

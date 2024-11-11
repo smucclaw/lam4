@@ -37,7 +37,6 @@ instance Gf GFloat where
 ----------------------------------------------------
 -- below this line machine-generated
 instance (Gf (Tree a)) => Show (Tree a) where
-    show :: Gf (Tree a) => Tree a -> String
     show = showExpr [] . gf
 ----------------------------------------------------
 
@@ -89,6 +88,7 @@ data Tree :: * -> * where
   GOr :: Tree GBinOp_
   GPlus :: Tree GBinOp_
   GBinExpr :: GBinOp -> GExpr -> GExpr -> Tree GExpr_
+  GCertain :: GExpr -> Tree GExpr_
   GConjExpr :: GListExpr -> Tree GExpr_
   GElif :: GListIfThen -> GExpr -> Tree GExpr_
   GFold :: GExpr -> GExpr -> GExpr -> Tree GExpr_
@@ -96,6 +96,7 @@ data Tree :: * -> * where
   GFunApp :: GExpr -> GListExpr -> Tree GExpr_
   GIfThenElse :: GExpr -> GExpr -> GExpr -> Tree GExpr_
   GInstanceSumIf :: GExpr -> GExpr -> Tree GExpr_
+  GKnown :: GExpr -> Tree GExpr_
   GKnownFunction :: GName -> Tree GExpr_
   GLet :: GS -> GExpr -> Tree GExpr_
   GLit :: GName -> Tree GExpr_
@@ -156,6 +157,7 @@ instance Eq (Tree a) where
     (GOr,GOr) -> and [ ]
     (GPlus,GPlus) -> and [ ]
     (GBinExpr x1 x2 x3,GBinExpr y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
+    (GCertain x1,GCertain y1) -> and [ x1 == y1 ]
     (GConjExpr x1,GConjExpr y1) -> and [ x1 == y1 ]
     (GElif x1 x2,GElif y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GFold x1 x2 x3,GFold y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
@@ -163,6 +165,7 @@ instance Eq (Tree a) where
     (GFunApp x1 x2,GFunApp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GIfThenElse x1 x2 x3,GIfThenElse y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GInstanceSumIf x1 x2,GInstanceSumIf y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GKnown x1,GKnown y1) -> and [ x1 == y1 ]
     (GKnownFunction x1,GKnownFunction y1) -> and [ x1 == y1 ]
     (GLet x1 x2,GLet y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GLit x1,GLit y1) -> and [ x1 == y1 ]
@@ -225,25 +228,26 @@ instance Gf GBinOp where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "And" -> GAnd
-      Just (i,[]) | i == mkCId "Divide" -> GDivide
-      Just (i,[]) | i == mkCId "Eq" -> GEq
-      Just (i,[]) | i == mkCId "Ge" -> GGe
-      Just (i,[]) | i == mkCId "Gt" -> GGt
-      Just (i,[]) | i == mkCId "Le" -> GLe
-      Just (i,[]) | i == mkCId "Lt" -> GLt
-      Just (i,[]) | i == mkCId "Minus" -> GMinus
-      Just (i,[]) | i == mkCId "Modulo" -> GModulo
-      Just (i,[]) | i == mkCId "Mult" -> GMult
-      Just (i,[]) | i == mkCId "Ne" -> GNe
-      Just (i,[]) | i == mkCId "Or" -> GOr
-      Just (i,[]) | i == mkCId "Plus" -> GPlus
+      Just (i,[]) | i == mkCId "And" -> GAnd 
+      Just (i,[]) | i == mkCId "Divide" -> GDivide 
+      Just (i,[]) | i == mkCId "Eq" -> GEq 
+      Just (i,[]) | i == mkCId "Ge" -> GGe 
+      Just (i,[]) | i == mkCId "Gt" -> GGt 
+      Just (i,[]) | i == mkCId "Le" -> GLe 
+      Just (i,[]) | i == mkCId "Lt" -> GLt 
+      Just (i,[]) | i == mkCId "Minus" -> GMinus 
+      Just (i,[]) | i == mkCId "Modulo" -> GModulo 
+      Just (i,[]) | i == mkCId "Mult" -> GMult 
+      Just (i,[]) | i == mkCId "Ne" -> GNe 
+      Just (i,[]) | i == mkCId "Or" -> GOr 
+      Just (i,[]) | i == mkCId "Plus" -> GPlus 
 
 
       _ -> error ("no BinOp " ++ show t)
 
 instance Gf GExpr where
   gf (GBinExpr x1 x2 x3) = mkApp (mkCId "BinExpr") [gf x1, gf x2, gf x3]
+  gf (GCertain x1) = mkApp (mkCId "Certain") [gf x1]
   gf (GConjExpr x1) = mkApp (mkCId "ConjExpr") [gf x1]
   gf (GElif x1 x2) = mkApp (mkCId "Elif") [gf x1, gf x2]
   gf (GFold x1 x2 x3) = mkApp (mkCId "Fold") [gf x1, gf x2, gf x3]
@@ -251,6 +255,7 @@ instance Gf GExpr where
   gf (GFunApp x1 x2) = mkApp (mkCId "FunApp") [gf x1, gf x2]
   gf (GIfThenElse x1 x2 x3) = mkApp (mkCId "IfThenElse") [gf x1, gf x2, gf x3]
   gf (GInstanceSumIf x1 x2) = mkApp (mkCId "InstanceSumIf") [gf x1, gf x2]
+  gf (GKnown x1) = mkApp (mkCId "Known") [gf x1]
   gf (GKnownFunction x1) = mkApp (mkCId "KnownFunction") [gf x1]
   gf (GLet x1 x2) = mkApp (mkCId "Let") [gf x1, gf x2]
   gf (GLit x1) = mkApp (mkCId "Lit") [gf x1]
@@ -272,6 +277,7 @@ instance Gf GExpr where
   fg t =
     case unApp t of
       Just (i,[x1,x2,x3]) | i == mkCId "BinExpr" -> GBinExpr (fg x1) (fg x2) (fg x3)
+      Just (i,[x1]) | i == mkCId "Certain" -> GCertain (fg x1)
       Just (i,[x1]) | i == mkCId "ConjExpr" -> GConjExpr (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Elif" -> GElif (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "Fold" -> GFold (fg x1) (fg x2) (fg x3)
@@ -279,6 +285,7 @@ instance Gf GExpr where
       Just (i,[x1,x2]) | i == mkCId "FunApp" -> GFunApp (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "IfThenElse" -> GIfThenElse (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2]) | i == mkCId "InstanceSumIf" -> GInstanceSumIf (fg x1) (fg x2)
+      Just (i,[x1]) | i == mkCId "Known" -> GKnown (fg x1)
       Just (i,[x1]) | i == mkCId "KnownFunction" -> GKnownFunction (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Let" -> GLet (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "Lit" -> GLit (fg x1)
@@ -355,7 +362,7 @@ instance Gf GMetadata where
   fg t =
     case unApp t of
       Just (i,[x1]) | i == mkCId "MkMetadata" -> GMkMetadata (fg x1)
-      Just (i,[]) | i == mkCId "NoMetadata" -> GNoMetadata
+      Just (i,[]) | i == mkCId "NoMetadata" -> GNoMetadata 
 
 
       _ -> error ("no Metadata " ++ show t)
@@ -396,7 +403,7 @@ instance Gf GS where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "AssignS" -> GAssignS (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "AtomicConcept" -> GAtomicConcept (fg x1)
-      Just (i,[]) | i == mkCId "EmptyS" -> GEmptyS
+      Just (i,[]) | i == mkCId "EmptyS" -> GEmptyS 
       Just (i,[x1]) | i == mkCId "EvalS" -> GEvalS (fg x1)
       Just (i,[x1]) | i == mkCId "EvalWhetherS" -> GEvalWhetherS (fg x1)
       Just (i,[x1]) | i == mkCId "ExprS" -> GExprS (fg x1)
@@ -425,11 +432,11 @@ instance Gf GUnaryOp where
 
   fg t =
     case unApp t of
-      Just (i,[]) | i == mkCId "Ceiling" -> GCeiling
-      Just (i,[]) | i == mkCId "Floor" -> GFloor
-      Just (i,[]) | i == mkCId "IntegerToFraction" -> GIntegerToFraction
-      Just (i,[]) | i == mkCId "Not" -> GNot
-      Just (i,[]) | i == mkCId "UnaryMinus" -> GUnaryMinus
+      Just (i,[]) | i == mkCId "Ceiling" -> GCeiling 
+      Just (i,[]) | i == mkCId "Floor" -> GFloor 
+      Just (i,[]) | i == mkCId "IntegerToFraction" -> GIntegerToFraction 
+      Just (i,[]) | i == mkCId "Not" -> GNot 
+      Just (i,[]) | i == mkCId "UnaryMinus" -> GUnaryMinus 
 
 
       _ -> error ("no UnaryOp " ++ show t)
@@ -446,6 +453,7 @@ instance Gf GIfThen where
 instance Compos Tree where
   compos r a f t = case t of
     GBinExpr x1 x2 x3 -> r GBinExpr `a` f x1 `a` f x2 `a` f x3
+    GCertain x1 -> r GCertain `a` f x1
     GConjExpr x1 -> r GConjExpr `a` f x1
     GElif x1 x2 -> r GElif `a` f x1 `a` f x2
     GFold x1 x2 x3 -> r GFold `a` f x1 `a` f x2 `a` f x3
@@ -453,6 +461,7 @@ instance Compos Tree where
     GFunApp x1 x2 -> r GFunApp `a` f x1 `a` f x2
     GIfThenElse x1 x2 x3 -> r GIfThenElse `a` f x1 `a` f x2 `a` f x3
     GInstanceSumIf x1 x2 -> r GInstanceSumIf `a` f x1 `a` f x2
+    GKnown x1 -> r GKnown `a` f x1
     GKnownFunction x1 -> r GKnownFunction `a` f x1
     GLet x1 x2 -> r GLet `a` f x1 `a` f x2
     GLit x1 -> r GLit `a` f x1

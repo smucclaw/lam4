@@ -56,7 +56,7 @@ abstract Lam4 = {
     QuotedBinExpr, -- no newline, quotes around args
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
 
-    Unknown, Uncertain : Expr -> Expr ;
+    Known, Certain, Unknown, Uncertain : Expr -> Expr ;
 
     -- TODO: get rid of all nested IfThenElses
     IfThenElse : Expr -> Expr -> Expr -> Expr ;

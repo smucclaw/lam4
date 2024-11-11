@@ -12,7 +12,33 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     MyListSize = Zero | One | Many ;
     Verbosity = Concise | Verbose ;
 
+    Hilight = Strong | Emph | Underline ;
+
   oper
+
+    -- Keywords
+
+    hilight : Hilight -> Str -> Str ;
+    hilight emph str =
+      openTag emph ++ str ++ closeTag emph ;
+
+    openTag : Hilight -> Str = \t -> case t of {
+      Strong => "<strong>" ;
+      Emph => "<em>" ;
+      Underling => "<u>"
+    } ;
+
+    closeTag : Hilight -> Str = \t -> case t of {
+      Strong => "</strong>" ;
+      Emph => "</em>" ;
+      Underling => "</u>"
+    } ;
+
+    ifKw : Str = hilight Strong "if" ;
+    thenKw : Str = hilight Strong "then" ;
+    elseKw : Str = hilight Strong "else" ;
+
+    -- List operations
     ListX0 : Type = ListX ** {size : MyListSize} ;
 
     baseListX0 : ListX0 = {
@@ -20,9 +46,31 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       size = Zero
     } ;
 
-    consListX0 : SS -> ListX0 -> ListX0 = \x,xs -> case xs.size of {
+  -- twoStr : (x,y : Str) -> ListX = \x,y ->
+  --   {s1 = x ; s2 = y} ;
+  -- consStr : Str -> ListX -> Str -> ListX = \comma,xs,x ->
+  --   {s1 = xs.s1 ++ comma ++ xs.s2 ; s2 = x } ;
+
+
+
+    conslListX0 : SS -> ListX0 -> ListX0 = \x,xs -> case xs.size of {
         Many => xs ** {
-          s1 = x.s ++ bindComma ++ xs.s1
+          s1 = xs.s1 ++ bindComma ++ xs.s2 ;
+          s2 = x.s
+          } ;
+        One => xs ** {
+          s2 = x.s ;
+          size = Many
+          } ;
+        Zero => xs ** {
+          s1 = x.s ;
+          size = One
+          }
+      } ;
+
+    consrListX0 : SS -> ListX0 -> ListX0 = \x,xs -> case xs.size of {
+        Many => xs ** {
+          s1 = x.s ++ bindComma ++ xs.s1 ;
           } ;
         One => xs ** {
           s1 = x.s ;
@@ -55,17 +103,14 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     EvalS expr = {s = "evaluate" ++ expr.s ++ linebreak} ;
     EvalWhetherS expr = {s = "evaluate whether" ++ expr.s ++ linebreak} ;
     AssignS name expr = {
-      s = quote name.s
-       ++ "is calculated by"
-       ++ indent1 expr.s
-       ++ linebreak } ;
+      s = dl (quote name.s ++ hilight Strong "is calculated by")
+             expr.s
+      } ;
     LetIsTrue name expr = {
-      s = quote name.s
-       ++ "is true if"
-       ++ indent1 expr.s
-       ++ linebreak
+      s = dl (quote name.s ++ ifKw)
+             expr.s
        } ;
-    AtomicConcept name = {s = name.s ++ "is an atomic concept."} ;
+    AtomicConcept name = {s = paragraph (name.s ++ "is an atomic concept.")} ;
 
     -- Metadata
     MkMetadata str = str ** {isEmpty = NonEmpty} ;
@@ -100,17 +145,19 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     -- just ad hoc characters to `tr "°∞" "\t\n"` in shell
     tab = "°°" ;
     space = "°" ;
-    linebreak = "∞" ;
+    linebreak = "<br/>" ;
 
     indent1, indent2 : Str -> Str ;
     indent1 str = linebreak ++ space ++ str ;
     indent2 str = linebreak ++ tab ++ str ;
 
     quote : Str -> Str ;
-    quote str = "[" ++ BIND ++ str ++ BIND ++ "]" ;
+    quote str = "<u>" ++ BIND ++ str ++ BIND ++ "</u>" ;
 
     quoteSS : SS -> SS ;
     quoteSS ss = {s = quote ss.s} ;
+
+    paragraph : Str -> Str = \s -> "<p>" ++ s ++ "</p>" ;
 
     artIndef = pre {
       "eu" | "Eu" | "uni" | "Uni" => "A" ;
@@ -132,19 +179,53 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       linArgs : Str -> ListX0 -> Str = \s,xs ->
         case xs.size of {
           Zero => "" ;
-          _    => s ++ conjX "and" xs } ;
+          _    => paragraph (s ++ conjX "and" xs) } ;
       linArgs : Str -> ListX0 -> Str -> Str = \pr,xs,pst ->
         case xs.size of {
           Zero => "" ;
-          _    => pr ++ conjX "and" xs ++ pst }
+          _    => paragraph (pr ++ conjX "and" xs ++ pst) }
       } ;
 
+    -- Bin expr
     mkBinExpr : Str -> Str -> {s : Verbosity => Str} ;
     mkBinExpr short long = {
       s = table {
         Concise => short ;
-        Verbose => long }
+        Verbose => hilight Emph long }
       } ;
+
+    -- ul = overload {
+      ul : (i,t,e : Str) -> Str ;
+      ul i t e =
+        paragraph (
+            i
+        ++ "<ul>"
+        ++ "<li>" ++ t ++ "</li>"
+        ++ "<li>" ++ e ++ "</li>"
+        ++ "</ul>"
+        ) ;
+    -- }
+
+    dl = overload {
+      dl : (t,d : Str) -> Str  = \t,d ->
+          "<dl>"
+        ++ "<dt>" ++ t ++ "</dt>"
+        ++ "<dd>" ++ d ++ "</dd>"
+        ++ "</dl>"
+        ;
+      dl : Hilight -> (t, d : Str) -> Str = \emph,t,d ->
+          "<dl>"
+        ++ "<dt>" ++ hilight emph t ++ "</dt>"
+        ++ "<dd>" ++ d ++ "</dd>"
+        ++ "</dl>"
+    } ;
+
+
+    ite : (i,t,e : Str) -> Str ;
+    ite i t e =
+      dl ifKw i ++
+      (dl thenKw t ++
+       dl elseKw e) ;
 
   lin
 
@@ -168,9 +249,8 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       } ;
 
     VerboseBinExpr op e1 e2 = {
-      s =         (quote e1.s)
-       ++ indent1 (op.s ! Verbose)
-       ++ indent1 (quote e2.s)
+      s = dl "" e1.s
+       ++ dl (op.s ! Verbose) e2.s
       } ;
 
     Unknown expr = {
@@ -181,19 +261,22 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       s = quote expr.s ++ "is uncertain"
     } ;
 
+    Known expr = {
+      s = quote expr.s ++ "is known"
+    } ;
+
+    Certain expr = {
+      s = quote expr.s ++ "is certain"
+    } ;
 
     IfThenElse if then else = {
-      s = "if" ++ if.s
-        ++ indent2 "then" ++ then.s
-        ++ indent2 "else" ++ else.s
+      s = ite if.s then.s else.s
       } ;
 
     -- : Expr -> Expr -> Expr ;
     InstanceSumIf entities condition = {
-      s = "adding up those of"
-       ++ indent2 (quote entities.s)
-       ++ indent1 "where"
-       ++ indent2 (quote condition.s)
+      s = dl "adding up those of" (quote entities.s)
+       ++ dl "where" (quote condition.s)
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
@@ -201,7 +284,11 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     -- Record : (Row Expr) -> Expr ;               -- record construction
 
     -- : Expr -> Name -> Expr ;             -- record projection
-    Project rec field = {s = glue rec.s "'s" ++ field.s} ;
+    Project rec field = {
+      s =
+      --  glue rec.s "'s" ++
+          field.s
+      } ;
 
     -- : Name -> Metadata -> [Name] -> Expr -> Expr ;  -- Function
     Fun funname md args body = {
@@ -236,7 +323,11 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       } ;
 
     -- : Expr -> [Expr] -> Expr ;
-    PredApp = FunApp ;
+    PredApp f xs = {
+      s = case xs.size of {
+        One => conjX "and" xs ++ "is" ++ f.s ; -- business plan is known
+        _ => f.s ++ "holds for" ++ conjX "and" xs }
+      } ;
 
     PredAppMany op args preds = {
       s = quote (conjX "and" args) ++ "is" ++ conjX (op.s ! Verbose) preds
@@ -279,7 +370,7 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     Ne = mkBinExpr "≠" "is not equal to" ;
 
     BaseExpr, BaseName = baseListX0 ;
-    ConsExpr, ConsName = consListX0 ;
+    ConsExpr, ConsName = consrListX0 ;
     ConjExpr = conjXss ;
 }
 
