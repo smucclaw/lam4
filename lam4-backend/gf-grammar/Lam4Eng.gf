@@ -159,15 +159,10 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
       } ;
 
     -- ul = overload {
-      ul : (i,t,e : Str) -> Str ;
-      ul i t e =
-        paragraph (
-            i
-        ++ "<ul>"
-        ++ "<li>" ++ t ++ "</li>"
-        ++ "<li>" ++ e ++ "</li>"
-        ++ "</ul>"
-        ) ;
+      ul,li : Str -> Str ;
+      ul str = "<ul>" ++ str ++ "</ul>" ;
+      li str = "<li>" ++ str ++ "</li>" ;
+
     -- }
 
     dl = overload {
@@ -247,6 +242,22 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     IfThenElse if then else = {
       s = ite if.s then.s else.s
       } ;
+
+    FirstIfThen i t = {
+      s = dl "if" i.s
+      ++ dl "then" t.s
+    } ;
+    MiddleIfThen i t = {
+      s = dl "else if" i.s
+      ++ dl "then" t.s
+    } ;
+    NilIfThen e = {
+      s = dl "else" e.s
+    } ;
+
+    BaseIfThen = baseIfThen ;
+    ConsIfThen = consIfThen ;
+    Elif its = its ; -- {s = ul its.s} ;
 
     -- : Expr -> Expr -> Expr ;
     InstanceSumIf entities condition = {
@@ -391,6 +402,21 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
           }
       } ;
 
+    baseIfThen : SS -> SS -> SS = \s1,s2 -> {
+      s =
+          -- li
+          s1.s
+        ++
+          -- li
+          s2.s
+      } ;
+
+    consIfThen : SS -> SS -> SS = \s,ss -> ss ** {
+      s =
+          -- li
+          s.s
+        ++ ss.s
+      } ;
   -- Special for flattening nested And/Or
   LinLExpr : Type = {s : PListOp => Str} ;
   LinListOp : Type = {s : Str ; op : PListOp} ;
@@ -408,7 +434,6 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
          dl (conjTable ! conj) s1.s
       ++
          dl (conjTable ! conj) s2.s
-
     } ;
 
   consLExpr : SS -> LinLExpr -> LinLExpr = \s,ss -> ss ** {

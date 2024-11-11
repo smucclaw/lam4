@@ -22,7 +22,7 @@ abstract Lam4 = {
     -- (condition, value)
     -- in order to flatten nested if-then-elses into if-elif-elif-…-else
     IfThen ;
-    [IfThen]{1} ;
+    [IfThen]{2} ;
   fun
     -- Placeholder, or skip some constructs?
     EmptyS : S ;
@@ -69,10 +69,13 @@ abstract Lam4 = {
     Round : (expr, prec : Expr) -> Expr ;
     Default : (val, default : Expr) -> Expr ;
 
-    -- TODO: get rid of all nested IfThenElses
     IfThenElse : Expr -> Expr -> Expr -> Expr ;
-    -- make them into Elif instead
-    Elif: [IfThen] -> Expr -> Expr ;
+
+    -- Flatten nested If Then Elses
+    FirstIfThen : Expr -> Expr -> IfThen ;
+    MiddleIfThen : Expr -> Expr -> IfThen ;
+    NilIfThen : Expr -> IfThen ; -- the original IfThenElse
+    Elif: [IfThen] -> Expr ;
     {-
 
       IF    i's `the business's number of past and current clients`  is larger than

@@ -172,6 +172,24 @@ style = [r|<head>
           margin-left: 1em;
         }
         /* Add more levels as needed */
+
+        /* First item with the default bullet */
+        ul li:first-child {
+          list-style-type: none; /* Or whatever default style you prefer */
+        }
+
+        /* Customize bullets for all other list items */
+        ul li:not(:first-child) {
+          list-style-type: none; /* Remove the default bullet */
+        }
+
+        ul li:not(:first-child)::before {
+          content: "else"; /* Use a custom symbol or character for bullets */
+          color: blue; /* Customize the color */
+          margin-right: 0em; /* Space between bullet and text */
+        }
+
+
       </style>
 </head>|]
 
@@ -237,7 +255,7 @@ varFromFun = \case
 ---- Tree transformations -----
 
 genericTreeTrans :: Tree a -> Tree a
-genericTreeTrans = flattenNestedAndOr . aggregatePredApp . binExprVerbosity
+genericTreeTrans = flattenITE . flattenNestedAndOr . aggregatePredApp . binExprVerbosity
 
 quoteVars :: Tree a -> Tree a
 quoteVars (GVar x) = GQuoteVar x
@@ -273,6 +291,21 @@ aggregatePredApp tree@(GVerboseBinExpr op (GFunApp f arg) (GFunApp g arg')) =
         then GPredAppMany op arg (GListExpr [f,g])
         else tree
 aggregatePredApp x = composOp aggregatePredApp x
+
+flattenITE :: Tree a -> Tree a
+flattenITE expr@GIfThenElse{} =
+  case collectITE expr of
+    ites@(_:_:_) -> GElif $ GListIfThen (rmElseFromFirst ites)
+    _            -> expr
+  where
+    rmElseFromFirst (GMiddleIfThen i t : rest) = GFirstIfThen i t : rest
+    rmElseFromFirst x = x
+flattenITE x = composOp flattenITE x
+
+collectITE :: GExpr -> [GIfThen]
+collectITE (GIfThenElse i t e@GIfThenElse{}) = GMiddleIfThen i t : collectITE e
+collectITE (GIfThenElse i t e) = [GMiddleIfThen i t, GNilIfThen e]
+collectITE e = [GNilIfThen e]
 
 flattenNestedAndOr :: Tree a -> Tree a
 flattenNestedAndOr e@GBinExpr{} = composOp flattenNestedAndOr (flattenIfLongEnough e)
