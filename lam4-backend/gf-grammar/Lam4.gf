@@ -26,13 +26,13 @@ abstract Lam4 = {
   fun
     -- Placeholder, or skip some constructs?
     EmptyS : S ;
-    TypeDeclS : TypeDecl -> S ;
+    TypeDeclS : (id : String) -> TypeDecl -> S ;
     EvalS,
     EvalWhetherS,
-    ExprS : Expr -> S ;
-    AssignS : Name -> Expr -> S ;
-    LetIsTrue : Name -> Expr -> S ;
-    AtomicConcept : Name -> S ;
+    ExprS : (id : String) -> Expr -> S ;
+    AssignS : (id : String) -> Name -> Expr -> S ;
+    LetIsTrue : (id : String) -> Name -> Expr -> S ;
+    AtomicConcept : (id : String) -> Name -> S ;
 
     -- Metadata
     MkMetadata : String -> Metadata ;
@@ -62,7 +62,6 @@ abstract Lam4 = {
 
     Unary   : UnaryOp -> Expr -> Expr ;
     VerboseBinExpr, -- newline + quotes around args
-    QuotedBinExpr, -- no newline, quotes around args
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
 
     UnaryMinusExpr, Known, Certain, Unknown, Uncertain : Expr -> Expr ;
@@ -97,6 +96,7 @@ abstract Lam4 = {
     InstanceSum : (entities : Expr) -> Expr ;
     FunApp : Expr -> [Expr] -> Expr ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
+    OnlyFieldProject,
     Project : Expr -> Name -> Expr ;             -- record projection
     Fun : (funname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;  -- Function
     Sig : [Name] -> [Expr] -> Expr ; -- TODO: what is this? only `Sig [] []` present in royalflush data

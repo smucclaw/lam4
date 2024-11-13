@@ -62,58 +62,54 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
   lin
     -- Placeholder, or skip some constructs?
     EmptyS = {s = ""} ;
-    TypeDeclS td = td ;
-    ExprS expr = expr ;
-    EvalS expr = {s = "evaluate" ++ expr.s ++ linebreak} ;
-    EvalWhetherS expr = {s = "evaluate whether" ++ expr.s ++ linebreak} ;
-    AssignS name expr = {
-      s = dl (quote name.s ++ hilight Strong "is calculated by")
-             expr.s
+    TypeDeclS id td = {s = paragraph id.s td.s} ;
+    ExprS id expr = {s = paragraph id.s expr.s} ;
+    EvalS id expr = {s = paragraph id.s ("evaluate" ++ expr.s)} ;
+    EvalWhetherS id expr = {s = paragraph id.s ("evaluate whether" ++ expr.s)} ;
+    AssignS id name expr = {
+      s = paragraph id.s (
+            dl (quote name.s ++ hilight Strong "is calculated by")
+               expr.s
+          )
       } ;
-    LetIsTrue name expr = {
-      s = dl (quote name.s ++ ifKw)
-             expr.s
+    LetIsTrue id name expr = {
+      s = paragraph id.s (
+            dl (quote name.s ++ ifKw)
+               expr.s
+          )
        } ;
-    AtomicConcept name = {s = paragraph (name.s ++ "is an atomic concept.")} ;
+    AtomicConcept id name = {s = paragraph id.s (name.s ++ "is an atomic concept.")} ;
 
     -- Metadata
     MkMetadata str = str ** {isEmpty = NonEmpty} ;
     NoMetadata = {s = [] ; isEmpty = Empty} ;
 
     -- Type declarations
-    MkRowTypeDecl md field typ = {s = bullet ++ "its" ++ field.s ++ linType typ ++ linRowMd md} ;
-    MkRowDecl md field = {s = bullet ++ "its" ++ field.s ++ linRowMd md} ;
+    MkRowTypeDecl md field typ = {s = "its" ++ field.s ++ linType typ ++ linRowMd md} ;
+    MkRowDecl md field = {s = "its" ++ field.s ++ linRowMd md} ;
 
     -- These funs are automatically generated from cat [RowTypeDecl]{0} ;
     -- : [RowTypeDecl]
     BaseRowTypeDecl = {s = [] ; isEmpty = Empty} ;
     -- : RowTypeDecl -> [RowTypeDecl] -> [RowTypeDecl]
-    ConsRowTypeDecl t ts =
-      let sep : Str = case ts.isEmpty of {
-                        Empty => [] ;
-                        NonEmpty => linebreak } ;
-       in {s = tab ++ t.s ++ sep ++ ts.s ; isEmpty = NonEmpty} ;
+    ConsRowTypeDecl t ts = {
+      s = li t.s ++ ts.s ;
+      isEmpty = NonEmpty
+      } ;
 
     MkTypeDecl md name rtds = {
-      s = artIndef ++ name.s ++ linTypeDeclMd md ++ "." ++
-          case rtds.isEmpty of {
-            Empty => [] ;
-            NonEmpty => "Each" ++ name.s ++
-                     "has associated with it information like" ++
-                     linebreak ++ rtds.s
-          } ;
+      s = artIndef ++ name.s ++ linTypeDeclMd md ++
+            case rtds.isEmpty of {
+              Empty => [] ;
+              NonEmpty => "Each" ++ name.s ++
+                      "has associated with it information like" ++
+                      ul rtds.s
+            }
       } ;
 
   oper
-    bullet = "*" ;
-    -- just ad hoc characters to `tr "°∞" "\t\n"` in shell
-    tab = "°°" ;
-    space = "°" ;
-    linebreak = "<br/>" ;
-
-    indent1, indent2 : Str -> Str ;
-    indent1 str = linebreak ++ space ++ str ;
-    indent2 str = linebreak ++ tab ++ str ;
+    linebreak = "∞" ;
+    hr = linebreak ++ "<hr/>" ++ linebreak ;
 
     quote : Str -> Str ;
     quote str = "<u>" ++ BIND ++ str ++ BIND ++ "</u>" ;
@@ -121,7 +117,10 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     quoteSS : SS -> SS ;
     quoteSS ss = {s = quote ss.s} ;
 
-    paragraph : Str -> Str = \s -> "<p>" ++ s ++ "</p>" ;
+    paragraph = overload {
+      paragraph : Str -> Str = \s -> "<p>" ++ s ++ "</p>" ;
+      paragraph : (id : Str) -> Str -> Str = \i,s -> "<p id=\"" ++ BIND ++ i ++ BIND ++ "\">" ++ s ++ "</p>"
+      } ;
 
     artIndef = pre {
       "eu" | "Eu" | "uni" | "Uni" => "A" ;
@@ -203,12 +202,6 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
        ++ e2.s
       } ;
 
-    QuotedBinExpr op e1 e2 = {
-      s = quote e1.s
-       ++ op.s ! Concise
-       ++ quote e2.s
-      } ;
-
     VerboseBinExpr op e1 e2 = {
       s = dl "" e1.s
        ++ dl (op.s ! Verbose) e2.s
@@ -280,21 +273,27 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
 
     -- : Expr -> Name -> Expr ;             -- record projection
     Project rec field = {
-      s =
-      --  glue rec.s "'s" ++
+      s = glue rec.s "'s" ++
           field.s
+      } ;
+
+    -- don't print out the record, only the field.
+    -- Whether to choose this or Project should depend on annotations in the Lam4 program.
+    OnlyFieldProject _rec field = {
+      s = field.s
       } ;
 
     -- : Name -> Metadata -> [Name] -> Expr -> Expr ;  -- Function
     Fun funname md args body = {
-      s = "Function" ++ funname.s ++ ":" ++ linebreak
-       ++ linArgs "given" args ", return"
-       ++ indent1 body.s
+      s =
+      -- "Function" ++ funname.s ++ ":" ++ linebreak ++
+      --  ++ linArgs "given" args ", return" ++
+      body.s
       } ;
 
     -- : S -> Expr -> Expr ;
     Let decl expr = {
-      s = decl.s ++ linebreak ++ expr.s
+      s = decl.s ++ hr ++ expr.s
     } ;
 
     -- : Name -> Expr -> Expr ;
@@ -327,8 +326,6 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     PredAppMany op args preds = {
       s = quote (conjX "and" args) ++ "is" ++ conjX (op.s ! Verbose) preds
     } ;
-
-
 
     Fold combine nil over = {
       s = linebreak ++

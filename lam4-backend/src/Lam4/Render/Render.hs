@@ -71,21 +71,17 @@ initializeGFLang str gr =
 
 
 postprocessText :: T.Text -> T.Text
-postprocessText = newlines . tabs . rmBIND
+postprocessText = rmBIND . newlines -- . any other postprocessing functions here
   where
     -- TODO: the following could be cleaned up / made clearer
     rmBIND :: T.Text -> T.Text
     rmBIND input = input & [regex|\s+&\+\s+|] . match %~ const ""
 
-    tabs :: T.Text -> T.Text
-    tabs = T.map (\c -> if c == '°' then ' ' else c)
-
     newlines :: T.Text -> T.Text
     newlines = T.map (\c -> if c == '∞' then '\n' else c)
 
 style :: T.Text
-style = [r|<head>
-
+style = [r|
     <style>
         /* Insert the CSS styling here */
 
@@ -140,14 +136,15 @@ style = [r|<head>
 
         /* Level 4 styles */
         dl dl dl dl {
-          background-color: #e9ffd2; /* Light green */
+          background-color: #ffe0b2; /* Light orange */
           padding-left: 0.5em;
+          border-color: #f57c00;
 
         }
 
         dl dl dl dl > dt {
           font-weight: bold;
-          color: #79b47e;
+          color: #e65100;
         }
 
         dl dl dl dl > dd {
@@ -157,15 +154,14 @@ style = [r|<head>
 
         /* Level 5 styles */
         dl dl dl dl dl {
-          background-color: #ffe0b2; /* Light orange */
+          background-color: #e9ffd2; /* Light green */
           padding-left: 0.5em;
-          border-color: #f57c00;
-
         }
 
         dl dl dl dl dl > dt {
           font-weight: bold;
-          color: #e65100;
+          color: #79b47e;
+
         }
 
         dl dl dl dl dl > dd {
@@ -173,25 +169,7 @@ style = [r|<head>
         }
         /* Add more levels as needed */
 
-        /* First item with the default bullet */
-        ul li:first-child {
-          list-style-type: none; /* Or whatever default style you prefer */
-        }
-
-        /* Customize bullets for all other list items */
-        ul li:not(:first-child) {
-          list-style-type: none; /* Remove the default bullet */
-        }
-
-        ul li:not(:first-child)::before {
-          content: "else"; /* Use a custom symbol or character for bullets */
-          color: blue; /* Customize the color */
-          margin-right: 0em; /* Space between bullet and text */
-        }
-
-
-      </style>
-</head>|]
+      </style>|]
 
 -- | Entrypoint
 renderCstProgramToNL :: NLGEnv -> CSTProgram -> T.Text
@@ -208,22 +186,30 @@ renderCstDeclToNL env = gfLin env . gf . genericTreeTrans . parseDecl
 renderCstDeclToGFtrees :: NLGEnv -> Decl -> T.Text
 renderCstDeclToGFtrees env = gfTree env . gf . genericTreeTrans . parseDecl
 
+
+-- TODO: do we flatten nested Let-definitions?
+-- for royalflush case, that'd be the best thing to do
+-- how about generally?
 parseDecl :: Decl -> GS
 parseDecl = \case
-  DataDecl name typedecl -> GTypeDeclS $ parseTypeDecl name typedecl
+  DataDecl name typedecl -> GTypeDeclS dummyId $ parseTypeDecl name typedecl
   Rec name expr ->
     if commonFunction name.name
-      then GExprS $ GKnownFunction $ parseName name
-      else GExprS $ parseExpr name expr
-  NonRec name (Sig [] []) -> GAtomicConcept (parseName name)
+      then GExprS dummyId $ GKnownFunction $ parseName name
+      else GExprS dummyId $ parseExpr name expr
+  NonRec name (Sig [] []) -> GAtomicConcept dummyId (parseName name)
   NonRec name expr@(BinExpr binop _ _) ->
     if booleanOp binop
-      then GLetIsTrue (parseName name) $ parseExpr noName expr
-      else GAssignS (parseName name) $ parseExpr noName expr
-  NonRec name expr -> GAssignS (parseName name) $ parseExpr noName expr
+      then GLetIsTrue dummyId (parseName name) $ parseExpr noName expr
+      else GAssignS dummyId (parseName name) $ parseExpr noName expr
+  NonRec name expr -> GAssignS dummyId (parseName name) $ parseExpr noName expr
   Eval expr -> quoteVars $ if isBool expr
-                then GEvalWhetherS $ parseExpr noName expr
-                else GEvalS $ parseExpr noName expr
+                then GEvalWhetherS dummyId $ parseExpr noName expr
+                else GEvalS dummyId $ parseExpr noName expr
+
+-- to wrap all declarations in <p id="paragraph_999999"> … </p>
+dummyId :: GString
+dummyId = GString "paragraph_999999"
 
 noName :: N.Name
 noName = N.MkName mempty Nothing N.NotEntrypoint
@@ -263,8 +249,8 @@ quoteVars x        = composOp quoteVars x
 
 -- Control verbosity of BinExpr in specific contexts
 binExprVerbosity :: Tree a -> Tree a
-binExprVerbosity (GAssignS e (GBinExpr op lc rc)) = GAssignS e (GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc))
-binExprVerbosity (GLetIsTrue e (GBinExpr op lc rc)) = GLetIsTrue e (GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc))
+binExprVerbosity (GAssignS id_ e (GBinExpr op lc rc)) = GAssignS id_ e (GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc))
+binExprVerbosity (GLetIsTrue id_ e (GBinExpr op lc rc)) = GLetIsTrue id_ e (GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc))
 binExprVerbosity (GVerboseBinExpr op lc rc) = GVerboseBinExpr op (unVerboseBinExpr lc) (unVerboseBinExpr rc)
 binExprVerbosity x = composOp binExprVerbosity x
 
@@ -422,7 +408,7 @@ parseExpr name =
                     else GFunApp (f fun) (GListExpr $ fmap f args)
 --  FunApp fun args          -> GFunApp (f fun) (GListExpr $ fmap f args)
 --  Record rows              -> GRecord
-  Project record label     -> GProject (f record) (parseNameForRecord label)
+  Project record label     -> GOnlyFieldProject (f record) (parseNameForRecord label) -- TODO: annotation to decide whether to print out the record name or only label?
   Fun md args body         -> GFun (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
 --  Let decl body            -> Let decl (f body)
   Predicate md args body   -> GPredicate (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
