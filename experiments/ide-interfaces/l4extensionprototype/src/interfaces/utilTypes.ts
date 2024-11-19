@@ -4,7 +4,9 @@
 
 export interface JsonRPCMessage {
   readonly jsonrpc: "2.0";
-  readonly id: number; 
+  readonly id: number;
+  readonly method: string;
+  readonly params: object | Array<any>;
 }
 
 /********************
