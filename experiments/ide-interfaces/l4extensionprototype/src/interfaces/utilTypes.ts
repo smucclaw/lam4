@@ -2,6 +2,19 @@
      Util types and Zod schemas
 **********************************/
 
+/********************
+  (Simple) Result
+**********************/
+
+export type Ok<T> = { type: "ok"; data: T };
+export type ResError<T> = { type: "error"; error: T };
+
+export type Result<TError, TOk> = Ok<TOk> | ResError<TError>;
+
+/********************
+   Async Result
+**********************/
+
 // From https://github.com/gvergnaud/ts-pattern/blob/b5aa458c031c08150689be8c4a2d0dc0c2b10093/tests/types-catalog/utils.ts#L78
 // Doing these with Zod schemas would be too much work right now
 
