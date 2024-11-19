@@ -66,6 +66,7 @@
     "ts-pattern": "^5.5.0",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
+    "vscode-uri": "^3.0.8",
     "zod-to-json-schema": "^3.23.5"
   }
 }

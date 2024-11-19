@@ -1,4 +1,4 @@
-import { Uri } from "vscode";
+import { URI } from 'vscode-uri';
 import { RequestType } from "vscode-languageclient/node";
 import { z } from "zod";
 
@@ -6,15 +6,10 @@ import { z } from "zod";
   Util functions
 *******************/
 
-/** Quicky hacky type guard */
-const isUri = (val: unknown): val is Uri => {
-  return val !== null && typeof val === "object" && "toString" in val && "scheme" in val && "path" in val;
-};
-
 const uriSchema = z
   .string()
-  .transform((str) => Uri.parse(str))
-  .or(z.custom<Uri>(isUri))
+  .transform((str) => URI.parse(str))
+  .or(z.custom<URI>(str => URI.isUri(str)))
   .transform((uri) => uri.toString());
   
 /*******************************
@@ -41,6 +36,13 @@ export namespace VisualizeProgramRequest {
   > = new RequestType("l4/visualizeProgram");
 }
 
+/** This is basically
+    ```
+      type VisualizeProgramInfo = {
+          program: URI;
+      }
+    ```
+*/
 export const visualizeProgramInfoSchema = z.object({
   program: uriSchema,
 });
