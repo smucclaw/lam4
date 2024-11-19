@@ -46,7 +46,8 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "generate-json-schema": "ts-node ./scripts/generateJsonSchema.ts"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.9",
@@ -59,6 +60,7 @@
     "eslint": "^9.13.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.3",
+    "vscode-uri": "^3.0.8",
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4"
   },
@@ -66,7 +68,6 @@
     "ts-pattern": "^5.5.0",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
-    "vscode-uri": "^3.0.8",
     "zod-to-json-schema": "^3.23.5"
   }
 }
