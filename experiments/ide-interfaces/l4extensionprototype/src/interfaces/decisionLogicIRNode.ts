@@ -50,8 +50,6 @@ interface IRId {
 
 // Naive version where we don't bother trying to support anaphora or whatever
 
-export type IRValue = "False" | "True" | "Unknown";
-
 export type IRExpr = BinExpr | Not | AtomicProposition;
 
 type BinOp = "And" | "Or";
@@ -71,7 +69,7 @@ export interface Not extends IRNode {
 
 export interface AtomicProposition extends IRNode {
   readonly $type: "AtomicProposition";
-  readonly value: IRValue;
+  readonly value: "False" | "True" | "Unknown";
   /** The label is what gets displayed in or around the box */
   readonly label: string;
 }
