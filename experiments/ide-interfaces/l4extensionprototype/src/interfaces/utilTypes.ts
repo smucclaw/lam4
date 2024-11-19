@@ -2,6 +2,11 @@
      Util types and Zod schemas
 **********************************/
 
+export interface JsonRPCMessage {
+  readonly jsonrpc: "2.0";
+  readonly id: number; 
+}
+
 /********************
   (Simple) Result
 **********************/

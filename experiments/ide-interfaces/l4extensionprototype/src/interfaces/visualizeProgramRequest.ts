@@ -64,6 +64,8 @@ export const visualizeProgramInfoSchema = z.object({
 
 export const visualizeProgramResponseSchema = z.object({
   html: z.string(),
+  id: z.number(), // id for json rpc
+  jsonrpc: z.literal("2.0"),
 });
 
 export const visualizeProgramErrorSchema = z.object({

@@ -1,4 +1,4 @@
-import { Result, ResError, Ok } from "./utilTypes";
+import { JsonRPCMessage, Result } from "./utilTypes";
 
 /**********************
   Protocol interfaces
@@ -14,20 +14,17 @@ This is what the language server would
 send to the component that actually makes the visualization.
 But this is not a component that the VSCode extension would know about.
 */
-export interface VisualizeDecisionLogicIRRequest {
+export interface VisualizeDecisionLogicIRRequest extends JsonRPCMessage {
   readonly method: "visualizeDecisionLogicIR";
   readonly params: VisualizeDecisionLogicIRInfo;
   readonly result: Result<VisualizeIRError, VisualizeDecisionLogicIRResult>;
-
-  readonly jsonrpc: "2.0";
-  readonly id: number;
 }
 
 export interface VisualizeDecisionLogicIRInfo {
   readonly program: IRNode;
 }
 
-export interface VisualizeDecisionLogicIRResult {
+export interface VisualizeDecisionLogicIRResult extends JsonRPCMessage {
   readonly html: string;
 }
 
