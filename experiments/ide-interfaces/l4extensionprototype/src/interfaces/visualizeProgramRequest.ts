@@ -1,7 +1,7 @@
 import { URI } from "vscode-uri";
 import { RequestType } from "vscode-languageclient/node";
 import { z } from "zod";
-import {AsyncResult} from "./utilTypes";
+import { AsyncResult } from "./utilTypes";
 
 /*****************
   Util functions
@@ -21,7 +21,7 @@ export const uriSchema = z
  * Request type for visualizing L4 programs.
  * Can think in the future about whether to have different requests for visualizations of different L4 constructs.
  *
- * @type {RequestType<VisualizeProgramInfo, AsyncResult<VisualizeProgramResponse>, any>}
+ * @type {RequestType<VisualizeProgramInfo, AsyncResult<VisualizeProgramResponse, VisualizeProgramError>, any>}
  *
  * @remarks
  * What RequestType's type parameters mean (yes, `RequestType` is a confusing type):
@@ -42,7 +42,7 @@ export namespace VisualizeProgramRequest {
 /** This is basically
     ```
       type VisualizeProgramInfo = {
-          program: URI;
+          program: URI; // which in json land is just `string`
       }
     ```
 */
