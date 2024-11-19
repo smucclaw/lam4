@@ -75,5 +75,6 @@ export interface Not extends IRNode {
 export interface AtomicProposition extends IRNode {
   readonly $type: "AtomicProposition";
   readonly value: IRValue;
+  /** The label is what gets displayed in or around the box */
   readonly label: string;
 }
