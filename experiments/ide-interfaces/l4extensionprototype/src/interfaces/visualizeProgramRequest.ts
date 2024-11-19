@@ -42,10 +42,11 @@ export namespace VisualizeProgramRequest {
 /* aka:
 
 type VisualizeProgramRequestSchema {
-  jsonrpc: "2.0";
   method: "l4/visualizeProgram";
   params: VisualizeProgramInfo;
   result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError>;
+  readonly jsonrpc: "2.0";
+  readonly id: number;
 }
 
 */
