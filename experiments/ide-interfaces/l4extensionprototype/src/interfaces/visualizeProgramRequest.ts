@@ -44,8 +44,6 @@ type VisualizeProgramRequestSchema {
   method: "l4/visualizeProgram";
   params: VisualizeProgramInfo;
   result: VisualizeProgramResponse;
-  readonly jsonrpc: "2.0";
-  readonly id: number;
 }
 
 */
