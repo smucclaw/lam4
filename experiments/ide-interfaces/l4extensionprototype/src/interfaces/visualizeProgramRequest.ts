@@ -39,6 +39,17 @@ export namespace VisualizeProgramRequest {
   > = new RequestType("l4/visualizeProgram");
 }
 
+/* aka:
+
+type VisualizeProgramRequestSchema {
+  jsonrpc: "2.0";
+  method: "l4/visualizeProgram";
+  params: VisualizeProgramInfo;
+  result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError>;
+}
+
+*/
+
 /** This is basically
     ```
       type VisualizeProgramInfo = {
