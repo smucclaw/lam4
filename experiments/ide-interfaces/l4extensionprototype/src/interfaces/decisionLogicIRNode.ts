@@ -41,7 +41,7 @@ export interface IRNode {
 
 /** Stable IDs useful for things like bidirectional synchronization down the road */
 interface IRId {
-  id: number;
+  readonly id: number;
 }
 
 /*******************************
