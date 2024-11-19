@@ -1,4 +1,4 @@
-import { URI } from 'vscode-uri';
+import { URI } from "vscode-uri";
 import { RequestType } from "vscode-languageclient/node";
 import { z } from "zod";
 
@@ -6,12 +6,12 @@ import { z } from "zod";
   Util functions
 *******************/
 
-const uriSchema = z
+export const uriSchema = z
   .string()
   .transform((str) => URI.parse(str))
-  .or(z.custom<URI>(str => URI.isUri(str)))
+  .or(z.custom<URI>((str) => URI.isUri(str)))
   .transform((uri) => uri.toString());
-  
+
 /*******************************
      VisualizeProgramRequest
 ********************************/
@@ -27,6 +27,8 @@ const uriSchema = z
  * - Params: VisualizeProgramInfo
  * - Result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError>
  * - Error: any (I don't currently understand what this type parameter does, but it shouldn't matter for our purposes.)
+ *
+ * Method Name: `"l4/visualizeProgram"`
  */
 export namespace VisualizeProgramRequest {
   export const type: RequestType<
@@ -59,12 +61,12 @@ export type VisualizeProgramInfo = z.infer<typeof visualizeProgramInfoSchema>;
 export type VisualizeProgramResponse = z.infer<typeof visualizeProgramResponseSchema>;
 export type VisualizeProgramError = z.infer<typeof visualizeProgramErrorSchema>;
 
-
-/******************
-     Util types
-*******************/
+/*********************************
+     Util types and Zod schemas
+**********************************/
 
 // From https://github.com/gvergnaud/ts-pattern/blob/b5aa458c031c08150689be8c4a2d0dc0c2b10093/tests/types-catalog/utils.ts#L78
+// Doing these with Zod schemas would be too much work right now
 
 type AsyncResultStatus = "idle" | "loading" | "error" | "success";
 
