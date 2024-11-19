@@ -1,7 +1,6 @@
 import { URI } from "vscode-uri";
 import { RequestType } from "vscode-languageclient/node";
 import { z } from "zod";
-import { AsyncResult, JsonRPCMessage } from "./utilTypes";
 
 /*****************
   Util functions
@@ -21,22 +20,21 @@ export const uriSchema = z
  * Request type for visualizing L4 programs.
  * Can think in the future about whether to have different requests for visualizations of different L4 constructs.
  *
- * @type {RequestType<VisualizeProgramInfo, AsyncResult<VisualizeProgramResponse, VisualizeProgramError>, any>}
+ * @type {RequestType<VisualizeProgramInfo, VisualizeProgramResponse, void>}
  *
  * @remarks
  * What RequestType's type parameters mean (yes, `RequestType` is a confusing type):
  * - Params: VisualizeProgramInfo
- * - Result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError> & JsonRPCMessage. 
- * AsyncResult was something I picked in a rush, and may not be a good fit --- please feel free to propose something else.
- * - Error: any (I don't currently understand what this type parameter does, but it shouldn't matter for our purposes.)
+ * - Result: VisualizeProgramResponse
+ * - Error: void (I don't currently understand what this type parameter does, but it shouldn't matter for our purposes.)
  *
  * Method Name: `"l4/visualizeProgram"`
  */
 export namespace VisualizeProgramRequest {
   export const type: RequestType<
     VisualizeProgramInfo,
-    AsyncResult<VisualizeProgramResponse, VisualizeProgramError> & JsonRPCMessage,
-    any
+    VisualizeProgramResponse,
+    void
   > = new RequestType("l4/visualizeProgram");
 }
 
@@ -45,7 +43,7 @@ export namespace VisualizeProgramRequest {
 type VisualizeProgramRequestSchema {
   method: "l4/visualizeProgram";
   params: VisualizeProgramInfo;
-  result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError> & JsonRPCResponse;
+  result: VisualizeProgramResponse;
   readonly jsonrpc: "2.0";
   readonly id: number;
 }
