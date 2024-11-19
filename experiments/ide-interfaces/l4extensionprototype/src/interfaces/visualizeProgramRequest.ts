@@ -26,7 +26,8 @@ export const uriSchema = z
  * @remarks
  * What RequestType's type parameters mean (yes, `RequestType` is a confusing type):
  * - Params: VisualizeProgramInfo
- * - Result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError>
+ * - Result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError> & JsonRPCMessage. 
+ * AsyncResult was something I picked in a rush, and may not be a good fit --- please feel free to propose something else.
  * - Error: any (I don't currently understand what this type parameter does, but it shouldn't matter for our purposes.)
  *
  * Method Name: `"l4/visualizeProgram"`

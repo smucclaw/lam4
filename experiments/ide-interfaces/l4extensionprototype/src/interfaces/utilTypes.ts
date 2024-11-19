@@ -5,6 +5,9 @@
 export interface JsonRPCMessage {
   readonly jsonrpc: "2.0";
   readonly id: number;
+}
+
+export interface JsonRPCRequest extends JsonRPCMessage {
   readonly method: string;
   readonly params: object | Array<any>;
 }
@@ -46,6 +49,10 @@ export interface AsyncResultError<TData, TError = Error> extends BaseAsyncResult
   status: "error";
   error: TError;
 }
+
+/** 
+ * AsyncResult was something I picked in a rush, and may not be a good fit --- please feel free to propose something else.
+ */
 export type AsyncResult<TData, TError = Error> =
   | AsyncResultIdleOrLoading<TData, TError>
   | AsyncResultSuccess<TData, TError>
