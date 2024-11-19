@@ -1,8 +1,10 @@
-import { JsonRPCRequest, Result } from "./utilTypes";
+import { JsonRPCRequest, JsonRPCMessage, Result } from "./utilTypes";
 
 /**********************
   Protocol interfaces
 ***********************/
+
+/** Might need fields like `code` to respect JsonRPC spec. Please mentally fill those in if so. */
 export interface VisualizeIRError {
   message: string;
 }
@@ -24,7 +26,7 @@ export interface VisualizeDecisionLogicIRInfo {
   readonly program: IRNode;
 }
 
-export interface VisualizeDecisionLogicIRResult extends JsonRPCRequest {
+export interface VisualizeDecisionLogicIRResult extends JsonRPCMessage {
   readonly html: string;
 }
 
