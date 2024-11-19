@@ -1,7 +1,7 @@
 import { URI } from "vscode-uri";
 import { RequestType } from "vscode-languageclient/node";
 import { z } from "zod";
-import { AsyncResult } from "./utilTypes";
+import { AsyncResult, JsonRPCMessage } from "./utilTypes";
 
 /*****************
   Util functions
@@ -34,7 +34,7 @@ export const uriSchema = z
 export namespace VisualizeProgramRequest {
   export const type: RequestType<
     VisualizeProgramInfo,
-    AsyncResult<VisualizeProgramResponse, VisualizeProgramError>,
+    AsyncResult<VisualizeProgramResponse, VisualizeProgramError> & JsonRPCMessage,
     any
   > = new RequestType("l4/visualizeProgram");
 }
@@ -44,7 +44,7 @@ export namespace VisualizeProgramRequest {
 type VisualizeProgramRequestSchema {
   method: "l4/visualizeProgram";
   params: VisualizeProgramInfo;
-  result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError>;
+  result: AsyncResult<VisualizeProgramResponse, VisualizeProgramError> & JsonRPCResponse;
   readonly jsonrpc: "2.0";
   readonly id: number;
 }
@@ -64,8 +64,6 @@ export const visualizeProgramInfoSchema = z.object({
 
 export const visualizeProgramResponseSchema = z.object({
   html: z.string(),
-  id: z.number(), // id for json rpc
-  jsonrpc: z.literal("2.0"),
 });
 
 export const visualizeProgramErrorSchema = z.object({
