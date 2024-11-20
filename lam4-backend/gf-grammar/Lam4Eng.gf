@@ -238,17 +238,19 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     ConsIfThen = consIfThen ;
     Elif its = its ; -- {s = ul its.s} ;
 
-    -- : Expr -> Expr -> Expr ;
-    InstanceSumIf entities condition = {
-      s = dl "adding up those of" entities.s
-       ++ dl "where" condition.s
+
+    -- : (description : String) -> (arg : Expr) -> Expr ;
+    FunApp1 adding_up entities = {
+      s = dl adding_up.s entities.s
       } ;
 
-    -- : Expr -> Expr ;
-    InstanceSum entities = {
-      s = dl "adding up" entities.s
+    -- : (desc1 : String) -> (arg1 : Expr) -> (desc2 : String) -> (arg2 : Expr) -> Expr ;
+    FunApp2 desc1 entities desc2 condition = {
+      s = dl desc1.s entities.s
+       ++ dl desc2.s condition.s
       } ;
 
+    -- If no annotation available, just put together function and arguments in a definition list
     -- : Expr -> [Expr] -> Expr ;
     FunApp f xs = {
       s = dl f.s (linArgs "" xs)

@@ -101,9 +101,9 @@ data Tree :: * -> * where
   GFold :: GExpr -> GExpr -> GExpr -> Tree GExpr_
   GFun :: GName -> GMetadata -> GListName -> GExpr -> Tree GExpr_
   GFunApp :: GExpr -> GListExpr -> Tree GExpr_
+  GFunApp1 :: GString -> GExpr -> Tree GExpr_
+  GFunApp2 :: GString -> GExpr -> GString -> GExpr -> Tree GExpr_
   GIfThenElse :: GExpr -> GExpr -> GExpr -> Tree GExpr_
-  GInstanceSum :: GExpr -> Tree GExpr_
-  GInstanceSumIf :: GExpr -> GExpr -> Tree GExpr_
   GKnownFunction :: GName -> Tree GExpr_
   GLet :: GS -> GExpr -> Tree GExpr_
   GLit :: GName -> Tree GExpr_
@@ -178,9 +178,9 @@ instance Eq (Tree a) where
     (GFold x1 x2 x3,GFold y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GFun x1 x2 x3 x4,GFun y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GFunApp x1 x2,GFunApp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GFunApp1 x1 x2,GFunApp1 y1 y2) -> and [ x1 == y1 , x2 == y2 ]
+    (GFunApp2 x1 x2 x3 x4,GFunApp2 y1 y2 y3 y4) -> and [ x1 == y1 , x2 == y2 , x3 == y3 , x4 == y4 ]
     (GIfThenElse x1 x2 x3,GIfThenElse y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (GInstanceSum x1,GInstanceSum y1) -> and [ x1 == y1 ]
-    (GInstanceSumIf x1 x2,GInstanceSumIf y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GKnownFunction x1,GKnownFunction y1) -> and [ x1 == y1 ]
     (GLet x1 x2,GLet y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GLit x1,GLit y1) -> and [ x1 == y1 ]
@@ -276,9 +276,9 @@ instance Gf GExpr where
   gf (GFold x1 x2 x3) = mkApp (mkCId "Fold") [gf x1, gf x2, gf x3]
   gf (GFun x1 x2 x3 x4) = mkApp (mkCId "Fun") [gf x1, gf x2, gf x3, gf x4]
   gf (GFunApp x1 x2) = mkApp (mkCId "FunApp") [gf x1, gf x2]
+  gf (GFunApp1 x1 x2) = mkApp (mkCId "FunApp1") [gf x1, gf x2]
+  gf (GFunApp2 x1 x2 x3 x4) = mkApp (mkCId "FunApp2") [gf x1, gf x2, gf x3, gf x4]
   gf (GIfThenElse x1 x2 x3) = mkApp (mkCId "IfThenElse") [gf x1, gf x2, gf x3]
-  gf (GInstanceSum x1) = mkApp (mkCId "InstanceSum") [gf x1]
-  gf (GInstanceSumIf x1 x2) = mkApp (mkCId "InstanceSumIf") [gf x1, gf x2]
   gf (GKnownFunction x1) = mkApp (mkCId "KnownFunction") [gf x1]
   gf (GLet x1 x2) = mkApp (mkCId "Let") [gf x1, gf x2]
   gf (GLit x1) = mkApp (mkCId "Lit") [gf x1]
@@ -307,9 +307,9 @@ instance Gf GExpr where
       Just (i,[x1,x2,x3]) | i == mkCId "Fold" -> GFold (fg x1) (fg x2) (fg x3)
       Just (i,[x1,x2,x3,x4]) | i == mkCId "Fun" -> GFun (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2]) | i == mkCId "FunApp" -> GFunApp (fg x1) (fg x2)
+      Just (i,[x1,x2]) | i == mkCId "FunApp1" -> GFunApp1 (fg x1) (fg x2)
+      Just (i,[x1,x2,x3,x4]) | i == mkCId "FunApp2" -> GFunApp2 (fg x1) (fg x2) (fg x3) (fg x4)
       Just (i,[x1,x2,x3]) | i == mkCId "IfThenElse" -> GIfThenElse (fg x1) (fg x2) (fg x3)
-      Just (i,[x1]) | i == mkCId "InstanceSum" -> GInstanceSum (fg x1)
-      Just (i,[x1,x2]) | i == mkCId "InstanceSumIf" -> GInstanceSumIf (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "KnownFunction" -> GKnownFunction (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Let" -> GLet (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "Lit" -> GLit (fg x1)
@@ -524,9 +524,9 @@ instance Compos Tree where
     GFold x1 x2 x3 -> r GFold `a` f x1 `a` f x2 `a` f x3
     GFun x1 x2 x3 x4 -> r GFun `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GFunApp x1 x2 -> r GFunApp `a` f x1 `a` f x2
+    GFunApp1 x1 x2 -> r GFunApp1 `a` f x1 `a` f x2
+    GFunApp2 x1 x2 x3 x4 -> r GFunApp2 `a` f x1 `a` f x2 `a` f x3 `a` f x4
     GIfThenElse x1 x2 x3 -> r GIfThenElse `a` f x1 `a` f x2 `a` f x3
-    GInstanceSum x1 -> r GInstanceSum `a` f x1
-    GInstanceSumIf x1 x2 -> r GInstanceSumIf `a` f x1 `a` f x2
     GKnownFunction x1 -> r GKnownFunction `a` f x1
     GLet x1 x2 -> r GLet `a` f x1 `a` f x2
     GLit x1 -> r GLit `a` f x1

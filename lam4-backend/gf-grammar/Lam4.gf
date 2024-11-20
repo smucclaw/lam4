@@ -85,15 +85,11 @@ abstract Lam4 = {
 
     -}
 
-{- [The investor's total allocation in Energy]
-   is calculated by (AssignS)
-   adding up (InstanceSumIf)
-    [the investor's funds allocated to the investment as per sector share]
-   where
-     [the investment is in Energy]
--}
-    InstanceSumIf : (entities, condition : Expr)-> Expr ;
-    InstanceSum : (entities : Expr) -> Expr ;
+    -- For linearizing functions that have a NLG annotation
+    FunApp1 : (description : String) -> (arg : Expr) -> Expr ;
+    FunApp2 : (desc1 : String) -> (arg1 : Expr) -> (desc2 : String) -> (arg2 : Expr) -> Expr ;
+
+    -- For linearizing functions that don't have NLG annotation
     FunApp : Expr -> [Expr] -> Expr ;
     -- Record : (Row Expr) -> Expr ;               -- record construction
     OnlyFieldProject,

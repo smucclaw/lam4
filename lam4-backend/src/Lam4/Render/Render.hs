@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Lam4.Render.Render (NLGConfig (..), NLGEnv, makeNLGEnv, renderCstProgramToNL) where
 
@@ -125,8 +126,7 @@ style = [r|
         }
 
         dl dl dl > dt {
-          font-weight: bold;
-
+          //font-weight: bold;
           color: #880e4f;
         }
 
@@ -143,7 +143,7 @@ style = [r|
         }
 
         dl dl dl dl > dt {
-          font-weight: bold;
+          // font-weight: bold;
           color: #e65100;
         }
 
@@ -159,7 +159,7 @@ style = [r|
         }
 
         dl dl dl dl dl > dt {
-          font-weight: bold;
+          // font-weight: bold;
           color: #79b47e;
 
         }
@@ -181,31 +181,31 @@ renderCstProgramToNL env decls = T.unlines (
   )
 
 renderCstDeclToNL :: NLGEnv -> Decl -> T.Text
-renderCstDeclToNL env = gfLin env . gf . genericTreeTrans . parseDecl
+renderCstDeclToNL env = gfLin env . gf . genericTreeTrans . parseDecl env
 
 renderCstDeclToGFtrees :: NLGEnv -> Decl -> T.Text
-renderCstDeclToGFtrees env = gfTree env . gf . genericTreeTrans . parseDecl
+renderCstDeclToGFtrees env = gfTree env . gf . genericTreeTrans . parseDecl env
 
 
 -- TODO: do we flatten nested Let-definitions?
 -- for royalflush case, that'd be the best thing to do
 -- how about generally?
-parseDecl :: Decl -> GS
-parseDecl = \case
+parseDecl :: NLGEnv -> Decl -> GS
+parseDecl env = \case
   DataDecl name typedecl -> GTypeDeclS dummyId $ parseTypeDecl name typedecl
   Rec name expr ->
     if commonFunction name.name
       then GExprS dummyId $ GKnownFunction $ parseName name
-      else GExprS dummyId $ parseExpr name expr
+      else GExprS dummyId $ parseExpr env name expr
   NonRec name (Sig [] []) -> GAtomicConcept dummyId (parseName name)
   NonRec name expr@(BinExpr binop _ _) ->
     if booleanOp binop
-      then GLetIsTrue dummyId (parseName name) $ parseExpr noName expr
-      else GAssignS dummyId (parseName name) $ parseExpr noName expr
-  NonRec name expr -> GAssignS dummyId (parseName name) $ parseExpr noName expr
+      then GLetIsTrue dummyId (parseName name) $ parseExpr env noName expr
+      else GAssignS dummyId (parseName name) $ parseExpr env noName expr
+  NonRec name expr -> GAssignS dummyId (parseName name) $ parseExpr env noName expr
   Eval expr -> quoteVars $ if isBool expr
-                then GEvalWhetherS dummyId $ parseExpr noName expr
-                else GEvalS dummyId $ parseExpr noName expr
+                then GEvalWhetherS dummyId $ parseExpr env noName expr
+                else GEvalS dummyId $ parseExpr env noName expr
 
 -- to wrap all declarations in <p id="paragraph_999999"> … </p>
 dummyId :: GString
@@ -229,10 +229,15 @@ commonFunction x = T.unpack x `elem` ["id", "map", "filter", "cons", "nil", "min
 booleanOp :: BinOp -> Bool
 booleanOp op = op `elem` [Eq, Lt, Gt, Le, Ge, Ne, And, Or]
 
+getName :: Expr -> Maybe String
+getName = \case
+  Var (N.MkName name _ _) -> Just $ T.unpack name
+  _ -> Nothing
+
 isPredicate :: Expr -> Bool
-isPredicate = \case
-  Var (N.MkName name _ _) -> name `elem` ["certain", "known", "uncertain", "unknown"]
-  _ -> False
+isPredicate (getName -> Just name) = name `elem` ["certain", "known", "uncertain", "unknown"]
+isPredicate _ = False
+
 
 varFromFun :: Expr -> Expr
 varFromFun = \case
@@ -366,13 +371,16 @@ parseLit = \case
   BoolLit bool -> GMkName $ GString $ show bool
   StringLit string -> GMkName $ GString $ T.unpack string
 
-parseExpr :: N.Name -> Expr -> GExpr
-parseExpr name =
-  let f = parseExpr name in \case
+parseExpr :: NLGEnv -> N.Name -> Expr -> GExpr
+parseExpr env name =
+  let f = parseExpr env name in \case
   Var var                  -> GVar (parseName var)
   Lit lit                  -> GLit (parseLit lit)
-  Unary UnaryMinus expr    -> GUnaryMinusExpr (f expr) ;
+  -- Totally generic transformation—treat unary minus differently from other unary functions
+  Unary UnaryMinus expr    -> GUnaryMinusExpr (f expr)
   Unary op expr            -> GUnary (parseUnaOp op) (f expr)
+
+  -- Specific decisions about verbosity of binary operations
   -- e.g. "x / y"
   BinExpr op lc@Var{} rc@Var{}    -> GBinExpr (parseBinOp op) (f lc) (f rc)
 
@@ -387,64 +395,63 @@ parseExpr name =
 
   -- other BinExprs are "verbose" = newlines and stuff
   BinExpr op lc rc         -> GVerboseBinExpr (parseBinOp op) (f lc) (f rc)
+
+
   IfThenElse cond thn els  -> GIfThenElse (f cond) (f thn) (f els)
 
   -- Basic arithmetic operations that have been defined as custom function
-  FunApp (Var (N.MkName "div" _ _)) [lc,rc] -> parseExpr name (BinExpr Divide lc rc)
-  FunApp (Var (N.MkName "mult" _ _)) [lc,rc] -> parseExpr name (BinExpr Mult lc rc)
-  FunApp (Var (N.MkName "add" _ _)) [lc,rc] -> parseExpr name (BinExpr Plus lc rc)
+
+  FunApp (getName -> Just "div")  [lc,rc] -> f (BinExpr Divide lc rc)
+  FunApp (getName -> Just "mult") [lc,rc] -> f (BinExpr Mult lc rc)
+  FunApp (getName -> Just "add")  [lc,rc] -> f (BinExpr Plus lc rc)
 
   -- Basic arithmetic operation that is hardly domain-specific
   -- Current linearization of Round takes Expr, Int
   -- and just outputs the Expr instead of "Expr rounded into precision of Int decimals"
   -- But this should be configurable.
-  FunApp (Var (N.MkName "round" _ _))       args -> parseRound args
-
-  -- These should be replaced with a general annotation-based approach
-  FunApp (Var (N.MkName "default" _ _))     args -> parseDefault args
-  FunApp (Var (N.MkName "instanceSumIf" _ _)) args -> parseInstanceSum args
-  FunApp (Var (N.MkName "instanceSum" _ _)) args -> parseInstanceSum args
+  FunApp (getName -> Just "round")   [expr, prec] -> GRound (f expr) (f prec)
 
 
   FunApp fun args -> if isPredicate fun
-                    then parseExpr name (PredApp fun args)
-                    else GFunApp (f fun) (GListExpr $ fmap f args)
---  FunApp fun args          -> GFunApp (f fun) (GListExpr $ fmap f args)
---  Record rows              -> GRecord
-  Project record label     -> GOnlyFieldProject (f record) (parseNameForRecord label) -- TODO: annotation to decide whether to print out the record name or only label?
+                    then f (PredApp fun args)
+                    else case getAnnotation env (f <$> args) fun of
+                           [(ann, i)] -> GFunApp1 ann (f $ args !! i)
+                           [(ann1, i), (ann2, j)] -> GFunApp2 ann1 (f $ args !! i) ann2 (f $ args !! j)
+                           _ -> GFunApp (f fun) (GListExpr $ fmap f args)
+  Project record label     -> GOnlyFieldProject (f record) (parseName label) -- TODO: annotation to decide whether to print out the record name or only label?
   Fun md args body         -> GFun (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
   Predicate md args body   -> GPredicate (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
   PredApp predicate args   -> GPredApp (f predicate) (GListExpr $ fmap f args)
   Foldr combine nil over   -> GFold (f combine) (f nil) (f over)
   Foldl combine nil over   -> GFold (f combine) (f nil) (f over)
   Sig parents relations    -> GSig (GListName $ fmap parseName parents) (GListExpr $ fmap f relations)
-  Let decl expr            -> GLet (parseDecl decl) (f expr)
+  Let decl expr            -> GLet (parseDecl env decl) (f expr)
   Cons e1 e2               -> GConjExpr (GListExpr [f e1, f e2])
   List es                  -> GConjExpr (GListExpr $ fmap f es)
-  Record rows              -> GConjExpr (GListExpr $ fmap parseRecordRow rows)
+  Record rows              -> GConjExpr (GListExpr [GRecord (parseName rname) (f row) | (rname,row) <- rows])
 --)  StatementBlock statements  -> undefined -- TODO
   x -> error [i|parseExpr: not yet implemented #{x}|]
 
-parseInstanceSum :: [Expr] -> GExpr
-parseInstanceSum [_set, inst, cond] = GInstanceSumIf instExpr condExpr
-  where
-    instExpr = parseExpr noName $ varFromFun inst
-    condExpr = parseExpr noName $ varFromFun cond
-parseInstanceSum [_set, inst] = GInstanceSum instExpr
-  where
-    instExpr = parseExpr noName $ varFromFun inst
-parseInstanceSum _ = GKnownFunction $ GMkName $ GString "SOMETHING WENT WRONG D:"
+-- TODO: This whole thing should come from external annotation
+-- Not hardcoded into Haskell code (nor GF code)
+-- NB. Indices start from 0, we just happen to have examples where 0th isn't used
+getAnnotation :: NLGEnv -> [GExpr] -> Expr -> [(GString, Int)]
+getAnnotation env args (getName -> Just name) = case name of
+  "default" -> [ (GString [i|if #{gfLin env $ gf $ head args} is uncertain, then|], 1)
+               , (GString "else", 0) ]
+  "instanceSumIf" -> [ (GString "adding up those of", 1)
+                     , (GString "where", 2) ]
+  "instanceSum" -> [ (GString "adding up", 1) ]
+  _ -> []
+getAnnotation _ _ _ = []
+{-
+The annotation needs to include the following:
+- name of the function
+- which of its arguments are used
+- what text is put before/after which argument
+- currently only puts stuff before argument, TODO also support after argument
+-}
 
-parseRound :: [Expr] -> GExpr
-parseRound [expr, prec] = GRound (parseExpr noName expr) (parseExpr noName prec)
-parseRound _ = GKnownFunction $ GMkName $ GString "SOMETHING WENT WRONG D:"
-
-parseDefault :: [Expr] -> GExpr
-parseDefault [expr, deflt] = GDefault (parseExpr noName expr) (parseExpr noName deflt)
-parseDefault _ = GKnownFunction $ GMkName $ GString "SOMETHING WENT WRONG D:"
-
-parseRecordRow :: (N.Name, Expr) -> GExpr
-parseRecordRow (name, expr) = GRecord (parseName name) (parseExpr name expr)
 
 parseTypeDecl :: N.Name -> DataDecl -> GTypeDecl
 parseTypeDecl name typedecl =
