@@ -1,4 +1,4 @@
-import { JsonRPCRequest, JsonRPCMessage, Result } from "./utilTypes";
+import { JsonRPCRequest, JsonRPCMessage, JsonRPCErrorResponse, JsonRPCSuccessResponse } from "./utilTypes";
 
 /**********************
   Protocol interfaces
@@ -11,10 +11,8 @@ But I'm hoping that won't be an issue / that this is still clear enough,
 since we'll presumably be using libraries to handle that sort of plumbing.
 */
 
-/** Might need fields like `code` to respect JsonRPC spec. Please mentally fill those in if so. */
-export interface VisualizeIRError {
-  message: string;
-}
+/** We can add more application-specific error codes etc in the future */
+export type VisualizeIRErrorResponse = JsonRPCErrorResponse;
 
 /**
 JSON-RPC Request for visualizing the intermediate representation.
@@ -26,16 +24,17 @@ But this is not a component that the VSCode extension would know about.
 export interface VisualizeDecisionLogicIRRequest extends JsonRPCRequest {
   readonly method: "visualizeDecisionLogicIR";
   readonly params: VisualizeDecisionLogicIRInfo;
-  /** The `Result` type might need to be tweaked to conform with JsonRPC spec --- the idea here is just that we want something like a Either type. */
-  readonly result: Result<VisualizeIRError, VisualizeDecisionLogicIRResult>;
 }
 
 export interface VisualizeDecisionLogicIRInfo {
   readonly program: IRNode;
 }
 
-export interface VisualizeDecisionLogicIRResult extends JsonRPCMessage {
-  readonly html: string;
+export type VisualizeDecisionLogicIRResponse = VisualizeDecisionLogicIRSuccessResponse | VisualizeIRErrorResponse
+
+type HTML = string;
+export interface VisualizeDecisionLogicIRSuccessResponse extends JsonRPCSuccessResponse {
+  readonly result: HTML;
 }
 
 /**********************

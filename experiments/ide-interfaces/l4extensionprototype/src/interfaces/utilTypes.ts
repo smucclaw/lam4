@@ -12,6 +12,19 @@ export interface JsonRPCRequest extends JsonRPCMessage {
   readonly params: object | Array<any>;
 }
 
+export interface JsonRPCErrorResponse extends JsonRPCMessage {
+  error: {
+    code: number;
+    message: string;
+    data?: any;
+  };
+}
+
+export interface JsonRPCSuccessResponse extends JsonRPCMessage {
+  result: any;
+}
+
+
 /********************
   (Simple) Result
 **********************/
