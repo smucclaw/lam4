@@ -39,11 +39,26 @@ export interface IRNode {
   readonly $type: string;
   /** (Stable) ID for this IRNode */
   readonly id: IRId;
+  readonly annotation: IRNodeAnnotation;
 }
 
 /** Stable IDs useful for things like bidirectional synchronization down the road */
 interface IRId {
   readonly id: number;
+}
+
+/** A separate record type for annotations makes it easy to add more annotation types in the future */
+export interface IRNodeAnnotation {
+  /** The label is what gets displayed in or around the box. */
+  readonly label?: string;
+}
+
+/**
+I can't think of a scenario where we'd plausibly want atomic propositions in something like a ladder diagram to not have a label;
+and conversely it is easy to think of scenarios where one forgets to add the label for atomic propositions.
+*/
+export interface AtomicPropositionAnnotation extends IRNodeAnnotation {
+  readonly label: string;
 }
 
 /*******************************
@@ -61,7 +76,6 @@ export interface BinExpr extends IRNode {
   readonly op: BinOp;
   readonly left: IRExpr;
   readonly right: IRExpr;
-  readonly label?: string;
 }
 
 export interface Not extends IRNode {
@@ -72,6 +86,5 @@ export interface Not extends IRNode {
 export interface AtomicProposition extends IRNode {
   readonly $type: "AtomicProposition";
   readonly value: "False" | "True" | "Unknown";
-  /** The label is what gets displayed in or around the box */
-  readonly label: string;
+  readonly annotation: AtomicPropositionAnnotation;
 }
