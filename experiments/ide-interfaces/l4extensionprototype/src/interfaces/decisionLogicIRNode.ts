@@ -30,8 +30,12 @@ export interface VisualizeDecisionLogicIRInfo {
 export type VisualizeDecisionLogicIRResponse = VisualizeDecisionLogicIRSuccessResponse | VisualizeIRErrorResponse
 
 type HTML = string;
+export interface VisualizeDecisionLogicResult {
+  html: HTML;
+}
+
 export interface VisualizeDecisionLogicIRSuccessResponse extends JsonRPCSuccessResponse {
-  readonly result: HTML;
+  readonly result: VisualizeDecisionLogicResult;
 }
 
 /** We can add more application-specific error codes etc in the future */
