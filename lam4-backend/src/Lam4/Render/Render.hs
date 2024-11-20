@@ -262,19 +262,11 @@ unVerboseBinExpr x = composOp unVerboseBinExpr x
 aggregatePredApp :: Tree a -> Tree a
 aggregatePredApp tree@(GBinExpr op (GPredApp f arg) (GPredApp g arg')) =
   if sameTree arg arg'
-    then GPredAppMany op arg (GListExpr [f,g])
+    then GPredAppMany op (GListExpr [f,g]) arg
     else tree
 aggregatePredApp tree@(GVerboseBinExpr op (GPredApp f arg) (GPredApp g arg')) =
       if sameTree arg arg'
-        then GPredAppMany op arg (GListExpr [f,g])
-        else tree
-aggregatePredApp tree@(GBinExpr op (GFunApp f arg) (GFunApp g arg')) =
-      if sameTree arg arg'
-        then GPredAppMany op arg (GListExpr [f,g])
-        else tree
-aggregatePredApp tree@(GVerboseBinExpr op (GFunApp f arg) (GFunApp g arg')) =
-      if sameTree arg arg'
-        then GPredAppMany op arg (GListExpr [f,g])
+        then GPredAppMany op (GListExpr [f,g]) arg
         else tree
 aggregatePredApp x = composOp aggregatePredApp x
 
@@ -396,13 +388,24 @@ parseExpr name =
   -- other BinExprs are "verbose" = newlines and stuff
   BinExpr op lc rc         -> GVerboseBinExpr (parseBinOp op) (f lc) (f rc)
   IfThenElse cond thn els  -> GIfThenElse (f cond) (f thn) (f els)
-  FunApp (Var (N.MkName "instanceSumIf" _ _)) args -> parseInstanceSum args
-  FunApp (Var (N.MkName "instanceSum" _ _)) args -> parseInstanceSum args
-  FunApp (Var (N.MkName "round" _ _))       args -> parseRound args
-  FunApp (Var (N.MkName "default" _ _))     args -> parseDefault args
+
+  -- Basic arithmetic operations that have been defined as custom function
   FunApp (Var (N.MkName "div" _ _)) [lc,rc] -> parseExpr name (BinExpr Divide lc rc)
   FunApp (Var (N.MkName "mult" _ _)) [lc,rc] -> parseExpr name (BinExpr Mult lc rc)
   FunApp (Var (N.MkName "add" _ _)) [lc,rc] -> parseExpr name (BinExpr Plus lc rc)
+
+  -- Basic arithmetic operation that is hardly domain-specific
+  -- Current linearization of Round takes Expr, Int
+  -- and just outputs the Expr instead of "Expr rounded into precision of Int decimals"
+  -- But this should be configurable.
+  FunApp (Var (N.MkName "round" _ _))       args -> parseRound args
+
+  -- These should be replaced with a general annotation-based approach
+  FunApp (Var (N.MkName "default" _ _))     args -> parseDefault args
+  FunApp (Var (N.MkName "instanceSumIf" _ _)) args -> parseInstanceSum args
+  FunApp (Var (N.MkName "instanceSum" _ _)) args -> parseInstanceSum args
+
+
   FunApp fun args -> if isPredicate fun
                     then parseExpr name (PredApp fun args)
                     else GFunApp (f fun) (GListExpr $ fmap f args)
@@ -410,7 +413,6 @@ parseExpr name =
 --  Record rows              -> GRecord
   Project record label     -> GOnlyFieldProject (f record) (parseNameForRecord label) -- TODO: annotation to decide whether to print out the record name or only label?
   Fun md args body         -> GFun (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
---  Let decl body            -> Let decl (f body)
   Predicate md args body   -> GPredicate (parseName name) (parseFunMetadata md) (GListName $ fmap parseName args) (f body)
   PredApp predicate args   -> GPredApp (f predicate) (GListExpr $ fmap f args)
   Foldr combine nil over   -> GFold (f combine) (f nil) (f over)

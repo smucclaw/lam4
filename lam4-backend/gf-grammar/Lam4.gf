@@ -64,7 +64,7 @@ abstract Lam4 = {
     VerboseBinExpr, -- newline + quotes around args
     BinExpr : BinOp -> Expr -> Expr -> Expr ;
 
-    UnaryMinusExpr, Known, Certain, Unknown, Uncertain : Expr -> Expr ;
+    UnaryMinusExpr : Expr -> Expr ;
     Round : (expr, prec : Expr) -> Expr ;
     Default : (val, default : Expr) -> Expr ;
 
@@ -143,8 +143,11 @@ abstract Lam4 = {
 
 
     Predicate : (predname : Name) -> Metadata -> (args : [Name]) -> Expr -> Expr ;            -- Differs from a function when doing symbolic evaluation. Exact way in which they should differ is WIP.
-    PredApp : Expr -> [Expr] -> Expr ;
-    PredAppMany : BinOp -> (business_is_good : [Expr]) -> (uncertain_unknown : [Expr]) -> Expr ;
+
+    PredApp : (pred : Expr) -> (args : [Expr]) -> Expr ;
+
+    -- Aggregation of multiple PredApps being applied to the same argument(s).
+    PredAppMany : BinOp -> (preds : [Expr]) -> (args : [Expr]) -> Expr ;
     Fold : Expr -> Expr -> Expr -> Expr ;
 
     -- When generating natural language for some file that defines a bunch of stuff like cons, map, filter,
@@ -174,23 +177,3 @@ abstract Lam4 = {
     Eq : BinOp ;      -- ^ equality (of Booleans, numbers or atoms)
     Ne : BinOp ;      -- ^ inequality (of Booleans, numbers or atoms)
 }
-
-{-
-— <some kind of description>
-LOTTERY {
-  — how much can be won from the jackpot
- `total jackpot`: Integer,
-   — whether buying tickets from this lottery is tax deductible
-  `tax deductible status`: Boolean
-}
-
-
-This can be rendered as:
-
-MkTypeDecl (MkMetadata "a game where you lose money") "Lottery" (ConsRowTypeDecl (MkRowDecl (MkMetadata "how much can be won from the jackpot") "‘total jackpot’") (ConsRowTypeDecl (MkRowDecl (MkMetadata "whether buying tickets from this lottery is tax deductible") "‘tax deductible status’") BaseRowTypeDecl))
-
-A/An ‘Lottery’ is <insert description>.
-Each lottery has associated with it information like
-  * its ‘total jackpot’; i.e., how much can be won from the jackpot
-  * its ‘tax deductible status’; i.e., whether buying tickets from this lottery is tax deductible
--}

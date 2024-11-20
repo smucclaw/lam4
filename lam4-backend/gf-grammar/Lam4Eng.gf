@@ -207,22 +207,6 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
        ++ dl (op.s ! Verbose) e2.s
       } ;
 
-    Unknown expr = {
-      s = quote expr.s ++ "is unknown"
-    } ;
-
-    Uncertain expr = {
-      s = quote expr.s ++ "is uncertain"
-    } ;
-
-    Known expr = {
-      s = quote expr.s ++ "is known"
-    } ;
-
-    Certain expr = {
-      s = quote expr.s ++ "is certain"
-    } ;
-
     Round expr precision = expr ;
     -- { -- for being extra verbose
     --   s = dl "rounding" expr.s
@@ -323,7 +307,7 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
         _ => f.s ++ "holds for" ++ conjX "and" xs }
       } ;
 
-    PredAppMany op args preds = {
+    PredAppMany op preds args = {
       s = quote (conjX "and" args) ++ "is" ++ conjX (op.s ! Verbose) preds
     } ;
 

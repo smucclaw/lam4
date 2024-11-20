@@ -95,7 +95,6 @@ data Tree :: * -> * where
   GPlus :: Tree GBinOp_
   GApplyListOp :: GListOp -> GListLExpr -> Tree GExpr_
   GBinExpr :: GBinOp -> GExpr -> GExpr -> Tree GExpr_
-  GCertain :: GExpr -> Tree GExpr_
   GConjExpr :: GListExpr -> Tree GExpr_
   GDefault :: GExpr -> GExpr -> Tree GExpr_
   GElif :: GListIfThen -> Tree GExpr_
@@ -105,7 +104,6 @@ data Tree :: * -> * where
   GIfThenElse :: GExpr -> GExpr -> GExpr -> Tree GExpr_
   GInstanceSum :: GExpr -> Tree GExpr_
   GInstanceSumIf :: GExpr -> GExpr -> Tree GExpr_
-  GKnown :: GExpr -> Tree GExpr_
   GKnownFunction :: GName -> Tree GExpr_
   GLet :: GS -> GExpr -> Tree GExpr_
   GLit :: GName -> Tree GExpr_
@@ -121,8 +119,6 @@ data Tree :: * -> * where
   GSig :: GListName -> GListExpr -> Tree GExpr_
   GUnary :: GUnaryOp -> GExpr -> Tree GExpr_
   GUnaryMinusExpr :: GExpr -> Tree GExpr_
-  GUncertain :: GExpr -> Tree GExpr_
-  GUnknown :: GExpr -> Tree GExpr_
   GVar :: GName -> Tree GExpr_
   GVerboseBinExpr :: GBinOp -> GExpr -> GExpr -> Tree GExpr_
   GFirstIfThen :: GExpr -> GExpr -> Tree GIfThen_
@@ -176,7 +172,6 @@ instance Eq (Tree a) where
     (GPlus,GPlus) -> and [ ]
     (GApplyListOp x1 x2,GApplyListOp y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GBinExpr x1 x2 x3,GBinExpr y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
-    (GCertain x1,GCertain y1) -> and [ x1 == y1 ]
     (GConjExpr x1,GConjExpr y1) -> and [ x1 == y1 ]
     (GDefault x1 x2,GDefault y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GElif x1,GElif y1) -> and [ x1 == y1 ]
@@ -186,7 +181,6 @@ instance Eq (Tree a) where
     (GIfThenElse x1 x2 x3,GIfThenElse y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GInstanceSum x1,GInstanceSum y1) -> and [ x1 == y1 ]
     (GInstanceSumIf x1 x2,GInstanceSumIf y1 y2) -> and [ x1 == y1 , x2 == y2 ]
-    (GKnown x1,GKnown y1) -> and [ x1 == y1 ]
     (GKnownFunction x1,GKnownFunction y1) -> and [ x1 == y1 ]
     (GLet x1 x2,GLet y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GLit x1,GLit y1) -> and [ x1 == y1 ]
@@ -202,8 +196,6 @@ instance Eq (Tree a) where
     (GSig x1 x2,GSig y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUnary x1 x2,GUnary y1 y2) -> and [ x1 == y1 , x2 == y2 ]
     (GUnaryMinusExpr x1,GUnaryMinusExpr y1) -> and [ x1 == y1 ]
-    (GUncertain x1,GUncertain y1) -> and [ x1 == y1 ]
-    (GUnknown x1,GUnknown y1) -> and [ x1 == y1 ]
     (GVar x1,GVar y1) -> and [ x1 == y1 ]
     (GVerboseBinExpr x1 x2 x3,GVerboseBinExpr y1 y2 y3) -> and [ x1 == y1 , x2 == y2 , x3 == y3 ]
     (GFirstIfThen x1 x2,GFirstIfThen y1 y2) -> and [ x1 == y1 , x2 == y2 ]
@@ -278,7 +270,6 @@ instance Gf GBinOp where
 instance Gf GExpr where
   gf (GApplyListOp x1 x2) = mkApp (mkCId "ApplyListOp") [gf x1, gf x2]
   gf (GBinExpr x1 x2 x3) = mkApp (mkCId "BinExpr") [gf x1, gf x2, gf x3]
-  gf (GCertain x1) = mkApp (mkCId "Certain") [gf x1]
   gf (GConjExpr x1) = mkApp (mkCId "ConjExpr") [gf x1]
   gf (GDefault x1 x2) = mkApp (mkCId "Default") [gf x1, gf x2]
   gf (GElif x1) = mkApp (mkCId "Elif") [gf x1]
@@ -288,7 +279,6 @@ instance Gf GExpr where
   gf (GIfThenElse x1 x2 x3) = mkApp (mkCId "IfThenElse") [gf x1, gf x2, gf x3]
   gf (GInstanceSum x1) = mkApp (mkCId "InstanceSum") [gf x1]
   gf (GInstanceSumIf x1 x2) = mkApp (mkCId "InstanceSumIf") [gf x1, gf x2]
-  gf (GKnown x1) = mkApp (mkCId "Known") [gf x1]
   gf (GKnownFunction x1) = mkApp (mkCId "KnownFunction") [gf x1]
   gf (GLet x1 x2) = mkApp (mkCId "Let") [gf x1, gf x2]
   gf (GLit x1) = mkApp (mkCId "Lit") [gf x1]
@@ -304,8 +294,6 @@ instance Gf GExpr where
   gf (GSig x1 x2) = mkApp (mkCId "Sig") [gf x1, gf x2]
   gf (GUnary x1 x2) = mkApp (mkCId "Unary") [gf x1, gf x2]
   gf (GUnaryMinusExpr x1) = mkApp (mkCId "UnaryMinusExpr") [gf x1]
-  gf (GUncertain x1) = mkApp (mkCId "Uncertain") [gf x1]
-  gf (GUnknown x1) = mkApp (mkCId "Unknown") [gf x1]
   gf (GVar x1) = mkApp (mkCId "Var") [gf x1]
   gf (GVerboseBinExpr x1 x2 x3) = mkApp (mkCId "VerboseBinExpr") [gf x1, gf x2, gf x3]
 
@@ -313,7 +301,6 @@ instance Gf GExpr where
     case unApp t of
       Just (i,[x1,x2]) | i == mkCId "ApplyListOp" -> GApplyListOp (fg x1) (fg x2)
       Just (i,[x1,x2,x3]) | i == mkCId "BinExpr" -> GBinExpr (fg x1) (fg x2) (fg x3)
-      Just (i,[x1]) | i == mkCId "Certain" -> GCertain (fg x1)
       Just (i,[x1]) | i == mkCId "ConjExpr" -> GConjExpr (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Default" -> GDefault (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "Elif" -> GElif (fg x1)
@@ -323,7 +310,6 @@ instance Gf GExpr where
       Just (i,[x1,x2,x3]) | i == mkCId "IfThenElse" -> GIfThenElse (fg x1) (fg x2) (fg x3)
       Just (i,[x1]) | i == mkCId "InstanceSum" -> GInstanceSum (fg x1)
       Just (i,[x1,x2]) | i == mkCId "InstanceSumIf" -> GInstanceSumIf (fg x1) (fg x2)
-      Just (i,[x1]) | i == mkCId "Known" -> GKnown (fg x1)
       Just (i,[x1]) | i == mkCId "KnownFunction" -> GKnownFunction (fg x1)
       Just (i,[x1,x2]) | i == mkCId "Let" -> GLet (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "Lit" -> GLit (fg x1)
@@ -339,8 +325,6 @@ instance Gf GExpr where
       Just (i,[x1,x2]) | i == mkCId "Sig" -> GSig (fg x1) (fg x2)
       Just (i,[x1,x2]) | i == mkCId "Unary" -> GUnary (fg x1) (fg x2)
       Just (i,[x1]) | i == mkCId "UnaryMinusExpr" -> GUnaryMinusExpr (fg x1)
-      Just (i,[x1]) | i == mkCId "Uncertain" -> GUncertain (fg x1)
-      Just (i,[x1]) | i == mkCId "Unknown" -> GUnknown (fg x1)
       Just (i,[x1]) | i == mkCId "Var" -> GVar (fg x1)
       Just (i,[x1,x2,x3]) | i == mkCId "VerboseBinExpr" -> GVerboseBinExpr (fg x1) (fg x2) (fg x3)
 
@@ -534,7 +518,6 @@ instance Compos Tree where
   compos r a f t = case t of
     GApplyListOp x1 x2 -> r GApplyListOp `a` f x1 `a` f x2
     GBinExpr x1 x2 x3 -> r GBinExpr `a` f x1 `a` f x2 `a` f x3
-    GCertain x1 -> r GCertain `a` f x1
     GConjExpr x1 -> r GConjExpr `a` f x1
     GDefault x1 x2 -> r GDefault `a` f x1 `a` f x2
     GElif x1 -> r GElif `a` f x1
@@ -544,7 +527,6 @@ instance Compos Tree where
     GIfThenElse x1 x2 x3 -> r GIfThenElse `a` f x1 `a` f x2 `a` f x3
     GInstanceSum x1 -> r GInstanceSum `a` f x1
     GInstanceSumIf x1 x2 -> r GInstanceSumIf `a` f x1 `a` f x2
-    GKnown x1 -> r GKnown `a` f x1
     GKnownFunction x1 -> r GKnownFunction `a` f x1
     GLet x1 x2 -> r GLet `a` f x1 `a` f x2
     GLit x1 -> r GLit `a` f x1
@@ -560,8 +542,6 @@ instance Compos Tree where
     GSig x1 x2 -> r GSig `a` f x1 `a` f x2
     GUnary x1 x2 -> r GUnary `a` f x1 `a` f x2
     GUnaryMinusExpr x1 -> r GUnaryMinusExpr `a` f x1
-    GUncertain x1 -> r GUncertain `a` f x1
-    GUnknown x1 -> r GUnknown `a` f x1
     GVar x1 -> r GVar `a` f x1
     GVerboseBinExpr x1 x2 x3 -> r GVerboseBinExpr `a` f x1 `a` f x2 `a` f x3
     GFirstIfThen x1 x2 -> r GFirstIfThen `a` f x1 `a` f x2
