@@ -11,9 +11,6 @@ But I'm hoping that won't be an issue / that this is still clear enough,
 since we'll presumably be using libraries to handle that sort of plumbing.
 */
 
-/** We can add more application-specific error codes etc in the future */
-export type VisualizeIRErrorResponse = JsonRPCErrorResponse;
-
 /**
 JSON-RPC Request for visualizing the intermediate representation.
 
@@ -36,6 +33,9 @@ type HTML = string;
 export interface VisualizeDecisionLogicIRSuccessResponse extends JsonRPCSuccessResponse {
   readonly result: HTML;
 }
+
+/** We can add more application-specific error codes etc in the future */
+export type VisualizeIRErrorResponse = JsonRPCErrorResponse;
 
 /**********************
          IR 
