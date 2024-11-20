@@ -66,8 +66,10 @@
   },
   "dependencies": {
     "ts-pattern": "^5.5.0",
+    "vscode-jsonrpc": "^8.2.1",
     "vscode-languageclient": "^9.0.1",
     "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-protocol": "^3.17.5",
     "zod-to-json-schema": "^3.23.5"
   }
 }
