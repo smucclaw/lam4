@@ -1,5 +1,5 @@
 import { URI } from "vscode-uri";
-import { RequestType } from "vscode-languageclient/node";
+import { RequestType } from "vscode-languageserver-protocol";
 import { z } from "zod";
 
 /*****************
@@ -20,6 +20,8 @@ export const uriSchema = z
  * Request type for visualizing L4 programs.
  * Can think in the future about whether to have different requests for visualizations of different L4 constructs.
  *
+ * We don't need to add JsonRPC or some kind of Maybe type because `RequestType` already takes care of that.
+ * 
  * @type {RequestType<VisualizeProgramInfo, VisualizeProgramResponse, void>}
  *
  * @remarks
@@ -31,11 +33,9 @@ export const uriSchema = z
  * Method Name: `"l4/visualizeProgram"`
  */
 export namespace VisualizeProgramRequest {
-  export const type: RequestType<
-    VisualizeProgramInfo,
-    VisualizeProgramResponse,
-    void
-  > = new RequestType("l4/visualizeProgram");
+  export const type: RequestType<VisualizeProgramInfo, VisualizeProgramResponse, void> = new RequestType(
+    "l4/visualizeProgram",
+  );
 }
 
 /* aka:
