@@ -34,9 +34,8 @@ data NLGConfig = MkNLGConfig {
 
 -- Loosely copied from dsl/…/natural4
 -- | Env that's needed for NLG operations
-data NLGEnv = NLGEnv
+newtype NLGEnv = NLGEnv
   { gfLin     :: GFLinearizer
-  , gfTree    :: GFLinearizer
   }
 
 gfPath :: String -> String
@@ -54,8 +53,7 @@ makeNLGEnv config = do
   -- Set up PGF Language and GF Linearizer
   let lang       = initializeGFLang config.concreteSyntaxName gr
       linearizer = makeGFLinearizer gr lang
-      printTree  = T.pack . PGF.showExpr []
-  pure $ NLGEnv linearizer printTree
+  pure $ NLGEnv linearizer
 
 makeGFLinearizer :: PGF.PGF -> PGF.Language -> GFLinearizer
 makeGFLinearizer gr lang = postprocessText . T.pack . PGF.linearize gr lang
@@ -183,10 +181,6 @@ renderCstProgramToNL env decls = T.unlines (
 renderCstDeclToNL :: NLGEnv -> Decl -> T.Text
 renderCstDeclToNL env = gfLin env . gf . genericTreeTrans . parseDecl env
 
-renderCstDeclToGFtrees :: NLGEnv -> Decl -> T.Text
-renderCstDeclToGFtrees env = gfTree env . gf . genericTreeTrans . parseDecl env
-
-
 -- TODO: do we flatten nested Let-definitions?
 -- for royalflush case, that'd be the best thing to do
 -- how about generally?
@@ -217,12 +211,6 @@ noName = N.MkName mempty Nothing N.NotEntrypoint
 parseName :: N.Name -> GName
 parseName = GMkName . GString . T.unpack . N.name
 
-parseNameForRecord :: N.Name -> GName
-parseNameForRecord = GMkName . GString . T.unpack . rmThe . N.name
-  where
-    rmThe :: T.Text -> T.Text
-    rmThe input = input & [regex|^\s?the+\s+|] . match %~ const ""
-
 commonFunction :: T.Text -> Bool
 commonFunction x = T.unpack x `elem` ["id", "map", "filter", "cons", "nil", "minus", "plus", "div", "mult", "add", "modulo", "pow", "round", "certain", "uncertain", "known", "unknown", "default", "instanceSumIf", "instanceSum"]
 
@@ -238,11 +226,6 @@ isPredicate :: Expr -> Bool
 isPredicate (getName -> Just name) = name `elem` ["certain", "known", "uncertain", "unknown"]
 isPredicate _ = False
 
-
-varFromFun :: Expr -> Expr
-varFromFun = \case
-  Fun _md _args (Project _rec label) -> Var label
-  e -> e
 ---- Tree transformations -----
 
 genericTreeTrans :: Tree a -> Tree a
