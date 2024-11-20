@@ -4,6 +4,13 @@ import { JsonRPCRequest, JsonRPCMessage, Result } from "./utilTypes";
   Protocol interfaces
 ***********************/
 
+/* 
+My focus was on the non-Json-RPC-specific / 'business-logic-specific' parts,
+so there might be subtle JsonRPC things that I didn't get right.
+But I'm hoping that won't be an issue / that this is still clear enough,
+since we'll presumably be using libraries to handle that sort of plumbing.
+*/
+
 /** Might need fields like `code` to respect JsonRPC spec. Please mentally fill those in if so. */
 export interface VisualizeIRError {
   message: string;
@@ -19,6 +26,7 @@ But this is not a component that the VSCode extension would know about.
 export interface VisualizeDecisionLogicIRRequest extends JsonRPCRequest {
   readonly method: "visualizeDecisionLogicIR";
   readonly params: VisualizeDecisionLogicIRInfo;
+  /** The `Result` type might need to be tweaked to conform with JsonRPC spec --- the idea here is just that we want something like a Either type. */
   readonly result: Result<VisualizeIRError, VisualizeDecisionLogicIRResult>;
 }
 
@@ -29,6 +37,44 @@ export interface VisualizeDecisionLogicIRInfo {
 export interface VisualizeDecisionLogicIRResult extends JsonRPCMessage {
   readonly html: string;
 }
+
+/**********************
+         IR 
+************************
+
+-----------------
+  Design intent
+-----------------
+
+I framed the visualizer inputs in terms of PL concepts, 
+as opposed to 'lower-level' graph visualization concepts (e.g. overlaying and connecting nodes),
+because my understanding was that Matthew Waddington wanted 
+the produced components to be things that other legal DSLs can also benefit from.
+In particular, he seemed to want something like 
+a 'L4-lite' intermediate representation whose semantics was mostly confined to propositional logic,
+and that other legal DSLs can either compile to (so as, e.g., to use tools whose inputs
+are in terms of this intermediate representation)
+or extend with their own features.
+
+Furthermore, if the visualizer inputs were framed in terms of, e.g., 'lower-level' graph visualization concepts,
+that wouldn't be very different from visualization tools that already exist for visualizing graphs.
+
+The other design goal was to try to come up with something that's simple while still being relatively extensible.
+If there are things that do not seem easily extensible, please do not hesitate to point those out.
+
+---------------------------------------
+  Relationship to previous prototypes
+---------------------------------------
+In coming up with the following, I 
+* looked through all the visualization-related components we've previously done (mathlangvis, Jules' ladder diagram, Meng's layman, vue pure pdpa) 
+and did a quick personal assessment of their software interfaces, design intents, 
+and practical pros and cons when it came to re-using them for this usecase.
+ (In particular, I've run and played with most of them.)
+* also looked at Maryam's https://github.com/Meowyam/lspegs
+
+If it seems like there are aspects of extant work that have not been considered in the following,
+it's likely because they are either not needed for the v1 mvp or looked like they'd have other practical disadvantages.
+*/
 
 /*****************
   Core IR node
