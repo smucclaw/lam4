@@ -15,8 +15,10 @@ source-repository-package
   location: https://github.com/inariksit/gf-core
   tag: 3a1782a5c8221101c330b6ee50ff5dd6fffb7410
 
-allow-newer: *
-allow-older: *
+allow-newer:
+    gf:base,
+    gf:ghc-prim,
+    gf:mtl,
 
 package *
     ghc-options: -haddock -fwrite-ide-info

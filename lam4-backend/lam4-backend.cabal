@@ -84,8 +84,8 @@ library
         simala,
         relude,
         gf,
-        cgi == 3001.5.0.0,
-        multipart == 0.2.0,
+        cgi ^>= 3001.5.0.1,
+        multipart ^>= 0.2.1,
         lens-regex-pcre,
         string-interpolate
 
