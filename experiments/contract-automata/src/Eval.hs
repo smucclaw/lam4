@@ -65,7 +65,7 @@ residualWithoutSimplify = synchronouslyCompose residual'
 residualWithSimplify :: [Clause] -> Event -> [Clause]
 residualWithSimplify = \clauses event -> simplify <$> synchronouslyCompose residual' clauses event
 
-{- | See CA p.32 and https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/b763318a826fef320fe6773b4fe0b6b095112027/UnknownDL.hs#L75 -}
+{- | See CA p. 28, 32, and https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/b763318a826fef320fe6773b4fe0b6b095112027/UnknownDL.hs#L75 -}
 synchronouslyCompose :: (Clause -> Event -> Clause) -> [Clause] -> Event -> [Clause]
 synchronouslyCompose clauseResidual = \clauses event -> fmap (`clauseResidual` event) clauses
   -- synchronous composition corresponds to conjunction over clauses
