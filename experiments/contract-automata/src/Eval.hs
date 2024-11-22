@@ -29,7 +29,7 @@ mkContractAut initial residualFunc = MkContractAut (Automaton initial trans acce
     trans = residualToTransition residualFunc
 
 residualToTransition :: ([Clause] -> Event -> [Clause]) -> (CAState -> Event -> Identity CAState)
-residualToTransition residualFn = \(MkCAState clauses) trace -> Identity $ MkCAState $ residualFn clauses trace
+residualToTransition residualFn = \(MkCAState clauses) event -> Identity $ MkCAState $ residualFn clauses event
 
 ----------------------------
   --- Accepting predicate
