@@ -67,8 +67,14 @@ getEventFromClause = \case
   Must event -> Just event
   May event -> Just event
   Shant event -> Just event
-  If (GDone event) _ -> Just event
-  If _ _ -> Nothing
+  If guard _ -> getEventFromGuard guard
+    where
+      getEventFromGuard :: Guard -> Maybe Event
+      getEventFromGuard = \case
+        GDone event -> Just event
+        GNot nguard -> getEventFromGuard nguard
+        GTrue      -> Nothing
+        GFalse     -> Nothing
   
 eventsFromClauses :: [Clause] -> [Event]
 eventsFromClauses = nubOrd . mapMaybe getEventFromClause
@@ -100,6 +106,7 @@ Note that I differ from Camilieri's SCL on this: he uses "the term action to mea
 type Action = Text
 
 -- Note: In a more realistic implemnetation, will also want some way to query whether certain obligations or permissions are currently active
+-- The GTrue and GFalse stuff are from Camilieri's SCL, though they might also map onto the `0` and `1` from the CA paper
 data Guard = GDone Event
              -- ^ Party did Action. This corresponds to the `InfixOrPostfixActionApplication` construct in the Lam4 Langium grammar, and is kinda similar to Camilieri's `GDone Action`
            | GNot Guard
