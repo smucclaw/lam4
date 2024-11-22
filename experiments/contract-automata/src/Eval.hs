@@ -8,7 +8,6 @@ import           Syntax
 -- import Data.Coerce (coerce)
 import           Control.Bool
 import           Control.Monad.Identity    (Identity (..))
-import           Data.Maybe (maybeToList)
 
 {----------------------
   Resources / See also
@@ -115,36 +114,3 @@ satisfiesGuard actualEvent = \case
   GNot guard  -> not $ actualEvent `satisfiesGuard` guard
   GTrue       -> True
   GFalse      -> False
-
------------------------------
-  --- Possible next steps
------------------------------
-
-{- | What next steps are possible, given the clauses active at a particular state
-
-This is adapted from https://github.com/shaunazzopardi/deontic-logic-with-unknowns-haskell/blob/b763318a826fef320fe6773b4fe0b6b095112027/UnknownDL.hs#L156 
-and partly based on my own understanding of the structure of normativity, more broadly speaking
-
-My naive strategy for defunctionalization would have been to
-get the reachable states using this `nextSteps` function
-(but making sure to individuate states not just by their active clauses
-but also by the path that leads to the state)
--}
-nextSteps :: [Clause] -> [[Event]]
-nextSteps clauses = fmap nextSteps' clauses
-  where
-    nextSteps' :: Clause -> [Event]
-    nextSteps' = \case
-      Top             -> []
-      Bottom          -> []
-
-      If guard _      -> maybeToList . getEventFromGuard $ guard
-
-      {- If we had ommissive actions (i.e., `!a` from the paper),
-      then we would probably want something like
-        Must event -> [event, OmmissiveOf event]
-      and so forth with the other deontic modals
-      -}
-      Shant event     -> [event]
-      Must event      -> [event]
-      May event       -> [event]

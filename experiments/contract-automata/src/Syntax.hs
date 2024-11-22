@@ -68,13 +68,13 @@ getEventFromClause = \case
   May event -> Just event
   Shant event -> Just event
   If guard _ -> getEventFromGuard guard
-
-getEventFromGuard :: Guard -> Maybe Event
-getEventFromGuard = \case
-  GDone event -> Just event
-  GNot nguard -> getEventFromGuard nguard
-  GTrue      -> Nothing
-  GFalse     -> Nothing
+    where
+      getEventFromGuard :: Guard -> Maybe Event
+      getEventFromGuard = \case
+        GDone event -> Just event
+        GNot nguard -> getEventFromGuard nguard
+        GTrue      -> Nothing
+        GFalse     -> Nothing
   
 eventsFromClauses :: [Clause] -> [Event]
 eventsFromClauses = nubOrd . mapMaybe getEventFromClause
