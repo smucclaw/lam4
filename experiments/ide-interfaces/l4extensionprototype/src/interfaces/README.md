@@ -1,5 +1,11 @@
 # README
 
+## Things we'll probably want in the medium term, but that I'm deferring for now
+
+* The current visualizer interfaces don't have what would be required for visualizers / widgets to be able to ask the editor to, e.g., navigate to the definitions in the code corresponding to this or that part of the visualization.
+  * For this sort of functionality, we'll probably need the analogue of interfaces like [VSCode-Lean4's `EditorConnection` and `EditorApi`](https://github.com/leanprover/vscode-lean4/blob/55b2f17ae09fcc3d6dbb3a49c373a4bd46f00028/lean4-infoview/src/infoview/editorConnection.ts#L22). That is, the visualizers will need access to methods for getting the editor to do things.
+  * This is something we'll probably want in the medium term, especially when the examples get complicated enough that we want to explore regions of the visualizations *on demand*. I'm just deferring this for now, to keep the short-term deliverables simple.
+
 ## General resources for visualizer interfaces
 
 Similar things that other people have done
