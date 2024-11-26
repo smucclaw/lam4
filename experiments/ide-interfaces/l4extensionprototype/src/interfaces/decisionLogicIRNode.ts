@@ -1,4 +1,4 @@
-import { JsonRPCRequest, JsonRPCMessage, JsonRPCErrorResponse, JsonRPCSuccessResponse } from "./utilTypes";
+import { JsonRPCRequest, JsonRPCErrorResponse, JsonRPCSuccessResponse } from "./utilTypes";
 
 /**********************
   Protocol interfaces
@@ -27,7 +27,7 @@ export interface VisualizeDecisionLogicIRInfo {
   readonly program: IRNode;
 }
 
-export type VisualizeDecisionLogicIRResponse = VisualizeDecisionLogicIRSuccessResponse | VisualizeIRErrorResponse
+export type VisualizeDecisionLogicIRResponse = VisualizeDecisionLogicIRSuccessResponse | VisualizeDecisionLogicIRErrorResponse
 
 type HTML = string;
 export interface VisualizeDecisionLogicResult {
@@ -39,7 +39,7 @@ export interface VisualizeDecisionLogicIRSuccessResponse extends JsonRPCSuccessR
 }
 
 /** We can add more application-specific error codes etc in the future */
-export type VisualizeIRErrorResponse = JsonRPCErrorResponse;
+export type VisualizeDecisionLogicIRErrorResponse = JsonRPCErrorResponse;
 
 /**********************
          IR 
