@@ -141,6 +141,34 @@ bankExampleTrace = [eventJohnLogin, eventHackAttempt]
 autBankExample :: ContractAutomaton
 autBankExample = mkContractAut (contractToCAState contractBank) residualWithoutSimplify
 
+autBankExample' :: Aut Int
+autBankExample' = renameAutomaton (buildAutomaton (contractToCAState contractBank))
+
+-- >>> autBankExample'
+-- State 0:
+--   MkEvent {getActor = MkParty {getName = "Hacker"}, getAction = "attemptHack"} -> 2
+--   MkEvent {getActor = MkParty {getName = "John"}, getAction = "login"} -> 5
+--   default -> 1
+-- <BLANKLINE>
+-- State 1:
+--   default -> 1
+-- <BLANKLINE>
+-- State 2:
+--   MkEvent {getActor = MkParty {getName = "Bank"}, getAction = "resolveSituation"} -> 3
+--   MkEvent {getActor = MkParty {getName = "John"}, getAction = "login"} -> 4
+--   MkEvent {getActor = MkParty {getName = "John"}, getAction = "makeMoneyTransfers"} -> 4
+--   default -> 1
+-- <BLANKLINE>
+-- State 3:
+--   default -> 1
+-- <BLANKLINE>
+-- State 4:
+--   default -> 4
+-- <BLANKLINE>
+-- State 5:
+--   default -> 1
+-- <BLANKLINE>
+
 runBankExampleOnTrace :: Trace -> Identity CAState
 runBankExampleOnTrace = run autBankExample.aut
 
