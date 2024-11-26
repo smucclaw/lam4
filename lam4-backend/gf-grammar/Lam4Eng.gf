@@ -41,8 +41,8 @@ concrete Lam4Eng of Lam4 = open Prelude, Coordination in {
     ifKw : Str = hilight Strong "if" ;
     thenKw : Str = hilight Strong "then" ;
     elseKw : Str = hilight Strong "else" ;
-    andKw : Str = hilight Emph "and" ;
-    orKw : Str = hilight Emph "or" ;
+    andKw : Str = hilight Strong "and" ;
+    orKw : Str = hilight Strong "or" ;
     allKw : Str = hilight Strong (hilight Emph "all of") ;
     anyKw : Str = hilight Strong (hilight Emph "any of") ;
 
