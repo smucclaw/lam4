@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE QuasiQuotes         #-}
 
-module Lam4.Render.Render (NLGConfig (..), NLGEnv, makeNLGEnv, renderCstProgramToNL) where
+module Lam4.Render.Render (NLGConfig (..), NLGEnv, NLGOutput, makeNLGEnv, renderCstProgramToNL) where
 
 import           Base
 import           Base.Aeson
