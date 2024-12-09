@@ -2,11 +2,12 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE QuasiQuotes         #-}
 
-module Lam4.Render.Render (NLGConfig (..), NLGEnv, NLGOutput, makeNLGEnv, renderCstProgramToNL) where
+module Lam4.Render.Render (NLGConfig (..), NLGEnv (..), NLGOutput (..), makeNLGEnv, renderCstProgramToNL) where
 
-import           Base
+import           Base (Text, Generic)
 import           Base.Aeson
 import qualified Base.Text                as T
+-- TODO: Refactor to just use the optics versions...
 import           Control.Lens             ((%~), (&))
 import           Control.Lens.Regex.Text  (match, regex)
 import           Data.String.Interpolate  (i)
@@ -35,11 +36,13 @@ data NLGConfig = MkNLGConfig {
 
 -- | The output type for JSON serialization
 data NLGOutput = MkNLGOutput {
-    sourceFilename        :: FilePath,
-    naturalLanguageOutput :: Text
+    sourceFilenames  :: [FilePath],
+    naturalLanguage  :: Text
 }
   deriving stock (Eq, Ord, Show, Generic)
-  deriving anyclass (ToJSON, FromJSON)
+
+instance ToJSON NLGOutput
+instance FromJSON NLGOutput
 
 
 -- Loosely copied from dsl/…/natural4

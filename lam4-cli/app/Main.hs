@@ -12,8 +12,6 @@ import           Base.File
 import           Control.Lens.Regex.ByteString (groups, regex)
 import           Data.ByteString               as BS hiding (concat, concatMap,
                                                       map, null, putStr)
-import qualified Data.Text                     as T
-
 import           Configuration.Dotenv (loadFile, defaultConfig, onMissingFile)
 
 import           Cradle
@@ -24,7 +22,7 @@ import           Lam4.Expr.ToConcreteEvalAST   (cstProgramToConEvalProgram)
 import           Lam4.Expr.ToSimala            ()
 import qualified Lam4.Expr.ToSimala            as ToSimala
 import           Lam4.Parser.Monad             (evalParserFromScratch)
-import           Lam4.Render.Render            (NLGConfig (..))
+import           Lam4.Render.Render            (NLGConfig (..), NLGOutput (..))
 import qualified Lam4.Render.Render            as Render
 import           Options.Applicative           as Options
 import           System.Directory
@@ -89,7 +87,7 @@ data Options =
   MkOptions
     { tracing :: ToSimala.TraceMode
     , files   :: [FilePath]
-    , onlyNLG :: Bool
+    , withNlg :: Bool
     }
 
 -- | Copied from Simala
@@ -105,7 +103,7 @@ optionsDescription =
   MkOptions
   <$> (toTracingMode <$> strOption (long "tracing" <> help "Tracing, one of \"off\", \"full\" (default), \"results\"") <|> pure ToSimala.TraceResults)
   <*> many (strArgument (metavar ".l4 FILES..."))
-  <*> switch (long "nlg-only")
+  <*> switch (long "with-nlg" <> help "Generate (and serialize to JSON) natural language output")
 
 optionsConfig :: Options.ParserInfo Options
 optionsConfig =
@@ -164,29 +162,19 @@ main = do
       writeFileUtf8 (simalaOutConfig.outputDir </> simalaOutConfig.programFilename) (ToSimala.render simalaProgram)
       writeFileLBS (simalaOutConfig.outputDir </> simalaOutConfig.programInfoFilename) (encodePretty programInfo)
 
-      -- NLG (put this behind an option later)
+      -- NLG
       -- TODO: Make a ToNLG monad
-      nlgEnv <- Render.makeNLGEnv nlgOutConfig
-      let nlRendering = Render.renderCstProgramToNL nlgEnv cstProgram
-      createDirectoryIfMissing True nlgOutConfig.outputDir
-      writeFileUtf8 (nlgOutConfig.outputDir </> nlgOutConfig.outputFilename) nlRendering
-      -- TODO: Save a json version with the nlg output as a member
+      when options.withNlg $ do
+        nlgEnv <- Render.makeNLGEnv nlgOutConfig
+        let nlRendering = Render.renderCstProgramToNL nlgEnv cstProgram
+            nlgOutput = MkNLGOutput { sourceFilenames = options.files,
+                                      naturalLanguage = nlRendering}
+        createDirectoryIfMissing True nlgOutConfig.outputDir
+        writeFileLBS (nlgOutConfig.outputDir </> nlgOutConfig.outputFilename) (encodePretty nlgOutput)
 
       -- Perform evaluation (if needed)
       _ <- ToSimala.doEvalDeclsTracing options.tracing ToSimala.emptyEnv simalaProgram
-
-      if options.onlyNLG
-        then putStr $ T.unpack nlRendering
-        else do
-          -- Finally print output and signal success
-          print "--- CST -----------"
-          pPrint cstProgram
-          print "--- Simala exprs --------"
-          putStr $ T.unpack $ ToSimala.render simalaProgram
-          print "-------------------------------"
-
-          putStrLn "---- Natural language (sort of) -----"
-          putStr $ T.unpack nlRendering
+      pure ()
 
 getCSTJsonFromFrontend :: FrontendConfig -> [FilePath] -> IO [ByteString]
 getCSTJsonFromFrontend config files = do
