@@ -4,6 +4,8 @@
 
 module Lam4.Render.Render (NLGConfig (..), NLGEnv, makeNLGEnv, renderCstProgramToNL) where
 
+import           Base
+import           Base.Aeson
 import qualified Base.Text                as T
 import           Control.Lens             ((%~), (&))
 import           Control.Lens.Regex.Text  (match, regex)
@@ -30,6 +32,15 @@ data NLGConfig = MkNLGConfig {
     , concreteSyntaxName :: String
     -- ^ e.g. "Lam4Eng"
 }
+
+-- | The output type for JSON serialization
+data NLGOutput = MkNLGOutput {
+    sourceFilename        :: FilePath,
+    naturalLanguageOutput :: Text
+}
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (ToJSON, FromJSON)
+
 
 -- Loosely copied from dsl/…/natural4
 -- | Env that's needed for NLG operations
