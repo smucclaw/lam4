@@ -35,7 +35,7 @@ For a contract with action alphabet Î£, we will introduce its deontic alphabet Î
 
 -- | The state of a contract automaton. It is possible for a CA state to contain 0 clauses.
 newtype CAState = MkCAState { clauses :: [Clause] }
-  deriving newtype (Eq, Ord, Finite)
+  deriving newtype (Eq, Ord, Finite, Semigroup)
   deriving stock Show
 
 contractToCAState :: Contract -> CAState
